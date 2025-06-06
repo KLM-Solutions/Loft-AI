@@ -1748,25 +1748,30 @@ export default function BookmarksPage() {
                   <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                     <div className="flex items-start space-x-4">
                       {tempSavedImage && (
-                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
                           <img
                             src={tempSavedImage}
                             alt="Saved content"
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-cover rounded-2xl"
                           />
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="flex items-center mt-1">
+                        <h3 className="text-sm font-medium text-gray-900">
                           {savedTitle}
                         </h3>
+                        </div>
                         <div className="flex items-center mt-1">
+                         
                           <div className="flex items-center text-xs text-gray-500">
+                          
                             <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>
                             <span>{new Date().toLocaleDateString()}</span>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
+                        
                           {tempSavedTags.map((tag) => (
                             <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
                               {tag}
