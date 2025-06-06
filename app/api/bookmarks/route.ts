@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const [titleResponse, summaryResponse] = await Promise.all([
       generateText({
         model: perplexity('sonar'),
-        prompt: `Generate a concise, engaging title (max 10 words) for this URL: ${url}`,
+        prompt: `Generate a concise, engaging title (max 5 words) for this URL: ${url}, response format should be like this : title(text-format not any other format, don't use this type of numbers or sources [1][5]), also don't use "" or '' `,
       }),
       generateText({
         model: perplexity('sonar'),
@@ -73,14 +73,21 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const clerk_username = user.username || user.emailAddresses?.[0]?.emailAddress || user.id;
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
 
     if (type === 'saved-searches') {
-      // Fetch saved searches
+      // Fetch saved searches for the current user only
       const searches = await sql`
         SELECT id, query, created_at
         FROM search
+        WHERE clerk_username = ${clerk_username}
         ORDER BY created_at DESC
         LIMIT 50
       `;

@@ -26,6 +26,10 @@ function normalizeBold(str: string) {
   return str.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '**$1**');
 }
 
+function removeQuotes(str: string) {
+  return str.replace(/^"|"$/g, '');
+}
+
 export default function BookmarksPage() {
   const router = useRouter()
   const pathname = usePathname()
@@ -201,6 +205,7 @@ export default function BookmarksPage() {
       }
 
       const data = await response.json();
+      console.log('Title from LLM:', data.title);
       setTitleInput(data.title);
       setSummaryInput(data.summary);
       setShowInShortModal(true);
@@ -911,24 +916,24 @@ export default function BookmarksPage() {
                           return (
                             <div
                               key={bm.id}
-                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-blue-400" : ""}`}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-stretch cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-blue-400" : ""}`}
                               onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                             >
                               {/* Image or blank */}
-                              <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                              <div className="w-24 h-16 flex-shrink-0 overflow-hidden rounded-xl flex items-center justify-center">
                                 {bm.image ? (
                                   <img 
                                     src={bm.image} 
                                     alt={bm.title}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain rounded-xl"
                                   />
                                 ) : (
-                                  <div className="w-full h-full bg-gray-100" />
+                                  <div className="w-full h-full bg-gray-100 rounded-xl" />
                                 )}
                               </div>
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0 pl-4">
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                  <span className={`font-semibold text-lg ${isExpanded ? '' : 'truncate whitespace-nowrap overflow-hidden'}`}><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
                                   {bm.url && (
                                     <a 
                                       href={bm.url} 
@@ -941,72 +946,78 @@ export default function BookmarksPage() {
                                     </a>
                                   )}
                                 </div>
-                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                <div className="flex items-center mt-2 space-x-2 flex-wrap">
-                                  {(bm.tags || []).map((tag: string, i: number) => (
-                                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                  ))}
-                                  {(bm.collections || []).map((col: string, i: number) => (
-                                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                  ))}
-                                </div>
+                                {!isExpanded && (
+                                  <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                )}
                                 {isExpanded && (
-                                  <div className="mt-3">
-                                    <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                  </div>
+                                  <>
+                                    <div className="mt-4">
+                                      <div className="text-gray-700"><ReactMarkdown>{bm.content || bm.summary}</ReactMarkdown></div>
+                                    </div>
+                                    <div className="flex items-center mt-4 space-x-2 flex-wrap">
+                                      {(bm.tags || []).map((tag: string, i: number) => (
+                                        <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                      ))}
+                                      {(bm.collections || []).map((col: string, i: number) => (
+                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                      ))}
+                                    </div>
+                                    <div className="mt-3">
+                                      <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                    </div>
+                                  </>
                                 )}
                               </div>
-                              <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                              {isExpanded && (
+                                <div className="text-xs text-gray-400 ml-4 mt-2 self-start">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                              )}
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {bookmarks.map((bm: any) => (
-                          <div
-                            key={bm.id}
-                            className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                            onClick={() => {
-                              setSelectedBookmark(bm);
-                              setShowModal(true);
-                            }}
-                          >
-                            <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                          <div key={bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
+                            <div className="h-48 overflow-hidden rounded-t-2xl">
                               {bm.image ? (
-                                <img 
-                                  src={bm.image} 
-                                  alt={bm.title}
-                                  className="w-full h-full object-cover"
-                                />
+                                <div className="w-full h-full overflow-hidden rounded-t-2xl">
+                                  <img
+                                    src={bm.image}
+                                    alt={bm.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
                               ) : (
-                                <div className="w-full h-full bg-gray-100" />
+                                <div className="w-full h-full bg-gray-100 rounded-t-2xl" />
                               )}
                             </div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                              {bm.url && (
-                                <a 
-                                  href={bm.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
-                                >
-                                  Site
-                                </a>
-                              )}
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
+                                {bm.url && (
+                                  <a 
+                                    href={bm.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                  >
+                                    Site
+                                  </a>
+                                )}
+                              </div>
+                              <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                              <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                {(bm.tags || []).map((tag: string, i: number) => (
+                                  <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                ))}
+                                {(bm.collections || []).map((col: string, i: number) => (
+                                  <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                ))}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                             </div>
-                            <div className="text-gray-500 text-sm truncate"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                            <div className="flex items-center mt-2 space-x-2 flex-wrap">
-                              {(bm.tags || []).map((tag: string, i: number) => (
-                                <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                              ))}
-                              {(bm.collections || []).map((col: string, i: number) => (
-                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                              ))}
-                            </div>
-                            <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                           </div>
                         ))}
                       </div>
@@ -1093,24 +1104,24 @@ export default function BookmarksPage() {
                                   return (
                                     <div
                                       key={bm.id}
-                                      className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-blue-400" : ""}`}
+                                      className={`bg-white rounded-2xl shadow p-4 flex items-stretch cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-blue-400" : ""}`}
                                       onClick={() => setExpandedId(isExpanded ? null : cardKey)}
                                     >
                                       {/* Image or blank */}
-                                      <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                      <div className="w-24 h-16 flex-shrink-0 overflow-hidden rounded-xl flex items-center justify-center">
                                         {bm.image ? (
                                           <img 
                                             src={bm.image} 
                                             alt={bm.title}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-contain rounded-xl"
                                           />
                                         ) : (
-                                          <div className="w-full h-full bg-gray-100" />
+                                          <div className="w-full h-full bg-gray-100 rounded-xl" />
                                         )}
                                       </div>
-                                      <div className="flex-1 min-w-0">
+                                      <div className="flex-1 min-w-0 pl-4">
                                         <div className="flex items-center justify-between mb-1">
-                                          <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                          <span className={`font-semibold text-lg ${isExpanded ? '' : 'truncate whitespace-nowrap overflow-hidden'}`}><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
                                           {bm.url && (
                                             <a 
                                               href={bm.url} 
@@ -1123,72 +1134,78 @@ export default function BookmarksPage() {
                                             </a>
                                           )}
                                         </div>
-                                        <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                        <div className="flex items-center mt-2 space-x-2 flex-wrap">
-                                          {(bm.tags || []).map((tag: string, i: number) => (
-                                            <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                          ))}
-                                          {(bm.collections || []).map((col: string, i: number) => (
-                                            <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                          ))}
-                                        </div>
+                                        {!isExpanded && (
+                                          <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                        )}
                                         {isExpanded && (
-                                          <div className="mt-3">
-                                            <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                          </div>
+                                          <>
+                                            <div className="mt-4">
+                                              <div className="text-gray-700"><ReactMarkdown>{bm.content || bm.summary}</ReactMarkdown></div>
+                                            </div>
+                                            <div className="flex items-center mt-4 space-x-2 flex-wrap">
+                                              {(bm.tags || []).map((tag: string, i: number) => (
+                                                <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                              ))}
+                                              {(bm.collections || []).map((col: string, i: number) => (
+                                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                              ))}
+                                            </div>
+                                            <div className="mt-3">
+                                              <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                            </div>
+                                          </>
                                         )}
                                       </div>
-                                      <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                      {isExpanded && (
+                                        <div className="text-xs text-gray-400 ml-4 mt-2 self-start">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                      )}
                                     </div>
                                   );
                                 })}
                               </div>
                             ) : (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {tagBookmarks.map((bm: any) => (
-                                  <div
-                                    key={bm.id}
-                                    className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                                    onClick={() => {
-                                      setSelectedBookmark(bm);
-                                      setShowModal(true);
-                                    }}
-                                  >
-                                    <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                                  <div key={bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
+                                    <div className="h-48 overflow-hidden rounded-t-2xl">
                                       {bm.image ? (
-                                        <img 
-                                          src={bm.image} 
-                                          alt={bm.title}
-                                          className="w-full h-full object-cover"
-                                        />
+                                        <div className="w-full h-full overflow-hidden rounded-t-2xl">
+                                          <img
+                                            src={bm.image}
+                                            alt={bm.title}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
                                       ) : (
-                                        <div className="w-full h-full bg-gray-100" />
+                                        <div className="w-full h-full bg-gray-100 rounded-t-2xl" />
                                       )}
                                     </div>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                                      {bm.url && (
-                                        <a 
-                                          href={bm.url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
-                                        >
-                                          Site
-                                        </a>
-                                      )}
+                                    <div className="p-4">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
+                                        {bm.url && (
+                                          <a 
+                                            href={bm.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                          >
+                                            Site
+                                          </a>
+                                        )}
+                                      </div>
+                                      <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                      <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                        {(bm.tags || []).map((tag: string, i: number) => (
+                                          <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                        ))}
+                                        {(bm.collections || []).map((col: string, i: number) => (
+                                          <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                        ))}
+                                      </div>
+                                      <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                                     </div>
-                                    <div className="text-gray-500 text-sm truncate"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                    <div className="flex items-center mt-2 space-x-2 flex-wrap">
-                                      {(bm.tags || []).map((tag: string, i: number) => (
-                                        <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                      ))}
-                                      {(bm.collections || []).map((col: string, i: number) => (
-                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                      ))}
-                                    </div>
-                                    <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                                   </div>
                                 ))}
                               </div>
@@ -1336,10 +1353,10 @@ export default function BookmarksPage() {
                     <img 
                       src={selectedBookmark.image} 
                       alt={selectedBookmark.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-xl"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-100" />
+                    <div className="w-full h-full bg-gray-100 rounded-xl" />
                   )}
                 </div>
                 <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
@@ -1389,7 +1406,7 @@ export default function BookmarksPage() {
                         <img 
                           src={selectedImage} 
                           alt="Uploaded" 
-                          className="w-full h-48 object-contain rounded-lg"
+                          className="w-full h-48 object-cover"
                         />
                         <button
                           onClick={() => setSelectedImage(null)}
@@ -1687,8 +1704,10 @@ export default function BookmarksPage() {
                   >
                     {isGenerating || isSaving ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
+                    ) : showInShortModal ? (
                       'Save'
+                    ) : (
+                      'Next'
                     )}
                   </button>
                 </div>
@@ -1717,36 +1736,26 @@ export default function BookmarksPage() {
               </div>
               <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
                 <div className="w-32 h-32 mb-4">
-                  {tempSavedImage ? (
-                    <img
-                      src={tempSavedImage}
-                      alt="Saved content"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <img
-                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
-                      alt="Success"
-                      className="w-full h-full"
-                    />
-                  )}
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                    alt="Success"
+                    className="w-full h-full"
+                  />
                 </div>
                 <h2 className="text-xl font-bold mb-2">Saved to Loft</h2>
                 <p className="text-gray-600 mb-6">Your content is safe and ready to rediscover anytime</p>
                 <div className="w-full max-w-sm">
-                  <div className="bg-white rounded-b-lg shadow-sm p-4 mb-4">
+                  <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
                     <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        {tempSavedImage ? (
+                      {tempSavedImage && (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
                           <img
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                            src={tempSavedImage}
                             alt="Saved content"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100" />
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 truncate">
                           {savedTitle}
@@ -1757,7 +1766,6 @@ export default function BookmarksPage() {
                             <span>{new Date().toLocaleDateString()}</span>
                           </div>
                         </div>
-                        {/* Tags and Collections in a single row */}
                         <div className="flex flex-wrap gap-2 mt-2">
                           {tempSavedTags.map((tag) => (
                             <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
