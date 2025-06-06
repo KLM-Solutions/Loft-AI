@@ -127,34 +127,72 @@ export default function BookmarksPage() {
   // Handle search submission
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      setSearchPerformed(true)
-      setIsSearching(true)
-      
-      // Save the search query
-      try {
-        await fetch("/api/bookmarks", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ searchQuery: searchQuery.trim() }),
-        })
-      } catch (error) {
-        console.error('Error saving search:', error)
-      }
+    setIsSearching(true)
+    
+    // Always fetch fresh data when searching
+    try {
+      const response = await fetch("/api/library")
+      const data = await response.json()
+      const allBookmarks = data.data || []
 
-      // Simulate search delay
-      setTimeout(() => {
-        setIsSearching(false)
-      }, 500)
+      if (searchQuery.trim()) {
+        // Save the search query
+        try {
+          await fetch("/api/bookmarks", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ searchQuery: searchQuery.trim() }),
+          })
+        } catch (error) {
+          console.error('Error saving search:', error)
+        }
+
+        // Filter bookmarks based on search query
+        const filteredBookmarks = allBookmarks.filter((bm: { 
+          title?: string; 
+          summary?: string; 
+          tags?: string[]; 
+          collections?: string[] 
+        }) => {
+          const searchLower = searchQuery.toLowerCase()
+          return (
+            bm.title?.toLowerCase().includes(searchLower) ||
+            bm.summary?.toLowerCase().includes(searchLower) ||
+            bm.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower)) ||
+            bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
+          )
+        })
+
+        // Update the bookmarks state with filtered results
+        setBookmarks(filteredBookmarks)
+      } else {
+        // If search query is empty, show all bookmarks
+        setBookmarks(allBookmarks)
+      }
+    } catch (error) {
+      console.error('Error fetching bookmarks:', error)
     }
+
+    // Simulate search delay
+    setTimeout(() => {
+      setIsSearching(false)
+    }, 500)
   }
 
   // Clear search
   const clearSearch = () => {
     setSearchQuery("")
-    setSearchPerformed(false)
+    // Reset bookmarks to original state
+    fetch("/api/library")
+      .then(res => res.json())
+      .then(data => {
+        setBookmarks(data.data || [])
+      })
+      .catch(error => {
+        console.error('Error fetching bookmarks:', error)
+      })
   }
 
   // Open save modal
@@ -670,6 +708,51 @@ export default function BookmarksPage() {
               </button>
             </div>
           </form>
+          {/* Content Type Filters */}
+          <div className="flex space-x-2 overflow-x-auto no-scrollbar mt-4">
+            <button
+              onClick={() => setContentFilter("all")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setContentFilter("links")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Links
+            </button>
+            <button
+              onClick={() => setContentFilter("images")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Images
+            </button>
+            <button
+              onClick={() => setContentFilter("notes")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Notes
+            </button>
+            <button
+              onClick={() => setContentFilter("articles")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "articles"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Articles
+            </button>
+          </div>
         </header>
 
         {/* Main Content Area - Now Scrollable */}
@@ -857,26 +940,43 @@ export default function BookmarksPage() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between mb-1">
                                     <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                                    {bm.url && (
-                                      <a 
-                                        href={bm.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
-                                      >
-                                        Site
-                                      </a>
-                                    )}
+                                    {/* Show site button in title row only on desktop */}
+                                    <div className="hidden md:block">
+                                      {bm.url && (
+                                        <a 
+                                          href={bm.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                        >
+                                          Site
+                                        </a>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                  <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
                                     {(bm.tags || []).map((tag: string, i: number) => (
                                       <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                     ))}
                                     {(bm.collections || []).map((col: string, i: number) => (
                                       <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                                     ))}
+                                    <div className="md:hidden">
+                                      {bm.url && (
+                                        <a
+                                          href={bm.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={e => e.stopPropagation()}
+                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                          style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                        >
+                                          Site
+                                        </a>
+                                      )}
+                                    </div>
                                   </div>
                                   {isExpanded && (
                                     <div className="mt-3">
@@ -924,13 +1024,27 @@ export default function BookmarksPage() {
                                   )}
                                 </div>
                                 <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
                                   {(bm.tags || []).map((tag: string, i: number) => (
                                     <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                   ))}
                                   {(bm.collections || []).map((col: string, i: number) => (
                                     <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                                   ))}
+                                  <div className="md:hidden">
+                                    {bm.url && (
+                                      <a
+                                        href={bm.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={e => e.stopPropagation()}
+                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                        style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                      >
+                                        Site
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
                                 <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                               </div>
@@ -1054,13 +1168,27 @@ export default function BookmarksPage() {
                                             )}
                                           </div>
                                           <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                          <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
                                             {(bm.tags || []).map((tag: string, i: number) => (
                                               <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                             ))}
                                             {(bm.collections || []).map((col: string, i: number) => (
                                               <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                                             ))}
+                                            <div className="md:hidden">
+                                              {bm.url && (
+                                                <a
+                                                  href={bm.url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  onClick={e => e.stopPropagation()}
+                                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                  style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                                >
+                                                  Site
+                                                </a>
+                                              )}
+                                            </div>
                                           </div>
                                           {isExpanded && (
                                             <div className="mt-3">
@@ -1108,13 +1236,27 @@ export default function BookmarksPage() {
                                           )}
                                         </div>
                                         <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                        <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
                                           {(bm.tags || []).map((tag: string, i: number) => (
                                             <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                           ))}
                                           {(bm.collections || []).map((col: string, i: number) => (
                                             <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                                           ))}
+                                          <div className="md:hidden">
+                                            {bm.url && (
+                                              <a
+                                                href={bm.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={e => e.stopPropagation()}
+                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                              >
+                                                Site
+                                              </a>
+                                            )}
+                                          </div>
                                         </div>
                                         <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                                       </div>
