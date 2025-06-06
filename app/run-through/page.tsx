@@ -408,74 +408,74 @@ export default function RunThroughPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 md:p-8 bg-[#f5f8fa] overflow-y-auto flex flex-col">
-          {messages.length === 0 ? (
-            // Default Content
-            <div className="flex-1 flex flex-col md:justify-center">
-              {/* AI Greeting */}
-              <div className="text-center mb-8 mt-8 md:mt-0">
-                <h2 className="text-2xl font-semibold mb-2">
-                  Hi there, <span className="text-blue-500">John</span>
-                </h2>
-                <p className="text-xl text-gray-700 mb-4">What would you like to know?</p>
-                <p className="text-gray-500">Use one of the most common prompts below or use your own to begin</p>
-              </div>
-
-              {/* Example Prompts */}
-              <div className="mt-8">
-                <p className="text-gray-500 text-center mb-6">Try something like:</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                  {examplePrompts.map((prompt, index) => (
-                    <button
-                      key={index}
-                      className="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md transition-shadow text-left"
-                      onClick={() => setInputValue(prompt.text)}
-                    >
-                      <p className="text-gray-700">"{prompt.text}"</p>
-                    </button>
-                  ))}
+        <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {messages.length === 0 ? (
+              // Default Content
+              <div className="flex flex-col h-full md:justify-center">
+                {/* AI Greeting */}
+                <div className="text-center mb-8 mt-8 md:mt-0">
+                  <h2 className="text-2xl font-semibold mb-2">
+                    Hi there, <span className="text-blue-500">John</span>
+                  </h2>
+                  <p className="text-xl text-gray-700 mb-4">What would you like to know?</p>
+                  <p className="text-gray-500">Use one of the most common prompts below or use your own to begin</p>
+                </div>
+                {/* Example Prompts */}
+                <div className="mt-8">
+                  <p className="text-gray-500 text-center mb-6">Try something like:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                    {examplePrompts.map((prompt, index) => (
+                      <button
+                        key={index}
+                        className="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md transition-shadow text-left"
+                        onClick={() => setInputValue(prompt.text)}
+                      >
+                        <p className="text-gray-700">"{prompt.text}"</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            // Chat Messages
-            <div className="flex-1 space-y-4 mb-4">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+            ) : (
+              // Chat Messages
+              <div className="flex flex-col space-y-4 mb-4">
+                {messages.map((message, index) => (
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                      message.role === 'user'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-white text-gray-800'
-                    }`}
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    {message.role === 'user' ? (
-                      <p className="whitespace-pre-wrap">{message.content}</p>
-                    ) : (
-                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-code:bg-gray-100 prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-pre:bg-gray-100 prose-pre:rounded-md prose-pre:p-2 prose-pre:my-2 prose-a:text-blue-500 prose-a:underline hover:prose-a:text-blue-600">
-                        <ReactMarkdown>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                    )}
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                        message.role === 'user'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-white text-gray-800'
+                      }`}
+                    >
+                      {message.role === 'user' ? (
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      ) : (
+                        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-code:bg-gray-100 prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-pre:bg-gray-100 prose-pre:rounded-md prose-pre:p-2 prose-pre:my-2 prose-a:text-blue-500 prose-a:underline hover:prose-a:text-blue-600">
+                          <ReactMarkdown>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white text-gray-800 rounded-2xl px-4 py-2">
-                    <p>Thinking...</p>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white text-gray-800 rounded-2xl px-4 py-2">
+                      <p>Thinking...</p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Input Form - Fixed at bottom */}
-          <div className="mt-auto pt-4">
+                )}
+              </div>
+            )}
+          </div>
+          {/* Input Form - Always at the bottom */}
+          <div className="pt-4 bg-[#f5f8fa] mb-5 md:mb-0">
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full">
               <div className="relative">
                 <input
@@ -503,7 +503,6 @@ export default function RunThroughPage() {
               </div>
             </form>
           </div>
-
           {/* Footer */}
           <div className="mt-4 text-center text-xs text-gray-500 pb-4">
             <div className="flex justify-center items-center space-x-4">
@@ -630,59 +629,57 @@ export default function RunThroughPage() {
 
       {/* Add New Collection Modal */}
       {showNewCollectionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Create New Collection</h2>
-                <button 
-                  onClick={() => setShowNewCollectionModal(false)} 
-                  className="text-gray-500 hover:text-gray-700"
-                  disabled={isCreatingCollection}
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="mb-4">
-                <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Collection Name
-                </label>
-                <input
-                  type="text"
-                  id="collectionName"
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
-                  placeholder="Enter collection name"
-                  className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isCreatingCollection}
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setShowNewCollectionModal(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50"
-                  disabled={isCreatingCollection}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateCollection}
-                  className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
-                    !newCollectionName.trim() || isCreatingCollection
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 text-white hover:bg-blue-600"
-                  }`}
-                  disabled={!newCollectionName.trim() || isCreatingCollection}
-                >
-                  {isCreatingCollection ? (
-                    <div className="relative">
-                      <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                    </div>
-                  ) : (
-                    'Create'
-                  )}
-                </button>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-auto p-6 flex flex-col items-center relative max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Create New Collection</h2>
+              <button 
+                onClick={() => setShowNewCollectionModal(false)} 
+                className="text-gray-500 hover:text-gray-700"
+                disabled={isCreatingCollection}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
+                Collection Name
+              </label>
+              <input
+                type="text"
+                id="collectionName"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                placeholder="Enter collection name"
+                className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isCreatingCollection}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowNewCollectionModal(false)}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50"
+                disabled={isCreatingCollection}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateCollection}
+                className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
+                  !newCollectionName.trim() || isCreatingCollection
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+                disabled={!newCollectionName.trim() || isCreatingCollection}
+              >
+                {isCreatingCollection ? (
+                  <div className="relative">
+                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                  </div>
+                ) : (
+                  'Create'
+                )}
+              </button>
             </div>
           </div>
         </div>

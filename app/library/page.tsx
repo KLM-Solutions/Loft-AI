@@ -284,7 +284,7 @@ export default function LibraryPage() {
                           <img 
                             src={bm.image} 
                             alt={bm.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-2xl"
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100" />
@@ -341,7 +341,7 @@ export default function LibraryPage() {
                         <img 
                           src={bm.image} 
                           alt={bm.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-2xl"
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-100" />
@@ -409,7 +409,7 @@ export default function LibraryPage() {
                     <img 
                       src={selectedBookmark.image} 
                       alt={selectedBookmark.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-2xl"
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-100" />
