@@ -755,7 +755,86 @@ export default function BookmarksPage() {
           </div>
         </header>
 
-        {/* Main Content Area - Now Scrollable */}
+        {/* Desktop Search and Create Section */}
+        <div className="hidden md:flex flex-col p-4 bg-[#f5f8fa] border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
+              <div className="relative rounded-full bg-white flex items-center p-2 shadow-sm">
+                <Search className="h-5 w-5 text-gray-500 ml-2" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent border-none focus:outline-none px-3 py-1 rounded-full"
+                />
+                {searchQuery && (
+                  <button type="button" onClick={clearSearch} className="p-1 rounded-full">
+                    <span className="sr-only">Clear search</span>
+                    <span className="text-gray-500 text-xl">&times;</span>
+                  </button>
+                )}
+                <button type="submit" className="p-1 rounded-full">
+                  <Mic className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </form>
+            <button 
+              onClick={openSaveModal}
+              className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full ml-4"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Create</span>
+            </button>
+          </div>
+          {/* Content Type Filters */}
+          <div className="flex space-x-2 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setContentFilter("all")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setContentFilter("links")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Links
+            </button>
+            <button
+              onClick={() => setContentFilter("images")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Images
+            </button>
+            <button
+              onClick={() => setContentFilter("notes")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Notes
+            </button>
+            <button
+              onClick={() => setContentFilter("articles")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "articles"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Articles
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
             {searchPerformed ? (
