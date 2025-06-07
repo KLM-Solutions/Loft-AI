@@ -912,14 +912,6 @@ export default function LibraryPage() {
           </div>
         </nav>
 
-        {/* Mobile Save Button - Fixed at bottom right */}
-        <button
-          onClick={openSaveModal}
-          className="md:hidden fixed right-4 bottom-20 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-10"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
-
         {/* Bookmark Modal */}
         {showModal && selectedBookmark && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
