@@ -609,7 +609,7 @@ export default function LibraryPage() {
           <nav className="flex-1 px-4 space-y-1">
             <Link
               href="/bookmarks"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-blue-500 bg-gray-100" : "text-gray-900"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
             >
               <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-blue-500" : "text-gray-500"}`} />
               <span>Explore</span>
@@ -881,11 +881,11 @@ export default function LibraryPage() {
 
         {/* Mobile Bottom Navigation - Hidden on Desktop */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 flex-shrink-0">
-          <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
+          <Link href="/bookmarks" className="flex flex-col items-center text-gray-500">
             <Search className="h-6 w-6" />
             <span className="text-xs mt-1">Explore</span>
           </Link>
-          <Link href="/library" className="flex flex-col items-center text-gray-500">
+          <Link href="/library" className="flex flex-col items-center text-blue-500">
             <BookmarkIcon className="h-6 w-6" />
             <span className="text-xs mt-1">Library</span>
           </Link>
@@ -893,10 +893,23 @@ export default function LibraryPage() {
             <Star className="h-6 w-6" />
             <span className="text-xs mt-1">Run through</span>
           </Link>
-          <Link href="/profile" className="flex flex-col items-center text-gray-500">
-            <Settings className="h-6 w-6" />
+          <div className="flex flex-col items-center text-gray-500">
+            <SignedIn>
+              <UserButton 
+                afterSignOutUrl="/" 
+                appearance={{ 
+                  elements: { 
+                    avatarBox: 'w-6 h-6',
+                    card: 'w-48',
+                    userPreview: 'p-2',
+                    userButtonPopoverCard: 'w-48',
+                    userButtonPopoverActionButton: 'p-2 text-sm'
+                  } 
+                }} 
+              />
+            </SignedIn>
             <span className="text-xs mt-1">Settings</span>
-          </Link>
+          </div>
         </nav>
 
         {/* Mobile Save Button - Fixed at bottom right */}

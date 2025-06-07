@@ -1436,7 +1436,7 @@ export default function BookmarksPage() {
         </main>
 
         {/* Mobile Bottom Navigation - Hidden on Desktop */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 flex-shrink-0">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3">
           <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
             <Search className="h-6 w-6" />
             <span className="text-xs mt-1">Explore</span>
@@ -1451,7 +1451,18 @@ export default function BookmarksPage() {
           </Link>
           <div className="flex flex-col items-center text-gray-500">
             <SignedIn>
-              <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-6 h-6' } }} />
+              <UserButton 
+                afterSignOutUrl="/" 
+                appearance={{ 
+                  elements: { 
+                    avatarBox: 'w-6 h-6',
+                    card: 'w-48',
+                    userPreview: 'p-2',
+                    userButtonPopoverCard: 'w-48',
+                    userButtonPopoverActionButton: 'p-2 text-sm'
+                  } 
+                }} 
+              />
             </SignedIn>
             <span className="text-xs mt-1">Settings</span>
           </div>

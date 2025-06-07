@@ -529,7 +529,18 @@ export default function RunThroughPage() {
           </Link>
           <div className="flex flex-col items-center text-gray-500">
             <SignedIn>
-              <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-6 h-6' } }} />
+              <UserButton 
+                afterSignOutUrl="/" 
+                appearance={{ 
+                  elements: { 
+                    avatarBox: 'w-6 h-6',
+                    card: 'w-48',
+                    userPreview: 'p-2',
+                    userButtonPopoverCard: 'w-48',
+                    userButtonPopoverActionButton: 'p-2 text-sm'
+                  } 
+                }} 
+              />
             </SignedIn>
             <span className="text-xs mt-1">Settings</span>
           </div>
