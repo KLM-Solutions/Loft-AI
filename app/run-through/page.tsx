@@ -410,7 +410,7 @@ export default function RunThroughPage() {
 
         {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto md:overflow-y-auto">
             {messages.length === 0 ? (
               // Default Content
               <div className="flex flex-col h-full md:justify-center">
@@ -480,8 +480,8 @@ export default function RunThroughPage() {
               </div>
             )}
           </div>
-          {/* Input Form - Always at the bottom */}
-          <div className="pt-4 bg-[#f5f8fa] mb-5 md:mb-0">
+          {/* Input Form - Fixed at bottom for mobile */}
+          <div className="pt-4 bg-[#f5f8fa] mb-20 md:mb-0">
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full">
               <div className="relative">
                 <input
