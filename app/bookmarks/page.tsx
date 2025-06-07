@@ -1148,7 +1148,7 @@ export default function BookmarksPage() {
                                 </div>
                                 <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
                                 <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                   {(bm.tags || []).map((tag: string, i: number) => (
                                     <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                   ))}
@@ -1210,7 +1210,7 @@ export default function BookmarksPage() {
                               )}
                             </div>
                             <div className="text-gray-500 text-sm truncate"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                            <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                               {(bm.tags || []).map((tag: string, i: number) => (
                                 <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                               ))}
@@ -1338,7 +1338,7 @@ export default function BookmarksPage() {
                                             )}
                                           </div>
                                           <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
+                                          <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                             {(bm.tags || []).map((tag: string, i: number) => (
                                               <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                             ))}
@@ -1406,7 +1406,7 @@ export default function BookmarksPage() {
                                           )}
                                         </div>
                                         <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
+                                        <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                           {(bm.tags || []).map((tag: string, i: number) => (
                                             <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                           ))}
