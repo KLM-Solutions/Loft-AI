@@ -489,11 +489,11 @@ export default function RunThroughPage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask me anything?"
-                  className="w-full py-3 px-4 pr-16 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full py-3 px-4 pr-24 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isLoading}
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                  <button type="button" className="p-2 text-gray-400 hover:text-gray-600" disabled={isLoading}>
+                  <button type="button" className="p-2 text-gray-700 hover:bg-gray-100 rounded-full" disabled={isLoading}>
                     <Mic className="h-5 w-5" />
                   </button>
                   <button

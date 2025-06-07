@@ -750,8 +750,8 @@ export default function BookmarksPage() {
                   <span className="text-gray-500 text-xl">&times;</span>
                 </button>
               )}
-              <button type="submit" className="p-1 rounded-full">
-                <Mic className="h-5 w-5 text-gray-500" />
+              <button type="submit" className="p-1 rounded-full hover:bg-gray-100">
+                <Mic className="h-5 w-5 text-gray-700" />
               </button>
             </div>
           </form>
@@ -870,8 +870,8 @@ export default function BookmarksPage() {
                     <span className="text-gray-500 text-xl">&times;</span>
                   </button>
                 )}
-                <button type="submit" className="p-1 rounded-full">
-                  <Mic className="h-5 w-5 text-gray-500" />
+                <button type="submit" className="p-1 rounded-full hover:bg-gray-100">
+                  <Mic className="h-5 w-5 text-gray-700" />
                 </button>
               </div>
             </form>
