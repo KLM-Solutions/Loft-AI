@@ -1000,7 +1000,7 @@ export default function BookmarksPage() {
                           return (
                             <div
                               key={bm.id}
-                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                               onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                             >
                               {/* Image or blank */}
@@ -1206,7 +1206,7 @@ export default function BookmarksPage() {
                                     return (
                                       <div
                                         key={bm.id}
-                                        className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-blue-400" : ""}`}
+                                        className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
                                         onClick={() => setExpandedId(isExpanded ? null : cardKey)}
                                       >
                                         {/* Image or blank */}
