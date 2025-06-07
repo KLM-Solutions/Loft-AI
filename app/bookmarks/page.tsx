@@ -31,6 +31,18 @@ function removeQuotes(str: string) {
   return str.replace(/^"|"$/g, '');
 }
 
+// Add this helper function after the existing helper functions
+function highlightText(text: string, searchQuery: string) {
+  if (!searchQuery.trim()) return text;
+  
+  const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
+  return parts.map((part, i) => 
+    part.toLowerCase() === searchQuery.toLowerCase() 
+      ? `<span class="bg-yellow-200">${part}</span>` 
+      : part
+  ).join('');
+}
+
 export default function BookmarksPage() {
   const router = useRouter()
   const pathname = usePathname()
@@ -702,7 +714,46 @@ export default function BookmarksPage() {
                 type="text"
                 placeholder="Search"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={async (e) => {
+                  const newQuery = e.target.value;
+                  setSearchQuery(newQuery);
+                  setIsSearching(true);
+                  
+                  try {
+                    const response = await fetch("/api/library");
+                    const data = await response.json();
+                    const allBookmarks = data.data || [];
+
+                    if (newQuery.trim()) {
+                      // Filter bookmarks based on search query
+                      const filteredBookmarks = allBookmarks.filter((bm: { 
+                        title?: string; 
+                        summary?: string; 
+                        tags?: string[]; 
+                        collections?: string[] 
+                      }) => {
+                        const searchLower = newQuery.toLowerCase();
+                        return (
+                          bm.title?.toLowerCase().includes(searchLower) ||
+                          bm.summary?.toLowerCase().includes(searchLower) ||
+                          bm.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower)) ||
+                          bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
+                        );
+                      });
+                      setBookmarks(filteredBookmarks);
+                    } else {
+                      // If search query is empty, show all bookmarks
+                      setBookmarks(allBookmarks);
+                    }
+                  } catch (error) {
+                    console.error('Error fetching bookmarks:', error);
+                  }
+
+                  // Simulate search delay
+                  setTimeout(() => {
+                    setIsSearching(false);
+                  }, 300);
+                }}
                 className="w-full bg-transparent border-none focus:outline-none px-3 py-1 rounded-full"
               />
               {searchQuery && (
@@ -727,38 +778,48 @@ export default function BookmarksPage() {
               All
             </button>
             <button
-              onClick={() => setContentFilter("links")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
+              title="Coming soon"
             >
               Links
+              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("images")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
+              title="Coming soon"
             >
               Images
+              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("notes")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
+              title="Coming soon"
             >
               Notes
+              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("articles")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "articles"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
+              title="Coming soon"
             >
               Articles
+              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
           </div>
         </header>
@@ -773,7 +834,46 @@ export default function BookmarksPage() {
                   type="text"
                   placeholder="Search"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={async (e) => {
+                    const newQuery = e.target.value;
+                    setSearchQuery(newQuery);
+                    setIsSearching(true);
+                    
+                    try {
+                      const response = await fetch("/api/library");
+                      const data = await response.json();
+                      const allBookmarks = data.data || [];
+
+                      if (newQuery.trim()) {
+                        // Filter bookmarks based on search query
+                        const filteredBookmarks = allBookmarks.filter((bm: { 
+                          title?: string; 
+                          summary?: string; 
+                          tags?: string[]; 
+                          collections?: string[] 
+                        }) => {
+                          const searchLower = newQuery.toLowerCase();
+                          return (
+                            bm.title?.toLowerCase().includes(searchLower) ||
+                            bm.summary?.toLowerCase().includes(searchLower) ||
+                            bm.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower)) ||
+                            bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
+                          );
+                        });
+                        setBookmarks(filteredBookmarks);
+                      } else {
+                        // If search query is empty, show all bookmarks
+                        setBookmarks(allBookmarks);
+                      }
+                    } catch (error) {
+                      console.error('Error fetching bookmarks:', error);
+                    }
+
+                    // Simulate search delay
+                    setTimeout(() => {
+                      setIsSearching(false);
+                    }, 300);
+                  }}
                   className="w-full bg-transparent border-none focus:outline-none px-3 py-1 rounded-full"
                 />
                 {searchQuery && (
@@ -806,38 +906,44 @@ export default function BookmarksPage() {
               All
             </button>
             <button
-              onClick={() => setContentFilter("links")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Links
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("images")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Images
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("notes")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Notes
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("articles")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "articles"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Articles
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
           </div>
         </div>
@@ -1230,47 +1336,50 @@ export default function BookmarksPage() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center justify-between mb-1">
-                                            <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                            <span 
+                                              className="font-semibold text-lg truncate"
+                                              dangerouslySetInnerHTML={{ 
+                                                __html: highlightText(bm.title || '', searchQuery) 
+                                              }}
+                                            />
                                             {bm.url && (
                                               <a 
                                                 href={bm.url} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
                                               >
-                                                Site
+                                                <ExternalLink className="h-4 w-4" />
                                               </a>
                                             )}
                                           </div>
-                                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
+                                          <div 
+                                            className="text-gray-500 text-sm truncate"
+                                            dangerouslySetInnerHTML={{ 
+                                              __html: highlightText(bm.summary || '', searchQuery) 
+                                            }}
+                                          />
+                                          <div className="flex items-center mt-2 space-x-2 flex-wrap">
                                             {(bm.tags || []).map((tag: string, i: number) => (
-                                              <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                              <span 
+                                                key={i} 
+                                                className="bg-gray-200 text-xs rounded px-2 py-0.5"
+                                                dangerouslySetInnerHTML={{ 
+                                                  __html: highlightText(tag, searchQuery) 
+                                                }}
+                                              />
                                             ))}
                                             {(bm.collections || []).map((col: string, i: number) => (
-                                              <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                              <span 
+                                                key={i} 
+                                                className="bg-green-200 text-xs rounded px-2 py-0.5"
+                                                dangerouslySetInnerHTML={{ 
+                                                  __html: highlightText(col, searchQuery) 
+                                                }}
+                                              />
                                             ))}
-                                            <div className="md:hidden">
-                                              {bm.url && (
-                                                <a
-                                                  href={bm.url}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  onClick={e => e.stopPropagation()}
-                                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
-                                                  style={{ marginTop: '2px' }} // optional, for vertical alignment
-                                                >
-                                                  Site
-                                                </a>
-                                              )}
-                                            </div>
                                           </div>
-                                          {isExpanded && (
-                                            <div className="mt-3">
-                                              <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                            </div>
-                                          )}
                                         </div>
                                         <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                                       </div>
