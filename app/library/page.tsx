@@ -22,7 +22,7 @@ import {
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn } from "@clerk/nextjs"
 
-// Helper to convert ****text**** to **text**
+// Helper to convert ****text**** to **text**npm run dev
 function normalizeBold(str: string) {
   return str.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '**$1**');
 }
@@ -790,7 +790,7 @@ export default function LibraryPage() {
                           </div>
                           <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
                           <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                          <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                          <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                             {(bm.tags || []).map((tag: string, i: number) => (
                               <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                             ))}
@@ -852,7 +852,7 @@ export default function LibraryPage() {
                         )}
                       </div>
                       <div className="text-gray-500 text-sm truncate"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                      <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                      <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                         {(bm.tags || []).map((tag: string, i: number) => (
                           <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                         ))}
@@ -950,7 +950,7 @@ export default function LibraryPage() {
                   )}
                 </div>
                 <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
-                <div className="flex items-center space-x-2 flex-wrap mb-4">
+                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                   {(selectedBookmark.tags || []).map((tag: string, i: number) => (
                     <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                   ))}
@@ -1125,7 +1125,7 @@ export default function LibraryPage() {
                       <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Tags <span className="text-red-500">*</span></h3>
                         <div className="relative">
-                          <div className="flex flex-wrap gap-2 mb-2">
+                          <div className="flex flex-wrap gap-x-2 gap-y-2 mb-2">
                             {selectedTags.map((tag) => (
                               <span
                                 key={tag}
@@ -1193,7 +1193,7 @@ export default function LibraryPage() {
                   <div>
                     <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Add to Collection <span className="text-red-500">*</span></h3>
                     <div className="relative">
-                      <div className="flex flex-wrap gap-2 mb-2">
+                      <div className="flex flex-wrap gap-x-2 gap-y-2 mb-2">
                         {selectedCollections.map((collectionId) => {
                           const collection = availableCollections.find(c => c.id === collectionId)
                           return collection ? (
@@ -1361,7 +1361,7 @@ export default function LibraryPage() {
                             <span>{new Date().toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-x-2 mt-2 w-full">
                         
                           {tempSavedTags.map((tag) => (
                             <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
