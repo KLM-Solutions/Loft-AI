@@ -64,7 +64,7 @@ export default function BookmarksPage() {
   const [selectedBookmark, setSelectedBookmark] = useState<any>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [showInterestModal, setShowInterestModal] = useState(true)
+  const [showInterestModal, setShowInterestModal] = useState(false)
   const [selectedInterests, setSelectedInterests] = useState<string[]>([])
   const [showInShortModal, setShowInShortModal] = useState(false)
   const [titleInput, setTitleInput] = useState("")
@@ -85,6 +85,7 @@ export default function BookmarksPage() {
   const [tempSavedCollections, setTempSavedCollections] = useState<string[]>([]);
   const [hasSelectedInterests, setHasSelectedInterests] = useState(false);
   const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [isCheckingInterests, setIsCheckingInterests] = useState(true)
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -573,18 +574,24 @@ export default function BookmarksPage() {
   // Add this useEffect to check if user has already selected interests when the component mounts
   useEffect(() => {
     const checkUserInterests = async () => {
+      setIsCheckingInterests(true);
       try {
         const response = await fetch('/api/interests');
         const data = await response.json();
         if (data.success) {
           setHasSelectedInterests(data.hasInterests);
           setUserInterests(data.data);
-          if (data.hasInterests) {
+          // Only show interest modal if user has no interests and no username
+          if (data.hasInterests || data.username) {
             setShowInterestModal(false);
+          } else {
+            setShowInterestModal(true);
           }
         }
       } catch (error) {
         console.error('Error checking user interests:', error);
+      } finally {
+        setIsCheckingInterests(false);
       }
     };
     checkUserInterests();
@@ -1442,10 +1449,12 @@ export default function BookmarksPage() {
             <Star className="h-6 w-6" />
             <span className="text-xs mt-1">Run through</span>
           </Link>
-          <Link href="/profile" className="flex flex-col items-center text-gray-500">
-            <Settings className="h-6 w-6" />
+          <div className="flex flex-col items-center text-gray-500">
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-6 h-6' } }} />
+            </SignedIn>
             <span className="text-xs mt-1">Settings</span>
-          </Link>
+          </div>
         </nav>
 
         {/* Mobile Save Button - Fixed at bottom right */}
@@ -2028,8 +2037,15 @@ export default function BookmarksPage() {
             </div>
           </div>
         )}
-        {/* Interest Modal */}
-        {showInterestModal && (
+        {/* Interest Modal with Loading State */}
+        {isCheckingInterests ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-2xl p-8 flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+              <p className="text-gray-600">Loading your preferences...</p>
+            </div>
+          </div>
+        ) : showInterestModal ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-auto p-6 flex flex-col items-center relative">
               <button
@@ -2054,7 +2070,7 @@ export default function BookmarksPage() {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
         {/* New Collection Modal */}
         {showNewCollectionModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

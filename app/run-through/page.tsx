@@ -527,10 +527,12 @@ export default function RunThroughPage() {
             <Star className="h-6 w-6" />
             <span className="text-xs mt-1">Run through</span>
           </Link>
-          <Link href="/profile" className="flex flex-col items-center text-gray-500">
-            <Settings className="h-6 w-6" />
+          <div className="flex flex-col items-center text-gray-500">
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-6 h-6' } }} />
+            </SignedIn>
             <span className="text-xs mt-1">Settings</span>
-          </Link>
+          </div>
         </nav>
       </div>
       {/* Overlay for desktop */}
