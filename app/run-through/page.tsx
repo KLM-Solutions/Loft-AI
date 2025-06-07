@@ -410,7 +410,7 @@ export default function RunThroughPage() {
 
         {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
-          <div className="flex-1 min-h-0 overflow-y-auto mb-20 md:mb-0">
+          <div className="flex-1 min-h-0 overflow-y-auto pb-24 md:pb-0">
             {messages.length === 0 ? (
               // Default Content
               <div className="flex flex-col h-full md:justify-center">
@@ -481,8 +481,8 @@ export default function RunThroughPage() {
             )}
           </div>
           {/* Input Form - Always at the bottom */}
-          <div className="fixed md:relative bottom-0 left-0 right-0 p-4 bg-[#f5f8fa] z-10">
-            <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full">
+          <div className="fixed bottom-0 left-0 right-0 md:relative pt-4 bg-[#f5f8fa] pb-20 md:pb-0">
+            <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full px-4 md:px-0">
               <div className="relative">
                 <input
                   type="text"
@@ -520,7 +520,7 @@ export default function RunThroughPage() {
         </main>
 
         {/* Mobile Bottom Navigation - Hidden on Desktop */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 z-20">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3">
           <Link href="/bookmarks" className="flex flex-col items-center text-gray-500">
             <Search className="h-6 w-6" />
             <span className="text-xs mt-1">Explore</span>
