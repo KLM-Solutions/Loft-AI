@@ -31,18 +31,6 @@ function removeQuotes(str: string) {
   return str.replace(/^"|"$/g, '');
 }
 
-// Add this helper function after the existing helper functions
-function highlightText(text: string, searchQuery: string) {
-  if (!searchQuery.trim()) return text;
-  
-  const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
-  return parts.map((part, i) => 
-    part.toLowerCase() === searchQuery.toLowerCase() 
-      ? `<span class="bg-yellow-200">${part}</span>` 
-      : part
-  ).join('');
-}
-
 export default function BookmarksPage() {
   const router = useRouter()
   const pathname = usePathname()
@@ -1336,50 +1324,47 @@ export default function BookmarksPage() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center justify-between mb-1">
-                                            <span 
-                                              className="font-semibold text-lg truncate"
-                                              dangerouslySetInnerHTML={{ 
-                                                __html: highlightText(bm.title || '', searchQuery) 
-                                              }}
-                                            />
+                                            <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
                                             {bm.url && (
                                               <a 
                                                 href={bm.url} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
                                               >
-                                                <ExternalLink className="h-4 w-4" />
+                                                Site
                                               </a>
                                             )}
                                           </div>
-                                          <div 
-                                            className="text-gray-500 text-sm truncate"
-                                            dangerouslySetInnerHTML={{ 
-                                              __html: highlightText(bm.summary || '', searchQuery) 
-                                            }}
-                                          />
-                                          <div className="flex items-center mt-2 space-x-2 flex-wrap">
+                                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 mt-2">
                                             {(bm.tags || []).map((tag: string, i: number) => (
-                                              <span 
-                                                key={i} 
-                                                className="bg-gray-200 text-xs rounded px-2 py-0.5"
-                                                dangerouslySetInnerHTML={{ 
-                                                  __html: highlightText(tag, searchQuery) 
-                                                }}
-                                              />
+                                              <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
                                             ))}
                                             {(bm.collections || []).map((col: string, i: number) => (
-                                              <span 
-                                                key={i} 
-                                                className="bg-green-200 text-xs rounded px-2 py-0.5"
-                                                dangerouslySetInnerHTML={{ 
-                                                  __html: highlightText(col, searchQuery) 
-                                                }}
-                                              />
+                                              <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                                             ))}
+                                            <div className="md:hidden">
+                                              {bm.url && (
+                                                <a
+                                                  href={bm.url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  onClick={e => e.stopPropagation()}
+                                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                  style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                                >
+                                                  Site
+                                                </a>
+                                              )}
+                                            </div>
                                           </div>
+                                          {isExpanded && (
+                                            <div className="mt-3">
+                                              <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                            </div>
+                                          )}
                                         </div>
                                         <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                                       </div>
