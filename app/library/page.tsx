@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Settings, X } from "lucide-react"
+import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Settings, X, ExternalLink } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { UserButton, SignedIn } from "@clerk/nextjs"
@@ -275,37 +275,53 @@ export default function LibraryPage() {
                   return (
                     <div
                       key={bm.id}
-                      className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-blue-400" : ""}`}
+                      className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full ${isExpanded ? "ring-2 ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                       onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                     >
                       {/* Image or blank */}
-                      <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                        {bm.image ? (
-                          <img 
-                            src={bm.image} 
-                            alt={bm.title}
-                            className="w-full h-full object-cover rounded-2xl"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
+                      {isExpanded ? (
+                        <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                          {bm.image ? (
+                            <img 
+                              src={bm.image} 
+                              alt={bm.title}
+                              className="w-full h-full object-cover rounded-2xl"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100" />
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                          {bm.image ? (
+                            <img 
+                              src={bm.image} 
+                              alt={bm.title}
+                              className="w-full h-full object-cover rounded-2xl"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100" />
+                          )}
+                        </div>
+                      )}
+                      <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                          {bm.url && (
+                          {/* Launch icon at end of row for mobile, only when expanded */}
+                          {isExpanded && bm.url && (
                             <a 
                               href={bm.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                              className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
                             >
-                              Site
+                              <ExternalLink className="h-4 w-4" />
                             </a>
                           )}
                         </div>
-                        <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                        <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                        <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                         <div className="flex items-center mt-2 space-x-2 flex-wrap">
                           {(bm.tags || []).map((tag: string, i: number) => (
                             <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
@@ -314,13 +330,19 @@ export default function LibraryPage() {
                             <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                           ))}
                         </div>
-                        {isExpanded && (
-                          <div className="mt-3">
-                            <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                          </div>
-                        )}
                       </div>
-                      <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                      {/* Remove the launch icon from the bottom right for expanded mobile cards */}
+                      {(!isExpanded && bm.url) && (
+                        <a 
+                          href={bm.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
                     </div>
                   );
                 })}
@@ -355,9 +377,9 @@ export default function LibraryPage() {
                           target="_blank" 
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
                         >
-                          Site
+                          <ExternalLink className="h-4 w-4" />
                         </a>
                       )}
                     </div>
@@ -384,16 +406,16 @@ export default function LibraryPage() {
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
+                  <div className="flex-1 flex items-center gap-2">
                     <h2 className="text-2xl font-bold">{selectedBookmark.title}</h2>
                     {selectedBookmark.url && (
                       <a 
                         href={selectedBookmark.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-block mt-2 text-sm text-blue-500 hover:text-blue-600 px-3 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
                       >
-                        Visit Site
+                        <ExternalLink className="h-5 w-5" />
                       </a>
                     )}
                   </div>
