@@ -5,7 +5,7 @@ import { useState, type FormEvent, useRef, useEffect } from "react"
 import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Mic, ArrowUp, Settings, Grid, List, ArrowUpDown, X, Loader2, Tag } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import ReactMarkdown from 'react-markdown'
-import { UserButton, SignedIn } from "@clerk/nextjs"
+import { UserButton, SignedIn, useUser } from "@clerk/nextjs"
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -15,6 +15,7 @@ interface ChatMessage {
 export default function RunThroughPage() {
   const router = useRouter()
   const pathname = usePathname()
+  const { user } = useUser()
   const [activeTab, setActiveTab] = useState("for-you")
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
@@ -385,7 +386,7 @@ export default function RunThroughPage() {
       <div className="flex-1 md:ml-60 overflow-hidden flex flex-col">
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-between p-4 bg-white border-b border-gray-200">
-          <h1 className="text-xl font-semibold">Ask AI</h1>
+          <h1 className="text-xl font-semibold">Ask Loft AI</h1>
           <div className="flex items-center space-x-4">
             <button className="p-2 rounded-full hover:bg-gray-100" onClick={toggleNotifications}>
               <img
@@ -404,7 +405,7 @@ export default function RunThroughPage() {
 
         {/* Mobile Header - Hidden on Desktop */}
         <header className="md:hidden p-4 bg-[#f5f8fa] border-b border-gray-200">
-          <h1 className="text-xl font-semibold">Ask AI</h1>
+          <h1 className="text-xl font-semibold">Ask Loft AI</h1>
         </header>
 
         {/* Main Content Area */}
@@ -416,7 +417,12 @@ export default function RunThroughPage() {
                 {/* AI Greeting */}
                 <div className="text-center mb-8 mt-8 md:mt-0">
                   <h2 className="text-2xl font-semibold mb-2">
-                    Hi there, <span className="text-blue-500">John</span>
+                    Hi there, <span className="text-blue-500">
+                      {user?.username || 
+                       user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 
+                       user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 
+                       'there'}
+                    </span>
                   </h2>
                   <p className="text-xl text-gray-700 mb-4">What would you like to know?</p>
                   <p className="text-gray-500">Use one of the most common prompts below or use your own to begin</p>
