@@ -961,6 +961,16 @@ export default function BookmarksPage() {
             >
               Notes
             </button>
+            <button
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
+            >
+              Articles
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
+            </button>
           </div>
         </header>
 
@@ -1046,34 +1056,28 @@ export default function BookmarksPage() {
               All
             </button>
             <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
-              title="Coming soon"
+              onClick={() => setContentFilter("links")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
             >
               Links
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
             </button>
             <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
-              title="Coming soon"
+              onClick={() => setContentFilter("images")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
             >
               Images
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
             </button>
             <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
-              title="Coming soon"
+              onClick={() => setContentFilter("notes")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
             >
               Notes
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
             </button>
             <button
               onClick={() => {}}
