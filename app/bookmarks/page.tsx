@@ -93,7 +93,7 @@ export default function BookmarksPage() {
   const [links, setLinks] = useState<any[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
-  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
+  const [isLoadingLinks, setIsLoadingLinks] = useState(false)
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -616,7 +616,6 @@ export default function BookmarksPage() {
 
   // Add function to fetch links
   const fetchLinks = async () => {
-    setIsLoadingLinks(true);
     try {
       const response = await fetch('/api/library');
       if (!response.ok) throw new Error('Failed to fetch links');
@@ -630,14 +629,12 @@ export default function BookmarksPage() {
       setLinks(processedLinks);
     } catch (error) {
       console.error('Error fetching links:', error);
-    } finally {
-      setIsLoadingLinks(false);
+      throw error;
     }
   };
 
   // Add function to fetch notes
   const fetchNotes = async () => {
-    setIsLoadingNotes(true);
     try {
       const response = await fetch('/api/notes-save');
       if (!response.ok) throw new Error('Failed to fetch notes');
@@ -651,14 +648,12 @@ export default function BookmarksPage() {
       setNotes(processedNotes);
     } catch (error) {
       console.error('Error fetching notes:', error);
-    } finally {
-      setIsLoadingNotes(false);
+      throw error;
     }
   };
 
   // Add function to fetch images
   const fetchImages = async () => {
-    setIsLoadingImages(true);
     try {
       const response = await fetch('/api/upload');
       if (!response.ok) throw new Error('Failed to fetch images');
@@ -672,13 +667,14 @@ export default function BookmarksPage() {
       setImages(processedImages);
     } catch (error) {
       console.error('Error fetching images:', error);
-    } finally {
-      setIsLoadingImages(false);
+      throw error;
     }
   };
 
   // Add useEffect to fetch data when content filter changes
   useEffect(() => {
+    setIsLoading(true); // Set main loading state when filter changes
+    
     if (contentFilter === "all") {
       // Fetch all data
       Promise.all([
@@ -689,18 +685,30 @@ export default function BookmarksPage() {
         // Combine all data into bookmarks
         const allData = [...links, ...notes, ...images];
         setBookmarks(allData);
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
       });
     } else if (contentFilter === "links") {
       fetchLinks().then(() => {
         setBookmarks(links);
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
       });
     } else if (contentFilter === "images") {
       fetchImages().then(() => {
         setBookmarks(images);
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
       });
     } else if (contentFilter === "notes") {
       fetchNotes().then(() => {
         setBookmarks(notes);
+        setIsLoading(false);
+      }).catch(() => {
+        setIsLoading(false);
       });
     }
   }, [contentFilter]);
