@@ -162,11 +162,24 @@ export default function BookmarksPage() {
     e.preventDefault()
     setIsSearching(true)
     
-    // Always fetch fresh data when searching
     try {
-      const response = await fetch("/api/library")
-      const data = await response.json()
-      const allBookmarks = data.data || []
+      let filteredBookmarks: any[] = []
+      
+      // Fetch data based on content filter
+      if (contentFilter === "all") {
+        const [linksData, notesData, imagesData] = await Promise.all([
+          fetchLinks(),
+          fetchNotes(),
+          fetchImages()
+        ])
+        filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+      } else if (contentFilter === "links") {
+        filteredBookmarks = await fetchLinks()
+      } else if (contentFilter === "images") {
+        filteredBookmarks = await fetchImages()
+      } else if (contentFilter === "notes") {
+        filteredBookmarks = await fetchNotes()
+      }
 
       if (searchQuery.trim()) {
         // Save the search query
@@ -183,7 +196,7 @@ export default function BookmarksPage() {
         }
 
         // Filter bookmarks based on search query
-        const filteredBookmarks = allBookmarks.filter((bm: { 
+        filteredBookmarks = filteredBookmarks.filter((bm: { 
           title?: string; 
           summary?: string; 
           tags?: string[]; 
@@ -197,13 +210,10 @@ export default function BookmarksPage() {
             bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
           )
         })
-
-        // Update the bookmarks state with filtered results
-        setBookmarks(filteredBookmarks)
-      } else {
-        // If search query is empty, show all bookmarks
-        setBookmarks(allBookmarks)
       }
+
+      // Update the bookmarks state with filtered results
+      setBookmarks(filteredBookmarks)
     } catch (error) {
       console.error('Error fetching bookmarks:', error)
     }
@@ -217,15 +227,43 @@ export default function BookmarksPage() {
   // Clear search
   const clearSearch = () => {
     setSearchQuery("")
-    // Reset bookmarks to original state
-    fetch("/api/library")
-      .then(res => res.json())
-      .then(data => {
-        setBookmarks(data.data || [])
+    setIsLoading(true)
+    
+    // Fetch data based on content filter
+    if (contentFilter === "all") {
+      Promise.all([
+        fetchLinks(),
+        fetchNotes(),
+        fetchImages()
+      ]).then(([linksData, notesData, imagesData]) => {
+        const allData = [...linksData, ...notesData, ...imagesData]
+        setBookmarks(allData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
       })
-      .catch(error => {
-        console.error('Error fetching bookmarks:', error)
+    } else if (contentFilter === "links") {
+      fetchLinks().then((linksData) => {
+        setBookmarks(linksData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
       })
+    } else if (contentFilter === "images") {
+      fetchImages().then((imagesData) => {
+        setBookmarks(imagesData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
+      })
+    } else if (contentFilter === "notes") {
+      fetchNotes().then((notesData) => {
+        setBookmarks(notesData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
+      })
+    }
   }
 
   // Open save modal
@@ -859,13 +897,27 @@ export default function BookmarksPage() {
                   setIsSearching(true);
                   
                   try {
-                    const response = await fetch("/api/library");
-                    const data = await response.json();
-                    const allBookmarks = data.data || [];
+                    let filteredBookmarks: any[] = []
+                    
+                    // Fetch data based on content filter
+                    if (contentFilter === "all") {
+                      const [linksData, notesData, imagesData] = await Promise.all([
+                        fetchLinks(),
+                        fetchNotes(),
+                        fetchImages()
+                      ])
+                      filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+                    } else if (contentFilter === "links") {
+                      filteredBookmarks = await fetchLinks()
+                    } else if (contentFilter === "images") {
+                      filteredBookmarks = await fetchImages()
+                    } else if (contentFilter === "notes") {
+                      filteredBookmarks = await fetchNotes()
+                    }
 
                     if (newQuery.trim()) {
                       // Filter bookmarks based on search query
-                      const filteredBookmarks = allBookmarks.filter((bm: { 
+                      filteredBookmarks = filteredBookmarks.filter((bm: { 
                         title?: string; 
                         summary?: string; 
                         tags?: string[]; 
@@ -879,11 +931,8 @@ export default function BookmarksPage() {
                           bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
                         );
                       });
-                      setBookmarks(filteredBookmarks);
-                    } else {
-                      // If search query is empty, show all bookmarks
-                      setBookmarks(allBookmarks);
                     }
+                    setBookmarks(filteredBookmarks);
                   } catch (error) {
                     console.error('Error fetching bookmarks:', error);
                   }
@@ -959,13 +1008,27 @@ export default function BookmarksPage() {
                     setIsSearching(true);
                     
                     try {
-                      const response = await fetch("/api/library");
-                      const data = await response.json();
-                      const allBookmarks = data.data || [];
+                      let filteredBookmarks: any[] = []
+                      
+                      // Fetch data based on content filter
+                      if (contentFilter === "all") {
+                        const [linksData, notesData, imagesData] = await Promise.all([
+                          fetchLinks(),
+                          fetchNotes(),
+                          fetchImages()
+                        ])
+                        filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+                      } else if (contentFilter === "links") {
+                        filteredBookmarks = await fetchLinks()
+                      } else if (contentFilter === "images") {
+                        filteredBookmarks = await fetchImages()
+                      } else if (contentFilter === "notes") {
+                        filteredBookmarks = await fetchNotes()
+                      }
 
                       if (newQuery.trim()) {
                         // Filter bookmarks based on search query
-                        const filteredBookmarks = allBookmarks.filter((bm: { 
+                        filteredBookmarks = filteredBookmarks.filter((bm: { 
                           title?: string; 
                           summary?: string; 
                           tags?: string[]; 
@@ -979,11 +1042,8 @@ export default function BookmarksPage() {
                             bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
                           );
                         });
-                        setBookmarks(filteredBookmarks);
-                      } else {
-                        // If search query is empty, show all bookmarks
-                        setBookmarks(allBookmarks);
                       }
+                      setBookmarks(filteredBookmarks);
                     } catch (error) {
                       console.error('Error fetching bookmarks:', error);
                     }
