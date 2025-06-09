@@ -679,34 +679,82 @@ export default function BookmarksPage() {
 
   // Add useEffect to fetch data when content filter changes
   useEffect(() => {
-    if (contentFilter === "all") {
-      setIsLoadingLinks(true);
-      fetch('/api/all')
-        .then(res => res.json())
-        .then(data => {
+    const fetchData = async () => {
+      if (contentFilter === "all") {
+        setIsLoadingLinks(true);
+        try {
+          const response = await fetch('/api/all');
+          const data = await response.json();
           if (data.success) {
             setBookmarks(data.data);
           }
-        })
-        .catch(error => {
+        } catch (error) {
           console.error('Error fetching all content:', error);
-        })
-        .finally(() => {
+        } finally {
           setIsLoadingLinks(false);
-        });
-    } else if (contentFilter === "links") {
-      fetchLinks().then(() => {
-        setBookmarks(links);
-      });
-    } else if (contentFilter === "images") {
-      fetchImages().then(() => {
-        setBookmarks(images);
-      });
-    } else if (contentFilter === "notes") {
-      fetchNotes().then(() => {
-        setBookmarks(notes);
-      });
-    }
+        }
+      } else if (contentFilter === "links") {
+        setIsLoadingLinks(true);
+        try {
+          const response = await fetch('/api/library');
+          if (!response.ok) throw new Error('Failed to fetch links');
+          const data = await response.json();
+          // Prefix link IDs with 'link_'
+          const processedLinks = data.data.map((link: any) => ({
+            ...link,
+            id: `link_${link.id}`,
+            contentType: 'link'
+          }));
+          setLinks(processedLinks);
+          setBookmarks(processedLinks);
+        } catch (error) {
+          console.error('Error fetching links:', error);
+        } finally {
+          setIsLoadingLinks(false);
+        }
+      } else if (contentFilter === "images") {
+        setIsLoadingImages(true);
+        try {
+          const response = await fetch('/api/upload');
+          if (!response.ok) throw new Error('Failed to fetch images');
+          const data = await response.json();
+          // Prefix image IDs with 'image_'
+          const processedImages = data.data.map((image: any) => ({
+            ...image,
+            id: `image_${image.id}`,
+            contentType: 'image'
+          }));
+          setImages(processedImages);
+          setBookmarks(processedImages);
+        } catch (error) {
+          console.error('Error fetching images:', error);
+        } finally {
+          setIsLoadingImages(false);
+        }
+      } else if (contentFilter === "notes") {
+        setIsLoadingNotes(true);
+        try {
+          const response = await fetch('/api/notes-save');
+          if (!response.ok) throw new Error('Failed to fetch notes');
+          const data = await response.json();
+          if (!data.success) throw new Error('Failed to fetch notes');
+          // Prefix note IDs with 'note_'
+          const processedNotes = data.data.map((note: any) => ({
+            ...note,
+            id: `note_${note.id}`,
+            contentType: 'note'
+          }));
+          setNotes(processedNotes);
+          setBookmarks(processedNotes);
+        } catch (error) {
+          console.error('Error fetching notes:', error);
+        } finally {
+          setIsLoadingNotes(false);
+        }
+      }
+    };
+
+    fetchData();
   }, [contentFilter]);
 
   // Update the loading state check
@@ -1046,63 +1094,63 @@ export default function BookmarksPage() {
             {isLoading ? (
               <LoadingSpinner />
             ) : bookmarks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <div className="w-40 h-40 mb-6">
-                  <img
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
-                    alt="No bookmarks"
-                    className="w-full h-full"
-                  />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
-                <p className="text-gray-600 mb-8 max-w-md">
-                  Start saving to fill your Loft with links, social posts, images, and more
-                </p>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
-                  Discover Content
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="w-40 h-40 mb-6">
+        <img
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
+          alt="No bookmarks"
+          className="w-full h-full"
+        />
+      </div>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+      <p className="text-gray-600 mb-8 max-w-md">
+        Start saving to fill your Loft with links, social posts, images, and more
+      </p>
+      <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
+        Discover Content
+      </button>
+    </div>
+            ) : (
+    <>
+      {/* Content based on active tab */}
+      {activeTab === "recent-saves" ? (
+        <div className="mt-6">
+          {/* Fixed Recent Saves Header */}
+          <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Recent Saves</h1>
+              <div className="flex space-x-2">
+                <button
+                  className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                  onClick={() => setCardView("list")}
+                  aria-label="List view"
+                >
+                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                </button>
+                <button
+                  className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                  onClick={() => setCardView("grid")}
+                  aria-label="Grid view"
+                >
+                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
                 </button>
               </div>
-            ) : (
-              <>
-                {/* Content based on active tab */}
-                {activeTab === "recent-saves" ? (
-                  <div className="mt-6">
-                    {/* Fixed Recent Saves Header */}
-                    <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-                      <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold">Recent Saves</h1>
-                        <div className="flex space-x-2">
-                          <button
-                            className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                            onClick={() => setCardView("list")}
-                            aria-label="List view"
-                          >
-                            <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
-                          </button>
-                          <button
-                            className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                            onClick={() => setCardView("grid")}
-                            aria-label="Grid view"
-                          >
-                            <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+            </div>
+          </div>
 
-                    {/* Add top padding so first card is not hidden behind sticky header */}
-                    <div className="pt-8">
-                    {(isLoading && contentFilter === "all") || 
-                     (isLoadingLinks && contentFilter === "links") || 
-                     (isLoadingImages && contentFilter === "images") || 
-                     (isLoadingNotes && contentFilter === "notes") ? (
-                      <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="relative">
-                          <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                          <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
-                        </div>
-                      </div>
-                    ) : bookmarks.length === 0 ? (
+          {/* Add top padding so first card is not hidden behind sticky header */}
+          <div className="pt-8">
+          {(isLoading && contentFilter === "all") || 
+           (isLoadingLinks && contentFilter === "links") || 
+           (isLoadingImages && contentFilter === "images") || 
+           (isLoadingNotes && contentFilter === "notes") ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
+                <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+              </div>
+            </div>
+          ) : bookmarks.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                         <div className="w-40 h-40 mb-6">
                           <img
@@ -1119,163 +1167,163 @@ export default function BookmarksPage() {
                           Discover Content
                         </button>
                       </div>
-                    ) : cardView === "list" ? (
-                      <div className="space-y-4 px-0">
-                        {bookmarks.map((bm: any) => {
-                          const isExpanded = expandedId === bm.id;
-                          return (
-                            <div
-                              key={bm.type ? bm.type + '-' + bm.id : bm.id}
-                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
-                              onClick={() => setExpandedId(isExpanded ? null : bm.id)}
-                            >
-                              {/* Image or blank */}
-                              {isExpanded ? (
-                                <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
-                                  {bm.image && bm.image !== '{}' ? (
-                                    <img 
-                                      src={bm.image} 
-                                      alt={bm.title}
-                                      className="w-full h-full object-cover rounded-2xl"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gray-100" />
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                  {bm.image && bm.image !== '{}' ? (
-                                    <img 
-                                      src={bm.image} 
-                                      alt={bm.title}
-                                      className="w-full h-full object-cover rounded-2xl"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gray-100" />
-                                  )}
-                                </div>
-                              )}
-                              <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold text-lg truncate">
-                                    {bm.title ? (
-                                      <ReactMarkdown>{normalizeBold(removeQuotes(bm.title))}</ReactMarkdown>
-                                    ) : (
-                                      bm.note || 'Untitled'
-                                    )}
-                                  </span>
-                                  {/* Launch icon at end of row for mobile, only when expanded */}
-                                  {isExpanded && bm.url && (
-                                    <a 
-                                      href={bm.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </a>
-                                  )}
-                                </div>
-                                <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>
-                                  {bm.summary ? (
-                                    <ReactMarkdown>{normalizeBold(removeQuotes(bm.summary))}</ReactMarkdown>
-                                  ) : (
-                                    bm.note || ''
-                                  )}
-                                </div>
-                                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                  {(bm.tags || []).map((tag: string, i: number) => (
-                                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                  ))}
-                                  {(bm.collections || []).map((col: string, i: number) => (
-                                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                  ))}
-                                </div>
-                              </div>
-                              {/* Remove the launch icon from the bottom right for expanded mobile cards */}
-                              {(!isExpanded && bm.url) && (
-                                <a 
-                                  href={bm.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                            </div>
-                          );
-                        })}
+          ) : cardView === "list" ? (
+            <div className="space-y-4 px-0">
+              {bookmarks.map((bm: any) => {
+                const isExpanded = expandedId === bm.id;
+                return (
+                  <div
+                    key={bm.type ? bm.type + '-' + bm.id : bm.id}
+                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                    onClick={() => setExpandedId(isExpanded ? null : bm.id)}
+                  >
+                    {/* Image or blank */}
+                    {isExpanded ? (
+                      <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                        {bm.image && bm.image !== '{}' ? (
+                          <img 
+                            src={bm.image} 
+                            alt={bm.title}
+                            className="w-full h-full object-cover rounded-2xl"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100" />
+                        )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {bookmarks.map((bm: any) => (
-                          <div
-                            key={bm.type ? bm.type + '-' + bm.id : bm.id}
-                            className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                            onClick={() => {
-                              setSelectedBookmark(bm);
-                              setShowModal(true);
-                            }}
-                          >
-                            <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
-                              {bm.image && bm.image !== '{}' ? (
-                                <img 
-                                  src={bm.image} 
-                                  alt={bm.title}
-                                  className="w-full h-full object-cover rounded-2xl"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-100" />
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-lg truncate">
-                                {bm.title || bm.note || 'Untitled'}
-                              </span>
-                              {bm.url && (
-                                <a 
-                                  href={bm.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </a>
-                              )}
-                            </div>
-                            <div className="text-gray-500 text-sm truncate">
-                              {bm.summary || bm.note || ''}
-                            </div>
-                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                              {(bm.tags || []).map((tag: string, i: number) => (
-                                <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                              ))}
-                              {(bm.collections || []).map((col: string, i: number) => (
-                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                              ))}
-                            </div>
-                            <div className="text-xs text-gray-400 mt-2">
-                              {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                        {bm.image && bm.image !== '{}' ? (
+                          <img 
+                            src={bm.image} 
+                            alt={bm.title}
+                            className="w-full h-full object-cover rounded-2xl"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100" />
+                        )}
                       </div>
                     )}
+                    <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-lg truncate">
+                          {bm.title ? (
+                            <ReactMarkdown>{normalizeBold(removeQuotes(bm.title))}</ReactMarkdown>
+                          ) : (
+                            bm.note || 'Untitled'
+                          )}
+                        </span>
+                        {/* Launch icon at end of row for mobile, only when expanded */}
+                        {isExpanded && bm.url && (
+                          <a 
+                            href={bm.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
+                      <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                      <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>
+                        {bm.summary ? (
+                          <ReactMarkdown>{normalizeBold(removeQuotes(bm.summary))}</ReactMarkdown>
+                        ) : (
+                          bm.note || ''
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                        {(bm.tags || []).map((tag: string, i: number) => (
+                          <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                        ))}
+                        {(bm.collections || []).map((col: string, i: number) => (
+                          <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                        ))}
+                      </div>
                     </div>
+                    {/* Remove the launch icon from the bottom right for expanded mobile cards */}
+                    {(!isExpanded && bm.url) && (
+                      <a 
+                        href={bm.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
                   </div>
-                ) : activeTab === "suggested-tags" ? (
-                  <div className="mt-6">
-                    {/* Fixed Suggested Tags Header */}
-                    <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-                      <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold">Suggested Tags</h1>
-                        <div className="flex space-x-2">
-                <button
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bookmarks.map((bm: any) => (
+                <div
+                  key={bm.type ? bm.type + '-' + bm.id : bm.id}
+                  className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                  onClick={() => {
+                    setSelectedBookmark(bm);
+                    setShowModal(true);
+                  }}
+                >
+                  <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                    {bm.image && bm.image !== '{}' ? (
+                      <img 
+                        src={bm.image} 
+                        alt={bm.title || bm.note || 'Image'}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100" />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-lg truncate">
+                      {bm.title || bm.note || ''}
+                    </span>
+                    {bm.url && (
+                      <a 
+                        href={bm.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                  <div className="text-gray-500 text-sm truncate">
+                    {bm.summary || bm.note || ''}
+                  </div>
+                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                    {(bm.tags || []).map((tag: string, i: number) => (
+                      <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                    ))}
+                    {(bm.collections || []).map((col: string, i: number) => (
+                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-2">
+                    {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          </div>
+        </div>
+      ) : activeTab === "suggested-tags" ? (
+        <div className="mt-6">
+          {/* Fixed Suggested Tags Header */}
+          <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Suggested Tags</h1>
+              <div className="flex space-x-2">
+        <button
                             className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
                             onClick={() => setCardView("list")}
                             aria-label="List view"
@@ -1289,404 +1337,404 @@ export default function BookmarksPage() {
                           >
                             <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
                 </button>
-                        </div>
-                      </div>
               </div>
+            </div>
+        </div>
 
-                    {isLoading ? (
-                      <LoadingSpinner />
-                    ) : Object.keys(bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
+              {isLoading ? (
+                <LoadingSpinner />
+              ) : Object.keys(bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
+                (bm.tags || []).forEach((tag: string) => {
+                  if (!acc[tag]) acc[tag] = [];
+                  acc[tag].push(bm);
+                });
+                return acc;
+              }, {})).length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                        <div className="w-40 h-40 mb-6">
+                          <img
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
+                            alt="No bookmarks"
+                            className="w-full h-full"
+                          />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+                        <p className="text-gray-600 mb-8 max-w-md">
+                          Start saving to fill your Loft with links, social posts, images, and more
+                        </p>
+                        <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
+                          Discover Content
+                        </button>
+                      </div>
+              ) : (
+                <div className="px-4 md:px-8">
+                  {/* Group bookmarks by tags */}
+                  {Object.entries(
+                    bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
                       (bm.tags || []).forEach((tag: string) => {
                         if (!acc[tag]) acc[tag] = [];
                         acc[tag].push(bm);
                       });
                       return acc;
-                    }, {})).length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                        <div className="w-40 h-40 mb-6">
-                          <img
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
-                            alt="No bookmarks"
-                            className="w-full h-full"
-                          />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
-                        <p className="text-gray-600 mb-8 max-w-md">
-                          Start saving to fill your Loft with links, social posts, images, and more
-                        </p>
-                        <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
-                          Discover Content
-                        </button>
+                    }, {})
+                  ).map(([tag, tagBookmarks]) => (
+                    <div key={tag} className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <h2 className="text-lg font-semibold text-gray-900">{tag}</h2>
+                        <span className="text-sm text-gray-500">({tagBookmarks.length})</span>
                       </div>
-                    ) : (
-                      <div className="px-4 md:px-8">
-                        {/* Group bookmarks by tags */}
-                        {Object.entries(
-                          bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
-                            (bm.tags || []).forEach((tag: string) => {
-                              if (!acc[tag]) acc[tag] = [];
-                              acc[tag].push(bm);
-                            });
-                            return acc;
-                          }, {})
-                        ).map(([tag, tagBookmarks]) => (
-                          <div key={tag} className="space-y-4">
-                            <div className="flex items-center space-x-2">
-                              <h2 className="text-lg font-semibold text-gray-900">{tag}</h2>
-                              <span className="text-sm text-gray-500">({tagBookmarks.length})</span>
-                            </div>
-                            {cardView === "list" ? (
-                              <div className="px-4 md:px-8">
-                                {/* List view */}
-                                <div className="space-y-4 px-0">
-                                  {tagBookmarks.map((bm: any) => {
-                                    const cardKey = `${tag}-${bm.type ? bm.type + '-' + bm.id : bm.id}`;
-                                    const isExpanded = expandedId === cardKey;
-                                    return (
-                                      <div
-                                        key={cardKey}
-                                        className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
-                                        onClick={() => setExpandedId(isExpanded ? null : cardKey)}
-                                      >
-                                        {/* Image or blank */}
-                                        <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                          {bm.image && bm.image !== '{}' ? (
-                                            <img 
-                                              src={bm.image} 
-                                              alt={bm.title}
-                                              className="w-full h-full object-cover rounded-2xl"
-                                            />
-                                          ) : (
-                                            <div className="w-full h-full bg-gray-100" />
-                                          )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center justify-between mb-1">
-                                            <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                                            {bm.url && (
-                                              <a 
-                                                href={bm.url} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
-                                              >
-                                                Site
-                                              </a>
-                                            )}
-                                          </div>
-                                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                          <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                            {(bm.tags || []).map((tag: string, i: number) => (
-                                              <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                            ))}
-                                            {(bm.collections || []).map((col: string, i: number) => (
-                                              <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                            ))}
-                                            <div className="md:hidden">
-                                              {bm.url && (
-                                                <a
-                                                  href={bm.url}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  onClick={e => e.stopPropagation()}
-                                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
-                                                  style={{ marginTop: '2px' }} // optional, for vertical alignment
-                                                >
-                                                  Site
-                                                </a>
-                                              )}
-                                            </div>
-                                          </div>
-                                          {isExpanded && (
-                                            <div className="mt-3">
-                                              <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="px-4 md:px-8">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                  {tagBookmarks.map((bm: any) => (
-                                    <div key={bm.type ? bm.type + '-' + bm.id : bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
-                                      <div className="h-48 overflow-hidden rounded-t-2xl">
-                                        {bm.image && bm.image !== '{}' ? (
-                                          <div className="w-full h-full overflow-hidden rounded-t-2xl">
-                                            <img
-                                              src={bm.image}
-                                              alt={bm.title}
-                                              className="w-full h-full object-cover rounded-2xl"
-                                            />
-                                          </div>
-                                        ) : (
-                                          <div className="w-full h-full bg-gray-100 rounded-t-2xl" />
+                      {cardView === "list" ? (
+                        <div className="px-4 md:px-8">
+                          {/* List view */}
+                          <div className="space-y-4 px-0">
+                            {tagBookmarks.map((bm: any) => {
+                              const cardKey = `${tag}-${bm.type ? bm.type + '-' + bm.id : bm.id}`;
+                              const isExpanded = expandedId === cardKey;
+                              return (
+                                <div
+                                  key={cardKey}
+                                  className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
+                                  onClick={() => setExpandedId(isExpanded ? null : cardKey)}
+                                >
+                                  {/* Image or blank */}
+                                  <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                    {bm.image && bm.image !== '{}' ? (
+                                      <img 
+                                        src={bm.image} 
+                                        alt={bm.title || bm.note || 'Image'}
+                                        className="w-full h-full object-cover rounded-2xl"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gray-100" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                      {bm.url && (
+                                        <a 
+                                          href={bm.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                        >
+                                          Site
+                                        </a>
+                                      )}
+                                    </div>
+                                    <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                    <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                      {(bm.tags || []).map((tag: string, i: number) => (
+                                        <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                      ))}
+                                      {(bm.collections || []).map((col: string, i: number) => (
+                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                      ))}
+                                      <div className="md:hidden">
+                                        {bm.url && (
+                                          <a
+                                            href={bm.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={e => e.stopPropagation()}
+                                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                            style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                          >
+                                            Site
+                                          </a>
                                         )}
                                       </div>
-                                      <div className="p-4">
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
-                                          {bm.url && (
-                                            <a 
-                                              href={bm.url} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer"
-                                              onClick={(e) => e.stopPropagation()}
-                                              className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
-                                            >
-                                              Site
-                                            </a>
-                                          )}
-                                        </div>
-                                        <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                        <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                          {(bm.tags || []).map((tag: string, i: number) => (
-                                            <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                          ))}
-                                          {(bm.collections || []).map((col: string, i: number) => (
-                                            <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                          ))}
-                                          <div className="md:hidden">
-                                            {bm.url && (
-                                              <a
-                                                href={bm.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onClick={e => e.stopPropagation()}
-                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
-                                                style={{ marginTop: '2px' }} // optional, for vertical alignment
-                                              >
-                                                Site
-                                              </a>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                                      </div>
                                     </div>
-                                  ))}
+                                    {isExpanded && (
+                                      <div className="mt-3">
+                                        <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="px-4 md:px-8">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {tagBookmarks.map((bm: any) => (
+                              <div key={bm.type ? bm.type + '-' + bm.id : bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
+                                <div className="h-48 overflow-hidden rounded-t-2xl">
+                                  {bm.image && bm.image !== '{}' ? (
+                                    <div className="w-full h-full overflow-hidden rounded-t-2xl">
+                                      <img
+                                        src={bm.image}
+                                        alt={bm.title || bm.note || 'Image'}
+                                        className="w-full h-full object-cover rounded-2xl"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100 rounded-t-2xl" />
+                                  )}
+                                </div>
+                                <div className="p-4">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
+                                    {bm.url && (
+                                      <a 
+                                        href={bm.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                      >
+                                        Site
+                                      </a>
+                                    )}
+                                  </div>
+                                  <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                    {(bm.tags || []).map((tag: string, i: number) => (
+                                      <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                    ))}
+                                    {(bm.collections || []).map((col: string, i: number) => (
+                                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                    ))}
+                                    <div className="md:hidden">
+                                      {bm.url && (
+                                        <a
+                                          href={bm.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={e => e.stopPropagation()}
+                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                          style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                        >
+                                          Site
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                                 </div>
                               </div>
-                            )}
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : activeTab === "search-saved" ? (
-                  <div className="mt-6">
-                    {/* Fixed Search Saved Header */}
-                    <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-                      <h1 className="text-2xl font-bold">Saved Searches</h1>
-                    </div>
-
-                    {isLoadingSearches ? (
-                      <LoadingSpinner />
-                    ) : savedSearches.length > 0 ? (
-                      <div className="space-y-4">
-                        {savedSearches.map((search) => (
-                          <div
-                            key={search.id}
-                            className="bg-white rounded-2xl shadow p-4 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => {
-                              setSearchQuery(search.query);
-                              setActiveTab("for-you");
-                              setSearchPerformed(true);
-                            }}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <Search className="h-5 w-5 text-gray-400" />
-                              <span className="text-gray-900">{search.query}</span>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {new Date(search.created_at).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                        <div className="w-40 h-40 mb-6">
-                          <img
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Not%20Found%20illustration-UrvV2weSLaEBzWyuYMprcREhfZTEH3.png"
-                            alt="No saved searches"
-                            className="w-full h-full"
-                          />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No Saved Searches</h2>
-                        <p className="text-gray-600 mb-8 max-w-md">
-                          Your search history will appear here. Start searching to see your history.
-                        </p>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+          </div>
+        ) : activeTab === "search-saved" ? (
+          <div className="mt-6">
+            {/* Fixed Search Saved Header */}
+            <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+              <h1 className="text-2xl font-bold">Saved Searches</h1>
+            </div>
+
+            {isLoadingSearches ? (
+              <LoadingSpinner />
+            ) : savedSearches.length > 0 ? (
+              <div className="space-y-4">
+                {savedSearches.map((search) => (
+                  <div
+                    key={search.id}
+                    className="bg-white rounded-2xl shadow p-4 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => {
+                      setSearchQuery(search.query);
+                      setActiveTab("for-you");
+                      setSearchPerformed(true);
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Search className="h-5 w-5 text-gray-400" />
+                      <span className="text-gray-900">{search.query}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(search.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </div>
                   </div>
-                ) : (
+                ))}
+              </div>
+            ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <div className="w-40 h-40 mb-6">
                   <img
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
-                    alt="No bookmarks"
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Not%20Found%20illustration-UrvV2weSLaEBzWyuYMprcREhfZTEH3.png"
+                    alt="No saved searches"
                     className="w-full h-full"
                   />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">No Saved Searches</h2>
                 <p className="text-gray-600 mb-8 max-w-md">
-                  Start saving to fill your Loft with links, social posts, images, and more
+                  Your search history will appear here. Start searching to see your history.
                 </p>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
-                  Discover Content
-                </button>
               </div>
-                )}
-              </>
             )}
           </div>
-
-          {/* Input Form - Fixed at bottom */}
-          <div className="pt-4">
-            {/* ... */}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-4 text-center text-xs text-gray-500 pb-4">
-            {/* ... */}
-          </div>
-        </main>
-
-        {/* Mobile Bottom Navigation - Hidden on Desktop */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3">
-          <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
-            <Search className="h-6 w-6" />
-            <span className="text-xs mt-1">Explore</span>
-          </Link>
-          <Link href="/library" className="flex flex-col items-center text-gray-500">
-            <BookmarkIcon className="h-6 w-6" />
-            <span className="text-xs mt-1">Library</span>
-          </Link>
-          <Link href="/run-through" className="flex flex-col items-center text-gray-500">
-            <Star className="h-6 w-6" />
-            <span className="text-xs mt-1">Run through</span>
-          </Link>
-          <div className="flex flex-col items-center text-gray-500">
-            <SignedIn>
-              <UserButton 
-                afterSignOutUrl="/" 
-                appearance={{ 
-                  elements: { 
-                    avatarBox: 'w-6 h-6',
-                    card: 'w-48',
-                    userPreview: 'p-2',
-                    userButtonPopoverCard: 'w-48',
-                    userButtonPopoverActionButton: 'p-2 text-sm'
-                  } 
-                }} 
-              />
-            </SignedIn>
-            <span className="text-xs mt-1">Settings</span>
-          </div>
-        </nav>
-
-        {/* Mobile Save Button - Fixed at bottom right */}
-        <button
-          onClick={openSaveModal}
-          className="md:hidden fixed right-4 bottom-20 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-10"
-        >
-          <Plus className="h-6 w-6" />
+        ) : (
+      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-40 h-40 mb-6">
+          <img
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
+            alt="No bookmarks"
+            className="w-full h-full"
+          />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+        <p className="text-gray-600 mb-8 max-w-md">
+          Start saving to fill your Loft with links, social posts, images, and more
+        </p>
+        <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
+          Discover Content
         </button>
-
-        {/* Bookmark Modal */}
-        {showModal && selectedBookmark && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1 flex items-center gap-2">
-                    <h2 className="text-2xl font-bold">{selectedBookmark.title}</h2>
-                    {selectedBookmark.url && (
-                      <a 
-                        href={selectedBookmark.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                      >
-                        <ExternalLink className="h-5 w-5" />
-                      </a>
-                    )}
-                  </div>
-                  <button 
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
-                  {selectedBookmark.image && selectedBookmark.image !== '{}' ? (
-                    <img 
-                      src={selectedBookmark.image} 
-                      alt={selectedBookmark.title}
-                      className="w-full h-full object-cover rounded-2xl"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-100" />
-                  )}
-                </div>
-                <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
-                <div className="flex items-center space-x-2 flex-wrap mb-4">
-                  {(selectedBookmark.tags || []).map((tag: string, i: number) => (
-                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                  ))}
-                  {(selectedBookmark.collections || []).map((col: string, i: number) => (
-                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                  ))}
-                </div>
-                <div className="text-sm text-gray-400">
-                  Created: {new Date(selectedBookmark.created_at).toLocaleString()}
-                </div>
-              </div>
-            </div>
-          </div>
+      </div>
         )}
+      </>
+    )}
+  </div>
 
-        {/* Save Modal */}
-        {showSaveModal && (
-          isMobile ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-              <SaveModal isOpen={showSaveModal} onClose={closeSaveModal} />
-            </div>
+  {/* Input Form - Fixed at bottom */}
+  <div className="pt-4">
+    {/* ... */}
+  </div>
+
+  {/* Footer */}
+  <div className="mt-4 text-center text-xs text-gray-500 pb-4">
+    {/* ... */}
+  </div>
+</main>
+
+{/* Mobile Bottom Navigation - Hidden on Desktop */}
+<nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3">
+  <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
+    <Search className="h-6 w-6" />
+    <span className="text-xs mt-1">Explore</span>
+  </Link>
+  <Link href="/library" className="flex flex-col items-center text-gray-500">
+    <BookmarkIcon className="h-6 w-6" />
+    <span className="text-xs mt-1">Library</span>
+  </Link>
+  <Link href="/run-through" className="flex flex-col items-center text-gray-500">
+    <Star className="h-6 w-6" />
+    <span className="text-xs mt-1">Run through</span>
+  </Link>
+  <div className="flex flex-col items-center text-gray-500">
+    <SignedIn>
+      <UserButton 
+        afterSignOutUrl="/" 
+        appearance={{ 
+          elements: { 
+            avatarBox: 'w-6 h-6',
+            card: 'w-48',
+            userPreview: 'p-2',
+            userButtonPopoverCard: 'w-48',
+            userButtonPopoverActionButton: 'p-2 text-sm'
+          } 
+        }} 
+      />
+    </SignedIn>
+    <span className="text-xs mt-1">Settings</span>
+  </div>
+</nav>
+
+{/* Mobile Save Button - Fixed at bottom right */}
+<button
+  onClick={openSaveModal}
+  className="md:hidden fixed right-4 bottom-20 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-10"
+>
+  <Plus className="h-6 w-6" />
+</button>
+
+{/* Bookmark Modal */}
+{showModal && selectedBookmark && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1 flex items-center gap-2">
+            <h2 className="text-2xl font-bold">{selectedBookmark.title}</h2>
+            {selectedBookmark.url && (
+              <a 
+                href={selectedBookmark.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+              >
+                <ExternalLink className="h-5 w-5" />
+              </a>
+            )}
+          </div>
+          <button 
+            onClick={() => setShowModal(false)}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
+          {selectedBookmark.image && selectedBookmark.image !== '{}' ? (
+            <img 
+              src={selectedBookmark.image} 
+              alt={selectedBookmark.title}
+              className="w-full h-full object-cover rounded-2xl"
+            />
           ) : (
-            <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-50 flex md:block">
-              {/* Backdrop */}
-              <div className="fixed inset-0 bg-black bg-opacity-50 md:hidden" onClick={closeSaveModal}></div>
-              {/* Modal */}
-              <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
-                {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold">
-                    {showInShortModal ? "Save to InShort" : "Save to Loft"}
-                  </h2>
-                  <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                {/* Content */}
-                <div className="flex-grow overflow-y-auto">
-                  <div className="p-6">
-                    {/* Media Upload (shared) */}
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
-                      <p className="text-sm text-gray-500 mb-2 md:mb-4">
-                        Add your documents here, and you can upload up to 5 files max
-                      </p>
+            <div className="w-full h-full bg-gray-100" />
+          )}
+        </div>
+        <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
+        <div className="flex items-center space-x-2 flex-wrap mb-4">
+          {(selectedBookmark.tags || []).map((tag: string, i: number) => (
+            <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+          ))}
+          {(selectedBookmark.collections || []).map((col: string, i: number) => (
+            <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+          ))}
+        </div>
+        <div className="text-sm text-gray-400">
+          Created: {new Date(selectedBookmark.created_at).toLocaleString()}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Save Modal */}
+{showSaveModal && (
+  isMobile ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+      <SaveModal isOpen={showSaveModal} onClose={closeSaveModal} />
+    </div>
+  ) : (
+    <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-50 flex md:block">
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 md:hidden" onClick={closeSaveModal}></div>
+      {/* Modal */}
+      <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold">
+            {showInShortModal ? "Save to InShort" : "Save to Loft"}
+          </h2>
+          <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {/* Content */}
+        <div className="flex-grow overflow-y-auto">
+          <div className="p-6">
+            {/* Media Upload (shared) */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
+              <p className="text-sm text-gray-500 mb-2 md:mb-4">
+                Add your documents here, and you can upload up to 5 files max
+              </p>
                       <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
                         {selectedImage && selectedImage !== '{}' ? (
                           <div className="relative w-full">
