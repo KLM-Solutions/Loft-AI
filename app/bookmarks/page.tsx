@@ -58,7 +58,6 @@ export default function BookmarksPage() {
     { id: "development", name: "Development", color: "bg-yellow-500" },
   ])
   const [bookmarks, setBookmarks] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [cardView, setCardView] = useState<"list" | "grid">("list")
   const [expandedId, setExpandedId] = useState<string | number | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -73,7 +72,6 @@ export default function BookmarksPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [savedTitle, setSavedTitle] = useState("")
-  const [savedSearches, setSavedSearches] = useState<any[]>([])
   const [isLoadingSearches, setIsLoadingSearches] = useState(false)
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const DEFAULT_SUMMARY = "This is a sample description for the article you're saving.";
@@ -94,6 +92,7 @@ export default function BookmarksPage() {
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isLoadingLinks, setIsLoadingLinks] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<any[]>([]);
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -103,16 +102,16 @@ export default function BookmarksPage() {
   // Fetch bookmarks when Recent Saves tab is active
   useEffect(() => {
     if (activeTab === "recent-saves") {
-      setIsLoading(true)
+      setIsLoadingLinks(true)
       fetch("/api/library")
         .then(res => res.json())
         .then(data => {
           setBookmarks(data.data || [])
-          setIsLoading(false)
+          setIsLoadingLinks(false)
         })
         .catch(error => {
           console.error('Error fetching bookmarks:', error)
-          setIsLoading(false)
+          setIsLoadingLinks(false)
         })
     }
   }, [activeTab])
@@ -681,16 +680,20 @@ export default function BookmarksPage() {
   // Add useEffect to fetch data when content filter changes
   useEffect(() => {
     if (contentFilter === "all") {
-      // Fetch all data
-      Promise.all([
-        fetchLinks(),
-        fetchNotes(),
-        fetchImages()
-      ]).then(() => {
-        // Combine all data into bookmarks
-        const allData = [...links, ...notes, ...images];
-        setBookmarks(allData);
-      });
+      setIsLoadingLinks(true);
+      fetch('/api/all')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setBookmarks(data.data);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching all content:', error);
+        })
+        .finally(() => {
+          setIsLoadingLinks(false);
+        });
     } else if (contentFilter === "links") {
       fetchLinks().then(() => {
         setBookmarks(links);
@@ -705,6 +708,9 @@ export default function BookmarksPage() {
       });
     }
   }, [contentFilter]);
+
+  // Update the loading state check
+  const isLoading = isLoadingLinks || isLoadingNotes || isLoadingImages;
 
   const LoadingSpinner = () => (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -1037,106 +1043,24 @@ export default function BookmarksPage() {
         {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-            {searchPerformed ? (
-              <div className="space-y-6">
-                {/* Content Type Filters and Sort Options in Same Row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex space-x-2 overflow-x-auto no-scrollbar">
-                    <button
-                      onClick={() => setContentFilter("all")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={() => setContentFilter("links")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      Links
-                    </button>
-                    <button
-                      onClick={() => setContentFilter("images")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      Images
-                    </button>
-                    <button
-                      onClick={() => setContentFilter("notes")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      Notes
-                    </button>
-                    <button
-                      onClick={() => setContentFilter("articles")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "articles"
-                          ? "bg-blue-500 text-white"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      Articles
-                    </button>
-                  </div>
-
-                  {/* Sort and View Options - Now in same row */}
-                  <div className="hidden md:flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-500 mr-2">Sort by</span>
-                      <button className="flex items-center text-sm text-gray-700 hover:text-gray-900">
-                        <span>Relevance</span>
-                        <ArrowUpDown className="h-4 w-4 ml-1" />
-                      </button>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button className="p-1 rounded hover:bg-gray-100">
-                        <Grid className="h-5 w-5 text-gray-700" />
-                      </button>
-                      <button className="p-1 rounded hover:bg-gray-100">
-                        <List className="h-5 w-5 text-gray-400" />
-                      </button>
-                    </div>
-                  </div>
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : bookmarks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="w-40 h-40 mb-6">
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
+                    alt="No bookmarks"
+                    className="w-full h-full"
+                  />
                 </div>
-
-                {/* No Results Found State */}
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="w-40 h-40 mb-6">
-                    <img
-                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Not%20Found%20illustration-UrvV2weSLaEBzWyuYMprcREhfZTEH3.png"
-                      alt="No results found"
-                      className="w-full h-full"
-                    />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">No Result Found</h2>
-                  <p className="text-gray-600 mb-8 max-w-md">Try refining your search or explore something new</p>
-
-                  {/* Suggested Searches */}
-                  <div className="w-full max-w-2xl">
-                    <h3 className="text-gray-500 text-sm mb-4">Suggested Searches:</h3>
-                    <div className="flex flex-wrap gap-3 md:gap-4 justify-center">
-                      <button className="flex items-center bg-white rounded-full px-3 py-2 md:px-6 md:py-3 text-sm md:text-base font-medium text-gray-700 hover:bg-gray-100 shadow-sm">
-                        <Search className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-gray-500" />
-                        Recently Saved
-                      </button>
-                      <button className="flex items-center bg-white rounded-full px-3 py-2 md:px-6 md:py-3 text-sm md:text-base font-medium text-gray-700 hover:bg-gray-100 shadow-sm">
-                        <Search className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-gray-500" />
-                        AI-generated Picks
-                      </button>
-                      <button className="flex items-center bg-white rounded-full px-3 py-2 md:px-6 md:py-3 text-sm md:text-base font-medium text-gray-700 hover:bg-gray-100 shadow-sm">
-                        <Search className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-gray-500" />
-                        Popular in Your Collections
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+                <p className="text-gray-600 mb-8 max-w-md">
+                  Start saving to fill your Loft with links, social posts, images, and more
+                </p>
+                <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
+                  Discover Content
+                </button>
               </div>
             ) : (
               <>
@@ -1201,7 +1125,7 @@ export default function BookmarksPage() {
                           const isExpanded = expandedId === bm.id;
                           return (
                             <div
-                              key={bm.id}
+                              key={bm.type ? bm.type + '-' + bm.id : bm.id}
                               className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                               onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                             >
@@ -1290,7 +1214,7 @@ export default function BookmarksPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {bookmarks.map((bm: any) => (
                           <div
-                            key={bm.id}
+                            key={bm.type ? bm.type + '-' + bm.id : bm.id}
                             className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
                             onClick={() => {
                               setSelectedBookmark(bm);
@@ -1416,11 +1340,11 @@ export default function BookmarksPage() {
                                 {/* List view */}
                                 <div className="space-y-4 px-0">
                                   {tagBookmarks.map((bm: any) => {
-                                    const cardKey = `${tag}-${bm.id}`;
+                                    const cardKey = `${tag}-${bm.type ? bm.type + '-' + bm.id : bm.id}`;
                                     const isExpanded = expandedId === cardKey;
                                     return (
                                       <div
-                                        key={bm.id}
+                                        key={cardKey}
                                         className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
                                         onClick={() => setExpandedId(isExpanded ? null : cardKey)}
                                       >
@@ -1490,7 +1414,7 @@ export default function BookmarksPage() {
                               <div className="px-4 md:px-8">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                   {tagBookmarks.map((bm: any) => (
-                                    <div key={bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
+                                    <div key={bm.type ? bm.type + '-' + bm.id : bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
                                       <div className="h-48 overflow-hidden rounded-t-2xl">
                                         {bm.image && bm.image !== '{}' ? (
                                           <div className="w-full h-full overflow-hidden rounded-t-2xl">
