@@ -642,6 +642,7 @@ export default function BookmarksPage() {
       const response = await fetch('/api/notes-save');
       if (!response.ok) throw new Error('Failed to fetch notes');
       const data = await response.json();
+      if (!data.success) throw new Error('Failed to fetch notes');
       // Prefix note IDs with 'note_'
       const processedNotes = data.data.map((note: any) => ({
         ...note,
@@ -1167,7 +1168,10 @@ export default function BookmarksPage() {
 
                     {/* Add top padding so first card is not hidden behind sticky header */}
                     <div className="pt-8">
-                    {isLoading ? (
+                    {(isLoading && contentFilter === "all") || 
+                     (isLoadingLinks && contentFilter === "links") || 
+                     (isLoadingImages && contentFilter === "images") || 
+                     (isLoadingNotes && contentFilter === "notes") ? (
                       <div className="flex items-center justify-center min-h-[400px]">
                         <div className="relative">
                           <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
@@ -1204,7 +1208,7 @@ export default function BookmarksPage() {
                               {/* Image or blank */}
                               {isExpanded ? (
                                 <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
-                                  {bm.image ? (
+                                  {bm.image && bm.image !== '{}' ? (
                                     <img 
                                       src={bm.image} 
                                       alt={bm.title}
@@ -1216,7 +1220,7 @@ export default function BookmarksPage() {
                                 </div>
                               ) : (
                                 <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                  {bm.image ? (
+                                  {bm.image && bm.image !== '{}' ? (
                                     <img 
                                       src={bm.image} 
                                       alt={bm.title}
@@ -1229,7 +1233,13 @@ export default function BookmarksPage() {
                               )}
                               <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                  <span className="font-semibold text-lg truncate">
+                                    {bm.title ? (
+                                      <ReactMarkdown>{normalizeBold(removeQuotes(bm.title))}</ReactMarkdown>
+                                    ) : (
+                                      bm.note || 'Untitled'
+                                    )}
+                                  </span>
                                   {/* Launch icon at end of row for mobile, only when expanded */}
                                   {isExpanded && bm.url && (
                                     <a 
@@ -1244,7 +1254,13 @@ export default function BookmarksPage() {
                                   )}
                                 </div>
                                 <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>
+                                  {bm.summary ? (
+                                    <ReactMarkdown>{normalizeBold(removeQuotes(bm.summary))}</ReactMarkdown>
+                                  ) : (
+                                    bm.note || ''
+                                  )}
+                                </div>
                                 <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                   {(bm.tags || []).map((tag: string, i: number) => (
                                     <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
@@ -1282,7 +1298,7 @@ export default function BookmarksPage() {
                             }}
                           >
                             <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
-                              {bm.image ? (
+                              {bm.image && bm.image !== '{}' ? (
                                 <img 
                                   src={bm.image} 
                                   alt={bm.title}
@@ -1410,7 +1426,7 @@ export default function BookmarksPage() {
                                       >
                                         {/* Image or blank */}
                                         <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                          {bm.image ? (
+                                          {bm.image && bm.image !== '{}' ? (
                                             <img 
                                               src={bm.image} 
                                               alt={bm.title}
@@ -1476,7 +1492,7 @@ export default function BookmarksPage() {
                                   {tagBookmarks.map((bm: any) => (
                                     <div key={bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
                                       <div className="h-48 overflow-hidden rounded-t-2xl">
-                                        {bm.image ? (
+                                        {bm.image && bm.image !== '{}' ? (
                                           <div className="w-full h-full overflow-hidden rounded-t-2xl">
                                             <img
                                               src={bm.image}
@@ -1690,7 +1706,7 @@ export default function BookmarksPage() {
                   </button>
                 </div>
                 <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
-                  {selectedBookmark.image ? (
+                  {selectedBookmark.image && selectedBookmark.image !== '{}' ? (
                     <img 
                       src={selectedBookmark.image} 
                       alt={selectedBookmark.title}
@@ -1748,7 +1764,7 @@ export default function BookmarksPage() {
                         Add your documents here, and you can upload up to 5 files max
                       </p>
                       <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
-                        {selectedImage ? (
+                        {selectedImage && selectedImage !== '{}' ? (
                           <div className="relative w-full">
                             <img 
                               src={selectedImage} 
