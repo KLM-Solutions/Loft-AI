@@ -51,9 +51,6 @@ const tagColors = [
   "bg-yellow-100 text-yellow-700 border-yellow-200",
   "bg-orange-100 text-orange-700 border-orange-200"
 ];
-const getTagColor = () => {
-  return tagColors[Math.floor(Math.random() * tagColors.length)];
-};
 
 export default function BookmarksPage() {
   const router = useRouter()
@@ -117,11 +114,19 @@ export default function BookmarksPage() {
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isLoadingLinks, setIsLoadingLinks] = useState(false)
+  const [tagColorMap] = useState(new Map<string, string>());
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
     "code", "art", "photography", "minimalism", "modern"
   ]
+
+  const getTagColor = (tag: string) => {
+    if (!tagColorMap.has(tag)) {
+      tagColorMap.set(tag, tagColors[Math.floor(Math.random() * tagColors.length)]);
+    }
+    return tagColorMap.get(tag);
+  };
 
   // Fetch bookmarks when Recent Saves tab is active
   useEffect(() => {
@@ -1289,7 +1294,7 @@ export default function BookmarksPage() {
                       <div className="space-y-4 px-0">
                         {bookmarks.map((bm: any) => {
                           const isExpanded = expandedId === bm.id;
-                          return (
+  return (
                             <div
                               key={bm.id}
                               className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
@@ -1341,7 +1346,7 @@ export default function BookmarksPage() {
                                 <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                                 <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                   {(bm.tags || []).map((tag: string, i: number) => (
-                                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
                                       <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
                                       {tag}
                                     </span>
@@ -1410,7 +1415,7 @@ export default function BookmarksPage() {
                             </div>
                             <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                               {(bm.tags || []).map((tag: string, i: number) => (
-                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
                                   <TagIcon className="w-4 h-4" />
                                   {tag}
                                 </span>
@@ -1538,7 +1543,7 @@ export default function BookmarksPage() {
                                           <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                                           <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                             {(bm.tags || []).map((tag: string, i: number) => (
-                                              <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                              <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
                                                 <TagIcon className="w-4 h-4" />
                                                 {tag}
                                               </span>
@@ -1609,7 +1614,7 @@ export default function BookmarksPage() {
                                         <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                                         <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                           {(bm.tags || []).map((tag: string, i: number) => (
-                                            <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                            <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
                                               <TagIcon className="w-4 h-4" />
                                               {tag}
                                             </span>
@@ -1809,7 +1814,7 @@ export default function BookmarksPage() {
                 <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
                 <div className="flex items-center space-x-2 flex-wrap mb-4">
                   {(selectedBookmark.tags || []).map((tag: string, i: number) => (
-                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
                       <TagIcon className="w-4 h-4" />
                       {tag}
                     </span>
