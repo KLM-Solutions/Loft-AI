@@ -1219,7 +1219,7 @@ export default function BookmarksPage() {
                                     <img 
                                       src={bm.image} 
                                       alt={bm.title}
-                                      className="w-full h-full object-cover rounded-2xl"
+                                      className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                                     />
                                   ) : (
                                     <div className="w-full h-full bg-gray-100" />
@@ -1231,7 +1231,7 @@ export default function BookmarksPage() {
                                     <img 
                                       src={bm.image} 
                                       alt={bm.title}
-                                      className="w-full h-full object-cover rounded-2xl"
+                                      className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                                     />
                                   ) : (
                                     <div className="w-full h-full bg-gray-100" />
@@ -1297,7 +1297,7 @@ export default function BookmarksPage() {
                                 <img 
                                   src={bm.image} 
                                   alt={bm.title}
-                                  className="w-full h-full object-cover rounded-2xl"
+                                  className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gray-100" />
@@ -1425,7 +1425,7 @@ export default function BookmarksPage() {
                                             <img 
                                               src={bm.image} 
                                               alt={bm.title}
-                                              className="w-full h-full object-cover rounded-2xl"
+                                              className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                                             />
                                           ) : (
                                             <div className="w-full h-full bg-gray-100" />
@@ -1492,7 +1492,7 @@ export default function BookmarksPage() {
                                             <img
                                               src={bm.image}
                                               alt={bm.title}
-                                              className="w-full h-full object-cover rounded-2xl"
+                                              className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                                             />
                                           </div>
                                         ) : (
