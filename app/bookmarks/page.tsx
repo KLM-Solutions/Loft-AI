@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn } from "@clerk/nextjs"
+import SaveModal from "@/components/save-modal"
 
 // Helper to convert ****text**** to **text**
 function normalizeBold(str: string) {
@@ -86,6 +87,13 @@ export default function BookmarksPage() {
   const [hasSelectedInterests, setHasSelectedInterests] = useState(false);
   const [userInterests, setUserInterests] = useState<string[]>([]);
   const [isCheckingInterests, setIsCheckingInterests] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+  const [notes, setNotes] = useState<any[]>([]);
+  const [images, setImages] = useState<any[]>([]);
+  const [links, setLinks] = useState<any[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [isLoadingLinks, setIsLoadingLinks] = useState(false);
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -597,6 +605,115 @@ export default function BookmarksPage() {
     checkUserInterests();
   }, []);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 767px)').matches)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Add function to fetch links
+  const fetchLinks = async () => {
+    setIsLoadingLinks(true);
+    try {
+      const response = await fetch('/api/library');
+      if (!response.ok) throw new Error('Failed to fetch links');
+      const data = await response.json();
+      // Prefix link IDs with 'link_'
+      const processedLinks = data.data.map((link: any) => ({
+        ...link,
+        id: `link_${link.id}`,
+        contentType: 'link'
+      }));
+      setLinks(processedLinks);
+    } catch (error) {
+      console.error('Error fetching links:', error);
+    } finally {
+      setIsLoadingLinks(false);
+    }
+  };
+
+  // Add function to fetch notes
+  const fetchNotes = async () => {
+    setIsLoadingNotes(true);
+    try {
+      const response = await fetch('/api/notes-save');
+      if (!response.ok) throw new Error('Failed to fetch notes');
+      const data = await response.json();
+      // Prefix note IDs with 'note_'
+      const processedNotes = data.data.map((note: any) => ({
+        ...note,
+        id: `note_${note.id}`,
+        contentType: 'note'
+      }));
+      setNotes(processedNotes);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    } finally {
+      setIsLoadingNotes(false);
+    }
+  };
+
+  // Add function to fetch images
+  const fetchImages = async () => {
+    setIsLoadingImages(true);
+    try {
+      const response = await fetch('/api/upload');
+      if (!response.ok) throw new Error('Failed to fetch images');
+      const data = await response.json();
+      // Prefix image IDs with 'image_'
+      const processedImages = data.data.map((image: any) => ({
+        ...image,
+        id: `image_${image.id}`,
+        contentType: 'image'
+      }));
+      setImages(processedImages);
+    } catch (error) {
+      console.error('Error fetching images:', error);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
+
+  // Add useEffect to fetch data when content filter changes
+  useEffect(() => {
+    if (contentFilter === "all") {
+      // Fetch all data
+      Promise.all([
+        fetchLinks(),
+        fetchNotes(),
+        fetchImages()
+      ]).then(() => {
+        // Combine all data into bookmarks
+        const allData = [...links, ...notes, ...images];
+        setBookmarks(allData);
+      });
+    } else if (contentFilter === "links") {
+      fetchLinks().then(() => {
+        setBookmarks(links);
+      });
+    } else if (contentFilter === "images") {
+      fetchImages().then(() => {
+        setBookmarks(images);
+      });
+    } else if (contentFilter === "notes") {
+      fetchNotes().then(() => {
+        setBookmarks(notes);
+      });
+    }
+  }, [contentFilter]);
+
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="relative">
+        <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
+        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-[#f5f8fa] overflow-hidden">
       {/* Desktop Sidebar - Hidden on Mobile */}
@@ -766,48 +883,28 @@ export default function BookmarksPage() {
               All
             </button>
             <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
-              title="Coming soon"
+              onClick={() => setContentFilter("links")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
             >
               Links
-              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
             </button>
             <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
-              title="Coming soon"
+              onClick={() => setContentFilter("images")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
             >
               Images
-              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
             </button>
             <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
-              title="Coming soon"
+              onClick={() => setContentFilter("notes")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
             >
               Notes
-              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
-            </button>
-            <button
-              onClick={() => {}}
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group flex items-center gap-2"
-              title="Coming soon"
-            >
-              Articles
-              <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Coming soon
-              </span>
             </button>
           </div>
         </header>
@@ -1196,7 +1293,9 @@ export default function BookmarksPage() {
                               )}
                             </div>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                              <span className="font-semibold text-lg truncate">
+                                {bm.title || bm.note || 'Untitled'}
+                              </span>
                               {bm.url && (
                                 <a 
                                   href={bm.url} 
@@ -1209,7 +1308,9 @@ export default function BookmarksPage() {
                                 </a>
                               )}
                             </div>
-                            <div className="text-gray-500 text-sm truncate"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                            <div className="text-gray-500 text-sm truncate">
+                              {bm.summary || bm.note || ''}
+                            </div>
                             <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                               {(bm.tags || []).map((tag: string, i: number) => (
                                 <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
@@ -1218,7 +1319,9 @@ export default function BookmarksPage() {
                                 <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                               ))}
                             </div>
-                            <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                            <div className="text-xs text-gray-400 mt-2">
+                              {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1251,12 +1354,7 @@ export default function BookmarksPage() {
               </div>
 
                     {isLoading ? (
-                      <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="relative">
-                          <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                          <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
-                        </div>
-                      </div>
+                      <LoadingSpinner />
                     ) : Object.keys(bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
                       (bm.tags || []).forEach((tag: string) => {
                         if (!acc[tag]) acc[tag] = [];
@@ -1448,12 +1546,7 @@ export default function BookmarksPage() {
                     </div>
 
                     {isLoadingSearches ? (
-                      <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="relative">
-                          <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                          <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
-                        </div>
-                      </div>
+                      <LoadingSpinner />
                     ) : savedSearches.length > 0 ? (
                       <div className="space-y-4">
                         {savedSearches.map((search) => (
@@ -1626,339 +1719,345 @@ export default function BookmarksPage() {
 
         {/* Save Modal */}
         {showSaveModal && (
-          <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-50 flex md:block">
-            {/* Backdrop */}
-            <div className="fixed inset-0 bg-black bg-opacity-50 md:hidden" onClick={closeSaveModal}></div>
-            {/* Modal */}
-            <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
-              {/* Header */}
-              <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold">
-                  {showInShortModal ? "Save to InShort" : "Save to Loft"}
-                </h2>
-                <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-none">
-                <div className="p-6">
-                  {/* Media Upload (shared) */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
-                    <p className="text-sm text-gray-500 mb-2 md:mb-4">
-                      Add your documents here, and you can upload up to 5 files max
-                    </p>
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
-                      {selectedImage ? (
-                        <div className="relative w-full">
-                          <img 
-                            src={selectedImage} 
-                            alt="Uploaded" 
-                            className="w-full h-48 object-cover"
-                          />
-                          <button
-                            onClick={() => setSelectedImage(null)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="mb-2 md:mb-4">
-                            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5 md:h-6 md:w-6 text-white"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
-                                />
-                              </svg>
-                            </div>
+          isMobile ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <SaveModal isOpen={showSaveModal} onClose={closeSaveModal} />
+            </div>
+          ) : (
+            <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-50 flex md:block">
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-black bg-opacity-50 md:hidden" onClick={closeSaveModal}></div>
+              {/* Modal */}
+              <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
+                {/* Header */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold">
+                    {showInShortModal ? "Save to InShort" : "Save to Loft"}
+                  </h2>
+                  <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                {/* Content */}
+                <div className="flex-grow overflow-y-auto">
+                  <div className="p-6">
+                    {/* Media Upload (shared) */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
+                      <p className="text-sm text-gray-500 mb-2 md:mb-4">
+                        Add your documents here, and you can upload up to 5 files max
+                      </p>
+                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
+                        {selectedImage ? (
+                          <div className="relative w-full">
+                            <img 
+                              src={selectedImage} 
+                              alt="Uploaded" 
+                              className="w-full h-48 object-cover"
+                            />
+                            <button
+                              onClick={() => setSelectedImage(null)}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
                           </div>
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleImageUpload}
-                            accept="image/*"
-                            className="hidden"
-                          />
-                          <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
-                          >
-                            Browse the image file to upload
-                          </button>
-                        </>
-                      )}
+                        ) : (
+                          <>
+                            <div className="mb-2 md:mb-4">
+                              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5 md:h-6 md:w-6 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleImageUpload}
+                              accept="image/*"
+                              className="hidden"
+                            />
+                            <button 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
+                            >
+                              Browse the image file to upload
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 md:mt-2">
+                        Supported formats: JPG, PNG, GIF, SVG
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1 md:mt-2">
-                      Supported formats: JPG, PNG, GIF, SVG
-                    </p>
-                  </div>
-                  {/* --- FORM AREA: This is the only part that changes! --- */}
-                  {showInShortModal ? (
-                    <>
-                      {/* InShort Modal Form Fields */}
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
-                        <div className="relative">
+                    {/* --- FORM AREA: This is the only part that changes! --- */}
+                    {showInShortModal ? (
+                      <>
+                        {/* InShort Modal Form Fields */}
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={urlInput}
+                              onChange={(e) => setUrlInput(e.target.value)}
+                              placeholder="https://in.pinterest.com/pin/..."
+                              className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              disabled={isGenerating}
+                            />
+                            {isGenerating && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Title</h3>
+                          <input
+                            type="text"
+                            value={titleInput}
+                            onChange={(e) => setTitleInput(e.target.value)}
+                            placeholder={isGenerating ? "Generating title..." : "Title"}
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4"
+                            disabled={isGenerating}
+                          />
+                          {titleInput && (
+                            <div className="mt-2 p-4 bg-gray-50 rounded-xl">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
+                              <div className="prose prose-sm max-w-none">
+                                <ReactMarkdown>{titleInput}</ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Summary</h3>
+                          <div className="relative">
+                            <textarea
+                              value={summaryInput}
+                              onChange={(e) => setSummaryInput(e.target.value)}
+                              placeholder={isGenerating ? "Generating summary..." : "Summary"}
+                              className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4 pr-10"
+                              rows={4}
+                              disabled={isGenerating}
+                            />
+                          </div>
+                          {summaryInput && (
+                            <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
+                              <div className="prose prose-sm max-w-none">
+                                <ReactMarkdown>{summaryInput}</ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Loft Modal Form Fields */}
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
                           <input
                             type="text"
                             value={urlInput}
                             onChange={(e) => setUrlInput(e.target.value)}
                             placeholder="https://in.pinterest.com/pin/..."
                             className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            disabled={isGenerating}
-                          />
-                          {isGenerating && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Title</h3>
-                        <input
-                          type="text"
-                          value={titleInput}
-                          onChange={(e) => setTitleInput(e.target.value)}
-                          placeholder={isGenerating ? "Generating title..." : "Title"}
-                          className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4"
-                          disabled={isGenerating}
-                        />
-                        {titleInput && (
-                          <div className="mt-2 p-4 bg-gray-50 rounded-xl">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
-                            <div className="prose prose-sm max-w-none">
-                              <ReactMarkdown>{titleInput}</ReactMarkdown>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Summary</h3>
-                        <div className="relative">
-                          <textarea
-                            value={summaryInput}
-                            onChange={(e) => setSummaryInput(e.target.value)}
-                            placeholder={isGenerating ? "Generating summary..." : "Summary"}
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4 pr-10"
-                            rows={4}
-                            disabled={isGenerating}
                           />
                         </div>
-                        {summaryInput && (
-                          <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
-                            <div className="prose prose-sm max-w-none">
-                              <ReactMarkdown>{summaryInput}</ReactMarkdown>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Tags <span className="text-red-500">*</span></h3>
+                          <div className="relative">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {selectedTags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                >
+                                  {tag}
+                                  <button
+                                    onClick={() => removeTag(tag)}
+                                    className="ml-1 text-blue-500 hover:text-blue-700"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </span>
+                              ))}
                             </div>
+                          <div className="flex items-center border border-gray-300 rounded-full p-2">
+                            <input
+                              type="text"
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                                onFocus={handleTagInputFocus}
+                                onBlur={handleTagInputBlur}
+                                onKeyDown={handleTagInputKeyDown}
+                                placeholder="Type and press Enter to add a tag"
+                              className="flex-1 focus:outline-none rounded-full"
+                            />
+                              <button 
+                                onClick={() => {
+                                  setShowTagDropdown(!showTagDropdown)
+                                  setShowCollectionDropdown(false)
+                                }}
+                                className="text-blue-500"
+                              >
+                              <Plus className="h-5 w-5" />
+                            </button>
+                            </div>
+                            {showTagDropdown && (
+                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                                  <button
+                                    onClick={() => addTag(tagInput.trim())}
+                                    className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
+                                  >
+                                    Add "{tagInput.trim()}"
+                                  </button>
+                                )}
+                                {defaultTags
+                                  .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
+                                  .map((tag) => (
+                                    <button
+                                      key={tag}
+                                      onClick={() => addTag(tag)}
+                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                                    >
+                                      {tag}
+                                    </button>
+                                  ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Loft Modal Form Fields */}
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
-                        <input
-                          type="text"
-                          value={urlInput}
-                          onChange={(e) => setUrlInput(e.target.value)}
-                          placeholder="https://in.pinterest.com/pin/..."
-                          className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Tags <span className="text-red-500">*</span></h3>
-                        <div className="relative">
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {selectedTags.map((tag) => (
+                        </div>
+                      </>
+                    )}
+                    {/* Add to Collection (shared) */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Add to Collection <span className="text-red-500">*</span></h3>
+                      <div className="relative">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {selectedCollections.map((collectionId) => {
+                            const collection = availableCollections.find(c => c.id === collectionId)
+                            return collection ? (
                               <span
-                                key={tag}
+                                key={collection.id}
                                 className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
                               >
-                                {tag}
-                                <button
-                                  onClick={() => removeTag(tag)}
+                                <div className={`w-3 h-3 ${collection.color} rounded-sm mr-1`}></div>
+                                {collection.name}
+                        <button
+                                  onClick={() => setSelectedCollections(selectedCollections.filter(id => id !== collectionId))}
                                   className="ml-1 text-blue-500 hover:text-blue-700"
                                 >
                                   <X className="h-3 w-3" />
-                                </button>
+                        </button>
                               </span>
-                            ))}
-                          </div>
+                            ) : null
+                          })}
+                        </div>
                         <div className="flex items-center border border-gray-300 rounded-full p-2">
                           <input
                             type="text"
-                            value={tagInput}
-                            onChange={(e) => setTagInput(e.target.value)}
-                              onFocus={handleTagInputFocus}
-                              onBlur={handleTagInputBlur}
-                              onKeyDown={handleTagInputKeyDown}
-                              placeholder="Type and press Enter to add a tag"
+                            value={collectionInput}
+                            onChange={(e) => setCollectionInput(e.target.value)}
+                            onFocus={handleCollectionInputFocus}
+                            onBlur={handleCollectionInputBlur}
+                            onKeyDown={handleCollectionInputKeyDown}
+                            placeholder="Type and press Enter to add a collection"
                             className="flex-1 focus:outline-none rounded-full"
                           />
-                            <button 
-                              onClick={() => {
-                                setShowTagDropdown(!showTagDropdown)
-                                setShowCollectionDropdown(false)
-                              }}
-                              className="text-blue-500"
-                            >
+                        <button
+                            onClick={() => {
+                              setShowCollectionDropdown(!showCollectionDropdown)
+                              setShowTagDropdown(false)
+                            }}
+                            className="text-blue-500"
+                          >
                             <Plus className="h-5 w-5" />
-                          </button>
-                          </div>
-                          {showTagDropdown && (
-                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                              {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
-                                <button
-                                  onClick={() => addTag(tagInput.trim())}
-                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
-                                >
-                                  Add "{tagInput.trim()}"
-                                </button>
-                              )}
-                              {defaultTags
-                                .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                                .map((tag) => (
-                                  <button
-                                    key={tag}
-                                    onClick={() => addTag(tag)}
-                                    className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
-                                  >
-                                    {tag}
-                                  </button>
-                                ))}
-                            </div>
-                          )}
+                        </button>
                         </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Add to Collection (shared) */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Add to Collection <span className="text-red-500">*</span></h3>
-                    <div className="relative">
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {selectedCollections.map((collectionId) => {
-                          const collection = availableCollections.find(c => c.id === collectionId)
-                          return collection ? (
-                            <span
-                              key={collection.id}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                            >
-                              <div className={`w-3 h-3 ${collection.color} rounded-sm mr-1`}></div>
-                              {collection.name}
-                      <button
-                                onClick={() => setSelectedCollections(selectedCollections.filter(id => id !== collectionId))}
-                                className="ml-1 text-blue-500 hover:text-blue-700"
-                              >
-                                <X className="h-3 w-3" />
-                      </button>
-                            </span>
-                          ) : null
-                        })}
-                      </div>
-                      <div className="flex items-center border border-gray-300 rounded-full p-2">
-                        <input
-                          type="text"
-                          value={collectionInput}
-                          onChange={(e) => setCollectionInput(e.target.value)}
-                          onFocus={handleCollectionInputFocus}
-                          onBlur={handleCollectionInputBlur}
-                          onKeyDown={handleCollectionInputKeyDown}
-                          placeholder="Type and press Enter to add a collection"
-                          className="flex-1 focus:outline-none rounded-full"
-                        />
-                      <button
-                          onClick={() => {
-                            setShowCollectionDropdown(!showCollectionDropdown)
-                            setShowTagDropdown(false)
-                          }}
-                          className="text-blue-500"
-                        >
-                          <Plus className="h-5 w-5" />
-                      </button>
-                      </div>
-                      {showCollectionDropdown && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-                          {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                            <button
-                              onClick={() => {
-                                const newCollection = {
-                                  id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                                  name: collectionInput.trim(),
-                                  color: "bg-gray-500"
-                                };
-                                setAvailableCollections([...availableCollections, newCollection]);
-                                if (!selectedCollections.includes(newCollection.id)) {
-                                  setSelectedCollections([...selectedCollections, newCollection.id]);
-                                }
-                                setCollectionInput("");
-                              }}
-                              className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
-                            >
-                              Add "{collectionInput.trim()}"
-                            </button>
-                          )}
-                          {availableCollections
-                            .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                            .map((collection) => (
+                        {showCollectionDropdown && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                            {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                               <button
-                                key={collection.id}
                                 onClick={() => {
-                                  if (!selectedCollections.includes(collection.id)) {
-                                    setSelectedCollections([...selectedCollections, collection.id]);
+                                  const newCollection = {
+                                    id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-') ,
+                                    name: collectionInput.trim(),
+                                    color: "bg-gray-500"
+                                  };
+                                  setAvailableCollections([...availableCollections, newCollection]);
+                                  if (!selectedCollections.includes(newCollection.id)) {
+                                    setSelectedCollections([...selectedCollections, newCollection.id]);
                                   }
+                                  setCollectionInput("");
                                 }}
-                                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
+                                className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
                               >
-                                <div className={`w-4 h-4 ${collection.color} rounded-sm mr-2`}></div>
-                                <span className="text-sm">{collection.name}</span>
+                                Add "{collectionInput.trim()}"
                               </button>
-                            ))}
-                        </div>
-                      )}
+                            )}
+                            {availableCollections
+                              .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                              .map((collection) => (
+                                <button
+                                  key={collection.id}
+                                  onClick={() => {
+                                    if (!selectedCollections.includes(collection.id)) {
+                                      setSelectedCollections([...selectedCollections, collection.id]);
+                                    }
+                                  }}
+                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
+                                >
+                                  <div className={`w-4 h-4 ${collection.color} rounded-sm mr-2`}></div>
+                                  <span className="text-sm">{collection.name}</span>
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <button
-                      onClick={closeSaveModal}
-                      className="px-4 py-2 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50"
-                      disabled={isGenerating || isSaving}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={showInShortModal ? handleInShortSave : handleSave}
-                      className={`px-4 py-2 rounded-full flex items-center justify-center min-w-[80px] ${
-                        (!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving)
-                          ? 'bg-gray-300 cursor-not-allowed'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      }`}
-                      disabled={!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving}
-                    >
-                      {isGenerating || isSaving ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : showInShortModal ? (
-                        'Save'
-                      ) : (
-                        'Next'
-                      )}
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <button
+                        onClick={closeSaveModal}
+                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50"
+                        disabled={isGenerating || isSaving}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={showInShortModal ? handleInShortSave : handleSave}
+                        className={`px-4 py-2 rounded-full flex items-center justify-center min-w-[80px] ${
+                          (!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving)
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        }`}
+                        disabled={!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving}
+                      >
+                        {isGenerating || isSaving ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : showInShortModal ? (
+                          'Save'
+                        ) : (
+                          'Next'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {/* Footer (shared) */}
@@ -1971,84 +2070,7 @@ export default function BookmarksPage() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Success Modal */}
-        {showSuccessModal && (
-          <div className="fixed inset-0 bg-black rounded-lg bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
-              <div className="flex justify-end p-4">
-                <button onClick={closeSuccessModal} className="text-gray-500 hover:text-gray-700">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
-                <div className="w-32 h-32 mb-4">
-                  <img
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
-                    alt="Success"
-                    className="w-full h-full"
-                  />
-                </div>
-                <h2 className="text-xl font-bold mb-2">Saved to Loft</h2>
-                <p className="text-gray-600 mb-6">Your content is safe and ready to rediscover anytime</p>
-                <div className="w-full max-w-sm">
-                  <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                    <div className="flex items-start space-x-4">
-                      {tempSavedImage && (
-                        <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
-                          <img
-                            src={tempSavedImage}
-                            alt="Saved content"
-                            className="w-full h-full object-cover rounded-2xl"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <div className="flex items-center mt-1">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          {savedTitle}
-                        </h3>
-                        </div>
-                        <div className="flex items-center mt-1">
-                         
-                          <div className="flex items-center text-xs text-gray-500">
-                          
-                            <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>
-                            <span>{new Date().toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                        
-                          {tempSavedTags.map((tag) => (
-                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-800">
-                              {tag}
-                            </span>
-                          ))}
-                          {tempSavedCollections.map((collectionId) => {
-                            const collection = availableCollections.find(c => c.id === collectionId);
-                            return collection ? (
-                              <span key={collection.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                <div className={`w-2 h-2 ${collection.color} rounded-sm mr-1`}></div>
-                                {collection.name}
-                              </span>
-                            ) : null;
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={handleViewInLibrary}
-                  className="w-full py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-                >
-                  View in Library
-                </button>
-              </div>
-            </div>
-          </div>
+          )
         )}
         {/* Overlay for desktop */}
         {showNotifications && (
