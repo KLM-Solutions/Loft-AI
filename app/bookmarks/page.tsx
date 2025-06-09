@@ -627,6 +627,7 @@ export default function BookmarksPage() {
         contentType: 'link'
       }));
       setLinks(processedLinks);
+      return processedLinks;
     } catch (error) {
       console.error('Error fetching links:', error);
       throw error;
@@ -646,6 +647,7 @@ export default function BookmarksPage() {
         contentType: 'note'
       }));
       setNotes(processedNotes);
+      return processedNotes;
     } catch (error) {
       console.error('Error fetching notes:', error);
       throw error;
@@ -665,6 +667,7 @@ export default function BookmarksPage() {
         contentType: 'image'
       }));
       setImages(processedImages);
+      return processedImages;
     } catch (error) {
       console.error('Error fetching images:', error);
       throw error;
@@ -681,31 +684,31 @@ export default function BookmarksPage() {
         fetchLinks(),
         fetchNotes(),
         fetchImages()
-      ]).then(() => {
+      ]).then(([linksData, notesData, imagesData]) => {
         // Combine all data into bookmarks
-        const allData = [...links, ...notes, ...images];
+        const allData = [...linksData, ...notesData, ...imagesData];
         setBookmarks(allData);
         setIsLoading(false);
       }).catch(() => {
         setIsLoading(false);
       });
     } else if (contentFilter === "links") {
-      fetchLinks().then(() => {
-        setBookmarks(links);
+      fetchLinks().then((linksData) => {
+        setBookmarks(linksData);
         setIsLoading(false);
       }).catch(() => {
         setIsLoading(false);
       });
     } else if (contentFilter === "images") {
-      fetchImages().then(() => {
-        setBookmarks(images);
+      fetchImages().then((imagesData) => {
+        setBookmarks(imagesData);
         setIsLoading(false);
       }).catch(() => {
         setIsLoading(false);
       });
     } else if (contentFilter === "notes") {
-      fetchNotes().then(() => {
-        setBookmarks(notes);
+      fetchNotes().then((notesData) => {
+        setBookmarks(notesData);
         setIsLoading(false);
       }).catch(() => {
         setIsLoading(false);
