@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent, useRef, useEffect } from "react"
+import { useState, type FormEvent, useRef, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import {
@@ -31,6 +31,29 @@ function normalizeBold(str: string) {
 function removeQuotes(str: string) {
   return str.replace(/^"|"$/g, '');
 }
+
+// 1. Add the SVG for the tag icon (from screenshot) as a React component at the top of the file:
+const TagIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="#7C6A8A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.59 7.59a2 2 0 0 1-2.83 0l-7.59-7.59a2 2 0 0 1 0-2.83l7.59-7.59a2 2 0 0 1 2.83 0l7.59 7.59a2 2 0 0 1 0 2.83z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>
+);
+
+// 2. Add a helper to generate a random color for each tag (memoized per tag):
+const tagColors = [
+  "bg-red-100 text-red-700 border-red-200",
+  "bg-pink-100 text-pink-700 border-pink-200",
+  "bg-purple-100 text-purple-700 border-purple-200",
+  "bg-indigo-100 text-indigo-700 border-indigo-200",
+  "bg-blue-100 text-blue-700 border-blue-200",
+  "bg-cyan-100 text-cyan-700 border-cyan-200",
+  "bg-teal-100 text-teal-700 border-teal-200",
+  "bg-green-100 text-green-700 border-green-200",
+  "bg-lime-100 text-lime-700 border-lime-200",
+  "bg-yellow-100 text-yellow-700 border-yellow-200",
+  "bg-orange-100 text-orange-700 border-orange-200"
+];
+const getTagColor = () => {
+  return tagColors[Math.floor(Math.random() * tagColors.length)];
+};
 
 export default function BookmarksPage() {
   const router = useRouter()
@@ -1258,7 +1281,10 @@ export default function BookmarksPage() {
                                 <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                                 <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                   {(bm.tags || []).map((tag: string, i: number) => (
-                                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                      <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                      {tag}
+                                    </span>
                                   ))}
                                   {(bm.collections || []).map((col: string, i: number) => (
                                     <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
@@ -1324,7 +1350,10 @@ export default function BookmarksPage() {
                             </div>
                             <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                               {(bm.tags || []).map((tag: string, i: number) => (
-                                <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                  <TagIcon className="w-4 h-4" />
+                                  {tag}
+                                </span>
                               ))}
                               {(bm.collections || []).map((col: string, i: number) => (
                                 <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
@@ -1449,7 +1478,10 @@ export default function BookmarksPage() {
                                           <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                                           <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                             {(bm.tags || []).map((tag: string, i: number) => (
-                                              <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                              <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                                <TagIcon className="w-4 h-4" />
+                                                {tag}
+                                              </span>
                                             ))}
                                             {(bm.collections || []).map((col: string, i: number) => (
                                               <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
@@ -1517,7 +1549,10 @@ export default function BookmarksPage() {
                                         <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
                                         <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                                           {(bm.tags || []).map((tag: string, i: number) => (
-                                            <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                            <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                                              <TagIcon className="w-4 h-4" />
+                                              {tag}
+                                            </span>
                                           ))}
                                           {(bm.collections || []).map((col: string, i: number) => (
                                             <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
@@ -1714,7 +1749,10 @@ export default function BookmarksPage() {
                 <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
                 <div className="flex items-center space-x-2 flex-wrap mb-4">
                   {(selectedBookmark.tags || []).map((tag: string, i: number) => (
-                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor()}`}>
+                      <TagIcon className="w-4 h-4" />
+                      {tag}
+                    </span>
                   ))}
                   {(selectedBookmark.collections || []).map((col: string, i: number) => (
                     <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
