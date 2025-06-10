@@ -674,7 +674,7 @@ export default function SavePage() {
                 >
                   Tags <span style={{ color: "#ef4444" }}>*</span>
                 </Label>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", marginBottom: showTagDropdown ? "8rem" : "1rem" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                     {selectedTags.map((tag) => (
                       <span
@@ -741,6 +741,7 @@ export default function SavePage() {
                         borderRadius: "0.5rem",
                         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                         padding: "0.5rem",
+                        marginBottom: "1rem", // Add margin to push content below
                       }}
                     >
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -798,7 +799,7 @@ export default function SavePage() {
                 >
                   Add to Collection <span style={{ color: "#ef4444" }}>*</span>
                 </Label>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", marginBottom: showCollectionDropdown ? "8rem" : "1rem" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                     {selectedCollections.map((collectionId) => {
                       const collection = availableCollections.find(c => c.id === collectionId);
@@ -869,6 +870,7 @@ export default function SavePage() {
                         borderRadius: "0.5rem",
                         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                         padding: "0.5rem",
+                        marginBottom: "1rem", // Add margin to push content below
                       }}
                     >
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -1221,7 +1223,7 @@ export default function SavePage() {
             >
               Tags <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showTagDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedTags.map((tag) => (
                   <span
@@ -1288,6 +1290,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -1301,42 +1304,42 @@ export default function SavePage() {
                           backgroundColor: "#dbeafe",
                           color: "#1d4ed8",
                           border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{tagInput.trim()}"
-                      </button>
-                    )}
-                    {defaultTags
-                      .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                      .map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => addTag(tag)}
-                          style={{
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "9999px",
-                            fontSize: "0.875rem",
-                            backgroundColor: "#dbeafe",
-                            color: "#1d4ed8",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                  </div>
+                cursor: "pointer",
+                            }}
+                          >
+                            Add "{tagInput.trim()}"
+                          </button>
+                        )}
+                        {defaultTags
+                          .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={() => addTag(tag)}
+                              style={{
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "9999px",
+                                fontSize: "0.875rem",
+                                backgroundColor: "#dbeafe",
+                                color: "#1d4ed8",
+                                border: "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div style={{ marginTop: "1rem" }}>
-            <Label
-              htmlFor="collections"
-              style={{
-                fontSize: "0.875rem",
+              <div style={{ marginTop: "1rem" }}>
+                <Label
+                  htmlFor="collections"
+                  style={{
+                    fontSize: "0.875rem",
               fontWeight: "500",
                 color: "#374151",
                 display: "block",
@@ -1345,7 +1348,7 @@ export default function SavePage() {
             >
               Add to Collection <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showCollectionDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedCollections.map((collectionId) => {
                   const collection = availableCollections.find(c => c.id === collectionId);
@@ -1416,6 +1419,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -1807,7 +1811,7 @@ export default function SavePage() {
             >
               Tags <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showTagDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedTags.map((tag) => (
                   <span
@@ -1874,6 +1878,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -1931,7 +1936,7 @@ export default function SavePage() {
             >
               Add to Collection <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showCollectionDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedCollections.map((collectionId) => {
                   const collection = availableCollections.find(c => c.id === collectionId);
@@ -2002,6 +2007,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>

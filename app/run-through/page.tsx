@@ -53,12 +53,7 @@ export default function RunThroughPage() {
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const [selectedBookmark, setSelectedBookmark] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
-  const [availableCollections, setAvailableCollections] = useState([
-    { id: "ui-mockup", name: "UI mockup", color: "bg-green-500" },
-    { id: "inspiration", name: "Inspiration", color: "bg-purple-500" },
-    { id: "design", name: "Design", color: "bg-blue-500" },
-    { id: "development", name: "Development", color: "bg-yellow-500" },
-  ])
+  const [availableCollections, setAvailableCollections] = useState<any[]>([])
   const [cardView, setCardView] = useState<"list" | "grid">("list")
   const [expandedId, setExpandedId] = useState<string | number | null>(null)
 
@@ -406,15 +401,19 @@ export default function RunThroughPage() {
             <div className="pt-4">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">MY COLLECTIONS</h3>
               <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto">
-                {availableCollections.map((collection) => (
-                  <div
-                    key={collection.id}
-                    className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
-                  >
-                    <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
-                    <span>{collection.name}</span>
-                  </div>
-                ))}
+                {availableCollections.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-gray-500">Loading collections...</div>
+                ) : (
+                  availableCollections.map((collection) => (
+                    <div
+                      key={collection.id}
+                      className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
+                    >
+                      <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
+                      <span>{collection.name}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
