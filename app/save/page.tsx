@@ -652,7 +652,7 @@ export default function SavePage() {
                         borderRadius: "0.5rem",
                         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                         padding: "0.5rem",
-                        marginBottom: "1rem", // Add margin to push content below
+                        marginBottom: "0.5rem", // Changed from 1rem to 0.5rem (2 in Tailwind)
                       }}
                     >
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -1201,7 +1201,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
-                    marginBottom: "1rem", // Add margin to push content below
+                    marginBottom: "0.5rem", // Changed from 1rem to 0.5rem (2 in Tailwind)
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -1789,7 +1789,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
-                    marginBottom: "1rem", // Add margin to push content below
+                    marginBottom: "0.5rem", // Changed from 1rem to 0.5rem (2 in Tailwind)
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
