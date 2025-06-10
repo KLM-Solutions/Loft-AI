@@ -69,13 +69,15 @@ export async function POST(request: Request) {
         // Step 3: Enable pgvector extension and search for relevant bookmarks
         await sql`CREATE EXTENSION IF NOT EXISTS vector;`;
 
-        // Step 4: Search for relevant bookmarks using pgvector, filtered by user
+        // Step 4: Search for relevant content using pgvector, filtered by user
         const searchResults = await sql`
           WITH query_embedding AS (
             SELECT (${queryEmbedding}::float[])::vector as embedding
           ),
           similarity_scores AS (
+            -- Bookmarks
             SELECT 
+              'bookmark' as type,
               title,
               summary,
               tags,
@@ -87,8 +89,44 @@ export async function POST(request: Request) {
             WHERE 
               clerk_username = ${clerk_username}
               AND (
-              1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
-              OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+                1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+                OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+              )
+            UNION ALL
+            -- Uploads
+            SELECT 
+              'upload' as type,
+              title,
+              summary,
+              tags,
+              collections,
+              created_at,
+              1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) as title_similarity,
+              1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) as summary_similarity
+            FROM uploads
+            WHERE 
+              clerk_username = ${clerk_username}
+              AND (
+                1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+                OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+              )
+            UNION ALL
+            -- Notes
+            SELECT 
+              'note' as type,
+              title,
+              summary,
+              tags,
+              collections,
+              created_at,
+              1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) as title_similarity,
+              1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) as summary_similarity
+            FROM notes
+            WHERE 
+              clerk_username = ${clerk_username}
+              AND (
+                1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+                OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
               )
           )
           SELECT * FROM similarity_scores
@@ -97,13 +135,14 @@ export async function POST(request: Request) {
         `;
 
         if (searchResults.length === 0) {
-          await sendChunk("No relevant bookmarks found. Let me help you with a general response.\n\n");
+          await sendChunk("No relevant content found. Let me help you with a general response.\n\n");
         } else {
-          await sendChunk("Found relevant bookmarks. Generating response...\n\n");
+          await sendChunk("Found relevant content. Generating response...\n\n");
         }
 
         // Step 5: Generate response using GPT-4 with the search results
         const context = searchResults.map(result => ({
+          type: result.type,
           title: result.title,
           summary: result.summary,
           tags: result.tags,
@@ -116,7 +155,7 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: `You are a helpful assistant that answers questions based on the user's saved bookmarks. 
+              content: `You are a helpful assistant that answers questions based on the user's saved content (bookmarks, uploads, and notes). 
               Use the following context to answer the question. If the context doesn't contain relevant information, 
               provide a helpful general response. Format your response in a clear, concise way.
               
