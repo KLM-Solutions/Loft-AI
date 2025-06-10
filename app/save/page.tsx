@@ -1579,48 +1579,26 @@ export default function SavePage() {
             <button
               onClick={async () => {
                 if (!formData.note) return;
-                setIsGenerating(true);
-                try {
-                  const response = await fetch("/api/notes", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ note: formData.note }),
-                  });
-                  const data = await response.json();
-                  if (data.title && data.summary) {
-                    setTitleInput(data.title);
-                    setSummaryInput(data.summary);
-                    setShowInShortModal(true);
-                  }
-                } catch (error) {
-                  console.error("Error generating title and summary:", error);
-                } finally {
-                  setIsGenerating(false);
-                }
+                setTitleInput("");
+                setSummaryInput(formData.note);
+                setShowInShortModal(true);
               }}
-              disabled={!formData.note || isGenerating}
+              disabled={!formData.note}
               style={{
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
                 fontSize: isMobile ? "0.875rem" : "0.75rem",
                 color: "white",
-                backgroundColor: !formData.note || isGenerating ? "#9CA3AF" : "#3B82F6",
+                backgroundColor: !formData.note ? "#9CA3AF" : "#3B82F6",
                 border: "none",
                 borderRadius: "0.375rem",
-                cursor: !formData.note || isGenerating ? "not-allowed" : "pointer",
+                cursor: !formData.note ? "not-allowed" : "pointer",
                 fontWeight: "500",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
               }}
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
-                  Generating...
-                </>
-              ) : (
-                "Continue"
-              )}
+              Continue
             </button>
           </div>
         </div>
@@ -1700,8 +1678,8 @@ export default function SavePage() {
               Note Preview
             </Label>
             <div
-            style={{
-              width: "100%",
+              style={{
+                width: "100%",
                 height: isMobile ? "200px" : "250px",
                 border: "1px solid #d1d5db",
                 borderRadius: "0.5rem",
@@ -1710,22 +1688,79 @@ export default function SavePage() {
                 justifyContent: "center",
                 backgroundColor: "#f9fafb",
                 overflow: "hidden",
+                position: "relative",
               }}
             >
-              <img
-                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
-                alt="Note Preview"
+              {selectedImage ? (
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                  <img
+                    src={selectedImage}
+                    alt="Note Preview"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      padding: "0",
+                    }}
+                  />
+                  <button
+                    onClick={() => setSelectedImage("")}
+                    style={{
+                      position: "absolute",
+                      top: "0.5rem",
+                      right: "0.5rem",
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "9999px",
+                      padding: "0.25rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <X style={{ height: "1rem", width: "1rem" }} />
+                  </button>
+                </div>
+              ) : (
+                <img
+                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
+                  alt="Note Preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    padding: "2rem",
+                  }}
+                />
+              )}
+            </div>
+            <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  padding: "2rem",
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: "pointer",
+                  fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
                 }}
+              >
+                <Upload style={{ height: "1rem", width: "1rem" }} />
+                Upload Image
+              </button>
+              <span style={{ fontSize: "0.75rem", color: "#6B7280" }}>(Optional)</span>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                style={{ display: "none" }}
               />
             </div>
-            <p style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>
-              This is the default note icon that will be used for your note
-            </p>
           </div>
 
           <div>
@@ -2025,6 +2060,7 @@ export default function SavePage() {
                       note: formData.note,
                       tags: selectedTags,
                       collections: selectedCollections,
+                      image: selectedImage || null
                     }),
                   });
                   const data = await response.json();
