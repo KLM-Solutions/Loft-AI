@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, type FormEvent, useRef, useEffect } from "react"
-import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Mic, ArrowUp, Settings, Grid, List, ArrowUpDown, X, Loader2, Tag } from "lucide-react"
+import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Mic, ArrowUp, Settings, Grid, List, ArrowUpDown, X, Loader2, Tag, ExternalLink } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn, useUser } from "@clerk/nextjs"
@@ -10,6 +10,7 @@ import { UserButton, SignedIn, useUser } from "@clerk/nextjs"
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  relatedTopics?: any[];
 }
 
 export default function RunThroughPage() {
@@ -49,12 +50,16 @@ export default function RunThroughPage() {
   const [showNewCollectionModal, setShowNewCollectionModal] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState("")
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
+  const [selectedBookmark, setSelectedBookmark] = useState<any>(null)
+  const [showModal, setShowModal] = useState(false)
   const [availableCollections, setAvailableCollections] = useState([
     { id: "ui-mockup", name: "UI mockup", color: "bg-green-500" },
     { id: "inspiration", name: "Inspiration", color: "bg-purple-500" },
     { id: "design", name: "Design", color: "bg-blue-500" },
     { id: "development", name: "Development", color: "bg-yellow-500" },
   ])
+  const [cardView, setCardView] = useState<"list" | "grid">("list")
+  const [expandedId, setExpandedId] = useState<string | number | null>(null)
 
   // Example prompts
   const examplePrompts = [
@@ -132,40 +137,14 @@ export default function RunThroughPage() {
 
       if (!response.ok) throw new Error('Failed to get response')
 
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('No reader available')
-
-      let assistantMessage = ''
-      
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const text = new TextDecoder().decode(value)
-        const lines = text.split('\n')
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.content) {
-                assistantMessage += data.content
-                setMessages(prev => {
-                  const newMessages = [...prev]
-                  const lastMessage = newMessages[newMessages.length - 1]
-                  if (lastMessage && lastMessage.role === 'assistant') {
-                    lastMessage.content = assistantMessage
-                    return [...newMessages]
-                  } else {
-                    return [...newMessages, { role: 'assistant', content: assistantMessage }]
-                  }
-                })
-              }
-            } catch (e) {
-              console.error('Error parsing SSE data:', e)
-            }
-          }
-        }
+      const data = await response.json()
+      if (data.success) {
+        // Add assistant's response with related topics
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.data.response,
+          relatedTopics: data.data.relatedTopics || []
+        }])
       }
     } catch (error) {
       console.error('Error:', error)
@@ -447,27 +426,182 @@ export default function RunThroughPage() {
               // Chat Messages
               <div className="flex flex-col space-y-4 mb-4">
                 {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
+                  <div key={index}>
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                        message.role === 'user'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-white text-gray-800'
-                      }`}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      {message.role === 'user' ? (
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                      ) : (
-                        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-code:bg-gray-100 prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-pre:bg-gray-100 prose-pre:rounded-md prose-pre:p-2 prose-pre:my-2 prose-a:text-blue-500 prose-a:underline hover:prose-a:text-blue-600">
-                          <ReactMarkdown>
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
-                      )}
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                          message.role === 'user'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-white text-gray-800'
+                        }`}
+                      >
+                        {message.role === 'user' ? (
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        ) : (
+                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-code:bg-gray-100 prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-pre:bg-gray-100 prose-pre:rounded-md prose-pre:p-2 prose-pre:my-2 prose-a:text-blue-500 prose-a:underline hover:prose-a:text-blue-600">
+                            <ReactMarkdown>
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    
+                    {/* Show related topics right after each assistant message */}
+                    {message.role === 'assistant' && message.relatedTopics && message.relatedTopics.length > 0 && (
+                      <div className="mt-4 px-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xl font-semibold">Related Topics</h3>
+                          <div className="flex space-x-2">
+                            <button
+                              className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                              onClick={() => setCardView("list")}
+                              aria-label="List view"
+                            >
+                              <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                            </button>
+                            <button
+                              className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                              onClick={() => setCardView("grid")}
+                              aria-label="Grid view"
+                            >
+                              <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                        {cardView === "list" ? (
+                          <div className="space-y-4">
+                            {message.relatedTopics.map((topic, idx) => {
+                              const isExpanded = expandedId === `${index}-${idx}`;
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                                  onClick={() => setExpandedId(isExpanded ? null : `${index}-${idx}`)}
+                                >
+                                  {/* Image or blank */}
+                                  {isExpanded ? (
+                                    <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                                      {topic.image ? (
+                                        <img 
+                                          src={topic.image} 
+                                          alt={topic.title}
+                                          className="w-full h-full object-cover rounded-2xl"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full bg-gray-100" />
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                      {topic.image ? (
+                                        <img 
+                                          src={topic.image} 
+                                          alt={topic.title}
+                                          className="w-full h-full object-cover rounded-2xl"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full bg-gray-100" />
+                                      )}
+                                    </div>
+                                  )}
+                                  <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-semibold text-lg truncate">{topic.title}</span>
+                                      {isExpanded && topic.url && (
+                                        <a 
+                                          href={topic.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                        >
+                                          <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                      )}
+                                    </div>
+                                    <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(topic.created_at).toLocaleString()}</div>
+                                    <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>{topic.summary}</div>
+                                    <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                      {(topic.tags || []).map((tag: string, i: number) => (
+                                        <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                      ))}
+                                      {(topic.collections || []).map((col: string, i: number) => (
+                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  {(!isExpanded && topic.url) && (
+                                    <a 
+                                      href={topic.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {message.relatedTopics.map((topic, idx) => (
+                              <div
+                                key={idx}
+                                className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                                onClick={() => {
+                                  setSelectedBookmark(topic);
+                                  setShowModal(true);
+                                }}
+                              >
+                                <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                                  {topic.image ? (
+                                    <img 
+                                      src={topic.image} 
+                                      alt={topic.title}
+                                      className="w-full h-full object-cover rounded-2xl"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100" />
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold text-lg truncate">{topic.title}</span>
+                                  {topic.url && (
+                                    <a 
+                                      href={topic.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="text-gray-500 text-sm truncate">{topic.summary}</div>
+                                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                  {(topic.tags || []).map((tag: string, i: number) => (
+                                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                  ))}
+                                  {(topic.collections || []).map((col: string, i: number) => (
+                                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                  ))}
+                                </div>
+                                <div className="text-xs text-gray-400 mt-2">
+                                  {new Date(topic.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {isLoading && (
@@ -699,6 +833,60 @@ export default function RunThroughPage() {
                   'Create'
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bookmark Modal */}
+      {showModal && selectedBookmark && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold">{selectedBookmark.title}</h2>
+                  {selectedBookmark.url && (
+                    <a 
+                      href={selectedBookmark.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                    >
+                      <ExternalLink className="h-5 w-5" />
+                    </a>
+                  )}
+                </div>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
+                {selectedBookmark.image ? (
+                  <img 
+                    src={selectedBookmark.image} 
+                    alt={selectedBookmark.title}
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100" />
+                )}
+              </div>
+              <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
+              <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                {(selectedBookmark.tags || []).map((tag: string, i: number) => (
+                  <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                ))}
+                {(selectedBookmark.collections || []).map((col: string, i: number) => (
+                  <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                ))}
+              </div>
+              <div className="text-sm text-gray-400">
+                Created: {new Date(selectedBookmark.created_at).toLocaleString()}
+              </div>
             </div>
           </div>
         </div>
