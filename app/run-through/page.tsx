@@ -11,6 +11,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   relatedTopics?: any[];
+  isLoadingTopics?: boolean;
 }
 
 export default function RunThroughPage() {
@@ -127,6 +128,7 @@ export default function RunThroughPage() {
     setIsLoading(true)
 
     try {
+      // First call to get LLM response stream
       const response = await fetch('/api/run-through', {
         method: 'POST',
         headers: {
@@ -136,15 +138,90 @@ export default function RunThroughPage() {
       })
 
       if (!response.ok) throw new Error('Failed to get response')
+      if (!response.body) throw new Error('No response body')
 
-      const data = await response.json()
-      if (data.success) {
-        // Add assistant's response with related topics
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: data.data.response,
-          relatedTopics: data.data.relatedTopics || []
-        }])
+      // Add initial assistant message without loading state
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: '',
+        relatedTopics: [],
+        isLoadingTopics: false
+      }])
+
+      // Handle the stream
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulatedContent = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n').filter(line => line.trim() !== '')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') break
+
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.content) {
+                accumulatedContent += parsed.content
+                // Update the last message with accumulated content
+                setMessages(prev => {
+                  const newMessages = [...prev]
+                  const lastMessage = newMessages[newMessages.length - 1]
+                  if (lastMessage.role === 'assistant') {
+                    lastMessage.content = accumulatedContent
+                  }
+                  return newMessages
+                })
+              }
+            } catch (e) {
+              console.error('Error parsing chunk:', e)
+            }
+          }
+        }
+      }
+
+      // After streaming is complete, set loading state for topics
+      setMessages(prev => {
+        const newMessages = [...prev]
+        const lastMessage = newMessages[newMessages.length - 1]
+        if (lastMessage.role === 'assistant') {
+          lastMessage.isLoadingTopics = true
+        }
+        return newMessages
+      })
+
+      // Second call to get related topics
+      const topicsResponse = await fetch('/api/run-through', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          query: userMessage,
+          type: 'related-topics'
+        }),
+      })
+
+      if (!topicsResponse.ok) throw new Error('Failed to get related topics')
+
+      const topicsData = await topicsResponse.json()
+      if (topicsData.success) {
+        // Update the last message with related topics and set loading to false
+        setMessages(prev => {
+          const newMessages = [...prev]
+          const lastMessage = newMessages[newMessages.length - 1]
+          if (lastMessage.role === 'assistant') {
+            lastMessage.relatedTopics = topicsData.data.relatedTopics
+            lastMessage.isLoadingTopics = false
+          }
+          return newMessages
+        })
       }
     } catch (error) {
       console.error('Error:', error)
@@ -450,156 +527,182 @@ export default function RunThroughPage() {
                     </div>
                     
                     {/* Show related topics right after each assistant message */}
-                    {message.role === 'assistant' && message.relatedTopics && message.relatedTopics.length > 0 && (
+                    {message.role === 'assistant' && (
                       <div className="mt-4 px-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-semibold">Related Topics</h3>
-                          <div className="flex space-x-2">
-                            <button
-                              className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                              onClick={() => setCardView("list")}
-                              aria-label="List view"
-                            >
-                              <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
-                            </button>
-                            <button
-                              className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                              onClick={() => setCardView("grid")}
-                              aria-label="Grid view"
-                            >
-                              <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
-                            </button>
-                          </div>
-                        </div>
-                        {cardView === "list" ? (
-                          <div className="space-y-4">
-                            {message.relatedTopics.map((topic, idx) => {
-                              const isExpanded = expandedId === `${index}-${idx}`;
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
-                                  onClick={() => setExpandedId(isExpanded ? null : `${index}-${idx}`)}
+                        {message.content && (
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-semibold">Related Topics</h3>
+                            {!message.isLoadingTopics && message.relatedTopics && message.relatedTopics.length > 0 && (
+                              <div className="flex space-x-2">
+                                <button
+                                  className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                  onClick={() => setCardView("list")}
+                                  aria-label="List view"
                                 >
-                                  {/* Image or blank */}
-                                  {isExpanded ? (
-                                    <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
-                                      {topic.image ? (
-                                        <img 
-                                          src={topic.image} 
-                                          alt={topic.title}
-                                          className="w-full h-full object-cover rounded-2xl"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full bg-gray-100" />
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                      {topic.image ? (
-                                        <img 
-                                          src={topic.image} 
-                                          alt={topic.title}
-                                          className="w-full h-full object-cover rounded-2xl"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full bg-gray-100" />
-                                      )}
-                                    </div>
-                                  )}
-                                  <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="font-semibold text-lg truncate">{topic.title}</span>
-                                      {isExpanded && topic.url && (
-                                        <a 
-                                          href={topic.url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                                        >
-                                          <ExternalLink className="h-4 w-4" />
-                                        </a>
-                                      )}
-                                    </div>
-                                    <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(topic.created_at).toLocaleString()}</div>
-                                    <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>{topic.summary}</div>
-                                    <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                      {(topic.tags || []).map((tag: string, i: number) => (
-                                        <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                      ))}
-                                      {(topic.collections || []).map((col: string, i: number) => (
-                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  {(!isExpanded && topic.url) && (
-                                    <a 
-                                      href={topic.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                    </a>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                                </button>
+                                <button
+                                  className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                  onClick={() => setCardView("grid")}
+                                  aria-label="Grid view"
+                                >
+                                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {message.relatedTopics.map((topic, idx) => (
+                        )}
+                        {message.isLoadingTopics ? (
+                          <div className={cardView === "list" ? "space-y-4" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
+                            {[...Array(3)].map((_, idx) => (
                               <div
                                 key={idx}
-                                className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                                onClick={() => {
-                                  setSelectedBookmark(topic);
-                                  setShowModal(true);
-                                }}
+                                className={`bg-white rounded-2xl shadow p-4 ${cardView === "list" ? "flex items-start" : "flex flex-col"}`}
                               >
-                                <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
-                                  {topic.image ? (
-                                    <img 
-                                      src={topic.image} 
-                                      alt={topic.title}
-                                      className="w-full h-full object-cover rounded-2xl"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gray-100" />
-                                  )}
-                                </div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold text-lg truncate">{topic.title}</span>
-                                  {topic.url && (
-                                    <a 
-                                      href={topic.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </a>
-                                  )}
-                                </div>
-                                <div className="text-gray-500 text-sm truncate">{topic.summary}</div>
-                                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                  {(topic.tags || []).map((tag: string, i: number) => (
-                                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                  ))}
-                                  {(topic.collections || []).map((col: string, i: number) => (
-                                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                  ))}
-                                </div>
-                                <div className="text-xs text-gray-400 mt-2">
-                                  {new Date(topic.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                <div className={`${cardView === "list" ? "w-16 h-16 mr-4" : "w-full h-48 mb-3"} rounded-lg bg-gray-200 animate-pulse`} />
+                                <div className="flex-1">
+                                  <div className="h-6 bg-gray-200 rounded animate-pulse mb-2" />
+                                  <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
+                                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                                  </div>
                                 </div>
                               </div>
                             ))}
                           </div>
-                        )}
+                        ) : message.relatedTopics && message.relatedTopics.length > 0 ? (
+                          cardView === "list" ? (
+                            <div className="space-y-4">
+                              {message.relatedTopics.map((topic, idx) => {
+                                const isExpanded = expandedId === `${index}-${idx}`;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                                    onClick={() => setExpandedId(isExpanded ? null : `${index}-${idx}`)}
+                                  >
+                                    {/* Image or blank */}
+                                    {isExpanded ? (
+                                      <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                                        {topic.image ? (
+                                          <img 
+                                            src={topic.image} 
+                                            alt={topic.title}
+                                            className="w-full h-full object-cover rounded-2xl"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full bg-gray-100" />
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                        {topic.image ? (
+                                          <img 
+                                            src={topic.image} 
+                                            alt={topic.title}
+                                            className="w-full h-full object-cover rounded-2xl"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full bg-gray-100" />
+                                        )}
+                                      </div>
+                                    )}
+                                    <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="font-semibold text-lg truncate">{topic.title}</span>
+                                        {isExpanded && topic.url && (
+                                          <a 
+                                            href={topic.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                          </a>
+                                        )}
+                                      </div>
+                                      <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(topic.created_at).toLocaleString()}</div>
+                                      <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>{topic.summary}</div>
+                                      <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                        {(topic.tags || []).map((tag: string, i: number) => (
+                                          <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                        ))}
+                                        {(topic.collections || []).map((col: string, i: number) => (
+                                          <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    {(!isExpanded && topic.url) && (
+                                      <a 
+                                        href={topic.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {message.relatedTopics.map((topic, idx) => (
+                                <div
+                                  key={idx}
+                                  className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                                  onClick={() => {
+                                    setSelectedBookmark(topic);
+                                    setShowModal(true);
+                                  }}
+                                >
+                                  <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                                    {topic.image ? (
+                                      <img 
+                                        src={topic.image} 
+                                        alt={topic.title}
+                                        className="w-full h-full object-cover rounded-2xl"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gray-100" />
+                                    )}
+                                  </div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-semibold text-lg truncate">{topic.title}</span>
+                                    {topic.url && (
+                                      <a 
+                                        href={topic.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                      </a>
+                                    )}
+                                  </div>
+                                  <div className="text-gray-500 text-sm truncate">{topic.summary}</div>
+                                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                    {(topic.tags || []).map((tag: string, i: number) => (
+                                      <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                    ))}
+                                    {(topic.collections || []).map((col: string, i: number) => (
+                                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                    ))}
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-2">
+                                    {new Date(topic.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        ) : null}
                       </div>
                     )}
                   </div>
