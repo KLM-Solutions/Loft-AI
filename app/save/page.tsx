@@ -533,7 +533,7 @@ export default function SavePage() {
                 <Label
                   htmlFor="summary"
                   style={{
-                fontSize: "0.875rem",
+                    fontSize: "0.875rem",
                     fontWeight: "500",
                     color: "#374151",
                     display: "block",
@@ -551,8 +551,8 @@ export default function SavePage() {
                     width: "100%",
                     minHeight: isMobile ? "100px" : "120px",
                     padding: isMobile ? "0.75rem" : "0.5rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "0.5rem",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "0.5rem",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     resize: "none",
                     fontFamily: "inherit",
@@ -560,47 +560,49 @@ export default function SavePage() {
                 />
               </div>
 
-              <div style={{ marginBottom: "1rem" }}>
-                <Label
-                  htmlFor="image"
-                  style={{
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                    color: "#374151",
-                    display: "block",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Note Preview
-                </Label>
-                <div
-                  style={{
-                    width: "100%",
-                    height: isMobile ? "200px" : "250px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "0.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "#f9fafb",
-                    overflow: "hidden",
-                  }}
-                >
-                  <img
-                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
-                    alt="Note Preview"
+              {!isMobile && (
+                <div style={{ marginBottom: "1rem" }}>
+                  <Label
+                    htmlFor="image"
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: "500",
+                      color: "#374151",
+                      display: "block",
+                      marginBottom: "0.25rem",
+                    }}
+                  >
+                    Note Preview
+                  </Label>
+                  <div
                     style={{
                       width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      padding: "2rem",
+                      height: isMobile ? "200px" : "250px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "0.5rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#f9fafb",
+                      overflow: "hidden",
                     }}
-                  />
+                  >
+                    <img
+                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
+                      alt="Note Preview"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        padding: "2rem",
+                      }}
+                    />
+                  </div>
+                  <p style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>
+                    This is the default note icon that will be used for your note
+                  </p>
                 </div>
-                <p style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>
-                  This is the default note icon that will be used for your note
-                </p>
-              </div>
+              )}
 
               <div>
                 <Label
