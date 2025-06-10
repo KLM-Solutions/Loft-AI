@@ -93,26 +93,57 @@ export default function SavePage() {
         console.log('Updated image preview with:', metadata.metadata.image);
       }
 
-      // Continue with the original functionality
-      const response = await fetch('/api/bookmarks', {
+      // Verify if the URL is from a social media platform
+      console.log('Starting URL verification process...');
+      const verifyResponse = await fetch('/api/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           url: formData.url,
-          image: selectedImage 
+          metadata: metadata.metadata
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to process URL');
+      if (!verifyResponse.ok) {
+        throw new Error('Failed to verify URL');
       }
 
-      const data = await response.json();
-      setTitleInput(data.title);
-      setSummaryInput(data.summary);
-      setShowInShortModal(true);
+      const verifyData = await verifyResponse.json();
+      const isSocialMedia = verifyData.isSocialMedia;
+      console.log('URL verification result:', { isSocialMedia });
+
+      if (isSocialMedia) {
+        console.log('Processing social media URL...');
+        // For social media links, use the title from metadata and let user write summary
+        setTitleInput(metadata.metadata.title || '');
+        console.log('Set title from metadata:', metadata.metadata.title);
+        setShowInShortModal(true);
+      } else {
+        console.log('Processing non-social media URL...');
+        // For non-social media links, use the existing bookmark creation flow
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            url: formData.url,
+            image: selectedImage 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process URL');
+        }
+
+        const data = await response.json();
+        console.log('Received bookmark data:', data);
+        setTitleInput(data.title);
+        setSummaryInput(data.summary);
+        setShowInShortModal(true);
+      }
     } catch (error) {
       console.error('Error processing URL:', error);
     } finally {
