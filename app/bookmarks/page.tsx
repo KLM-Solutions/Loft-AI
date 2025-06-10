@@ -1770,8 +1770,12 @@ export default function BookmarksPage() {
           </div>
 
           {/* Footer */}
-          <div className="mt-4 text-center text-xs text-gray-500 pb-4">
-            {/* ... */}
+          <div className="mt-2 text-center text-xs text-gray-500 pb-2">
+            <div className="flex justify-center items-center space-x-3">
+              <span>Powered by PxlBrain</span>
+              <span>Privacy</span>
+              <span>Report</span>
+            </div>
           </div>
         </main>
 
