@@ -885,57 +885,59 @@ export default function RunThroughPage() {
 
       {/* Add New Collection Modal */}
       {showNewCollectionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-auto p-6 flex flex-col items-center relative max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Create New Collection</h2>
-              <button 
-                onClick={() => setShowNewCollectionModal(false)} 
-                className="text-gray-500 hover:text-gray-700"
-                disabled={isCreatingCollection}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="mb-4">
-              <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
-                Collection Name
-              </label>
-              <input
-                type="text"
-                id="collectionName"
-                value={newCollectionName}
-                onChange={(e) => setNewCollectionName(e.target.value)}
-                placeholder="Enter collection name"
-                className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isCreatingCollection}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowNewCollectionModal(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50"
-                disabled={isCreatingCollection}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateCollection}
-                className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
-                  !newCollectionName.trim() || isCreatingCollection
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-500 text-white hover:bg-blue-600"
-                }`}
-                disabled={!newCollectionName.trim() || isCreatingCollection}
-              >
-                {isCreatingCollection ? (
-                  <div className="relative">
-                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                  </div>
-                ) : (
-                  'Create'
-                )}
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Create New Collection</h2>
+                <button 
+                  onClick={() => setShowNewCollectionModal(false)} 
+                  className="text-gray-500 hover:text-gray-700"
+                  disabled={isCreatingCollection}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mb-4">
+                <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Collection Name
+                </label>
+                <input
+                  type="text"
+                  id="collectionName"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  placeholder="Enter collection name"
+                  className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isCreatingCollection}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setShowNewCollectionModal(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50"
+                  disabled={isCreatingCollection}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCollection}
+                  className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
+                    !newCollectionName.trim() || isCreatingCollection
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
+                  disabled={!newCollectionName.trim() || isCreatingCollection}
+                >
+                  {isCreatingCollection ? (
+                    <div className="relative">
+                      <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                    </div>
+                  ) : (
+                    'Create'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
