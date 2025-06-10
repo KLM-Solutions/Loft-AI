@@ -22,6 +22,8 @@ import {
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn } from "@clerk/nextjs"
 import SaveModal from "@/components/save-modal"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 // Helper to convert ****text**** to **text**
 function normalizeBold(str: string) {
@@ -790,6 +792,47 @@ export default function BookmarksPage() {
       </div>
     </div>
   );
+
+  const handleUrlPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedUrl = e.clipboardData.getData('text');
+    if (!pastedUrl) return;
+
+    console.log('📋 URL pasted:', pastedUrl);
+
+    try {
+      setIsGenerating(true);
+      console.log('🔄 Fetching metadata from:', pastedUrl);
+      
+      const response = await fetch('/api/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: pastedUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to extract metadata');
+      }
+
+      const data = await response.json();
+      console.log('✅ Metadata received:', data.metadata);
+
+      if (data.success) {
+        setUrlInput(pastedUrl);
+        setTitleInput(data.metadata.title || '');
+        setSummaryInput(data.metadata.description || '');
+        if (data.metadata.image) {
+          setSelectedImage(data.metadata.image);
+        }
+        console.log('✨ Form updated with metadata');
+      }
+    } catch (error) {
+      console.error('❌ Error extracting metadata:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-[#f5f8fa] overflow-hidden">
@@ -1927,7 +1970,8 @@ export default function BookmarksPage() {
                               type="text"
                               value={urlInput}
                               onChange={(e) => setUrlInput(e.target.value)}
-                              placeholder="https://in.pinterest.com/pin/..."
+                              onPaste={handleUrlPaste}
+                              placeholder="https://example.com"
                               className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
                               disabled={isGenerating}
                             />

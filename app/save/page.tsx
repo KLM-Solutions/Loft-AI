@@ -33,6 +33,7 @@ export default function SavePage() {
   ])
   const [selectedImage, setSelectedImage] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState("")
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -68,6 +69,31 @@ export default function SavePage() {
       setIsGenerating(true);
       setTitleInput("");
       setSummaryInput("");
+
+      // First fetch metadata
+      console.log('Fetching metadata for URL:', formData.url);
+      const metadataResponse = await fetch('/api/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: formData.url }),
+      });
+
+      if (!metadataResponse.ok) {
+        throw new Error('Failed to fetch metadata');
+      }
+
+      const metadata = await metadataResponse.json();
+      console.log('Received metadata:', metadata);
+
+      // Update the image preview if metadata contains an image
+      if (metadata.metadata.image) {
+        setSelectedImage(metadata.metadata.image);
+        console.log('Updated image preview with:', metadata.metadata.image);
+      }
+
+      // Continue with the original functionality
       const response = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -92,7 +118,7 @@ export default function SavePage() {
     } finally {
       setIsGenerating(false);
     }
-  }
+  };
 
   const handleInShortSave = async () => {
     if (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0) {
