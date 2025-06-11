@@ -14,7 +14,7 @@ import {
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "InShort - Your bookmarks, remembered",
+  title: "Loft AI - Your bookmarks, remembered",
   description: "Save anything. Find it when it matters.",
 }
 

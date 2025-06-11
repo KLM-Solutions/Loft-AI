@@ -1455,7 +1455,7 @@ export default function SavePage() {
           <div style={{ marginBottom: "1rem" }}>
             <Label
               htmlFor="note"
-          style={{
+              style={{
                 fontSize: "0.875rem",
                 fontWeight: "500",
                 color: "#374151",
@@ -1483,46 +1483,110 @@ export default function SavePage() {
             />
           </div>
 
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-            <button
-              onClick={handleBack}
-              style={{
-                padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
-                fontSize: isMobile ? "0.875rem" : "0.75rem",
-                color: "#374151",
-                backgroundColor: "#F3F4F6",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor: "pointer",
-                fontWeight: "500",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={async () => {
-                if (!formData.note) return;
-                setTitleInput("");
-                setSummaryInput(formData.note);
-                setShowInShortModal(true);
-              }}
-              disabled={!formData.note}
-              style={{
-                padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
-                fontSize: isMobile ? "0.875rem" : "0.75rem",
-                color: "white",
-                backgroundColor: !formData.note ? "#9CA3AF" : "#3B82F6",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor: !formData.note ? "not-allowed" : "pointer",
-                fontWeight: "500",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              Continue
-            </button>
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                }}
+              >
+                <Upload style={{ height: "0.875rem", width: "0.875rem" }} />
+                Upload Image
+              </button>
+              <span style={{ fontSize: "0.75rem", color: "#6B7280" }}>(Optional)</span>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                style={{ display: "none" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                onClick={handleBack}
+                style={{
+                  padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
+                  fontSize: isMobile ? "0.875rem" : "0.75rem",
+                  color: "#374151",
+                  backgroundColor: "#F3F4F6",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: "pointer",
+                  fontWeight: "500",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!formData.note) return;
+                  setIsGenerating(true);
+                  try {
+                    const response = await fetch('/api/notes', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        note: formData.note
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to generate title and summary');
+                    }
+
+                    const data = await response.json();
+                    setTitleInput(data.title);
+                    setSummaryInput(data.summary);
+                    setShowInShortModal(true);
+                  } catch (error) {
+                    console.error('Error generating title and summary:', error);
+                    // If API fails, still show modal but with empty title/summary
+                    setTitleInput('');
+                    setSummaryInput(formData.note);
+                    setShowInShortModal(true);
+                  } finally {
+                    setIsGenerating(false);
+                  }
+                }}
+                disabled={!formData.note || isGenerating}
+                style={{
+                  padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
+                  fontSize: isMobile ? "0.875rem" : "0.75rem",
+                  color: "white",
+                  backgroundColor: !formData.note || isGenerating ? "#9CA3AF" : "#3B82F6",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: !formData.note || isGenerating ? "not-allowed" : "pointer",
+                  fontWeight: "500",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
+                    Generating...
+                  </>
+                ) : (
+                  "Continue"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -1655,34 +1719,6 @@ export default function SavePage() {
                   }}
                 />
               )}
-            </div>
-            <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#3b82f6",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: "pointer",
-                  fontSize: "0.875rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <Upload style={{ height: "1rem", width: "1rem" }} />
-                Upload Image
-              </button>
-              <span style={{ fontSize: "0.75rem", color: "#6B7280" }}>(Optional)</span>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                accept="image/*"
-                style={{ display: "none" }}
-              />
             </div>
           </div>
 

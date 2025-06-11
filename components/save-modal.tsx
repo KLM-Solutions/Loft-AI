@@ -19,29 +19,13 @@ export default function SaveModal({ isOpen, onClose }: SaveModalProps) {
     {
       id: "paste",
       icon: Link2,
-      title: "Paste from clipboard",
-      description: "https://in.pinterest.com/pin...",
+      title: "Paste a URL",
       onClick: () => handleOptionClick("paste"),
-    },
-    {
-      id: "upload",
-      icon: Upload,
-      title: "Upload",
-      description: "image, video, pdf, etc.",
-      onClick: () => handleOptionClick("upload"),
-    },
-    {
-      id: "snap",
-      icon: Camera,
-      title: "Take snap",
-      description: "Take photo or video",
-      onClick: () => handleOptionClick("snap"),
     },
     {
       id: "create",
       icon: Plus,
-      title: "Create",
-      description: "create new note",
+      title: "Create a note",
       onClick: () => handleOptionClick("create"),
     },
   ]
@@ -173,19 +157,9 @@ export default function SaveModal({ isOpen, onClose }: SaveModalProps) {
                       color: "#111827",
                       fontSize: "1rem",
                       lineHeight: "1.5",
-                      marginBottom: "0.125rem",
                     }}
                   >
                     {option.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#6b7280",
-                      lineHeight: "1.25",
-                    }}
-                  >
-                    {option.description}
                   </div>
                 </div>
               </button>
