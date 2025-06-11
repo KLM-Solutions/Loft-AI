@@ -1336,7 +1336,14 @@ export default function BookmarksPage() {
                       <div className="space-y-4 px-0">
                         {bookmarks.map((bm: any) => {
                           const isExpanded = expandedId === bm.id;
-  return (
+                          const totalTags = (bm.tags || []).length;
+                          const totalCollections = (bm.collections || []).length;
+                          const showTagCount = totalTags > 1;
+                          const showCollectionCount = totalCollections > 1;
+                          const firstTag = bm.tags?.[0];
+                          const firstCollection = bm.collections?.[0];
+
+                          return (
                             <div
                               key={bm.id}
                               className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
@@ -1370,46 +1377,51 @@ export default function BookmarksPage() {
                               )}
                               <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                                  {/* Launch icon at end of row for mobile, only when expanded */}
-                                  {isExpanded && bm.url && (
+                                  <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                  {bm.url && (
                                     <a 
                                       href={bm.url} 
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
-                                      className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
                                     >
                                       <ExternalLink className="h-4 w-4" />
                                     </a>
                                   )}
                                 </div>
-                                <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                  {(bm.tags || []).map((tag: string, i: number) => (
-                                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
-                                      <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
-                                      {tag}
-                                    </span>
-                                  ))}
-                                  {(bm.collections || []).map((col: string, i: number) => (
-                                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                  ))}
-                                </div>
+                                <div className="text-xs text-gray-400 mb-1">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                {isExpanded ? (
+                                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                    {(bm.tags || []).map((tag: string, i: number) => (
+                                      <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
+                                        <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                        {tag}
+                                      </span>
+                                    ))}
+                                    {(bm.collections || []).map((col: string, i: number) => (
+                                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    {firstTag && (
+                                      <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}>
+                                        <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                        {firstTag}
+                                        {showTagCount && <span className="ml-1">+{totalTags - 1}</span>}
+                                      </span>
+                                    )}
+                                    {firstCollection && (
+                                      <span className="bg-green-200 text-xs rounded px-2 py-0.5">
+                                        {firstCollection}
+                                        {showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              {/* Remove the launch icon from the bottom right for expanded mobile cards */}
-                              {(!isExpanded && bm.url) && (
-                                <a 
-                                  href={bm.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
                             </div>
                           );
                         })}
