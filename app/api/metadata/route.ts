@@ -16,7 +16,11 @@ export async function POST(request: Request) {
     }
 
     console.log('📥 Fetching webpage content...');
-    const { body: html, url: finalUrl } = await got(url);
+    const { body: html, url: finalUrl } = await got(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
     console.log('📄 HTML content received, length:', html.length);
 
     // Load HTML into cheerio
