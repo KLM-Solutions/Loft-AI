@@ -89,8 +89,28 @@ export default function SavePage() {
 
       // Update the image preview if metadata contains an image
       if (metadata.metadata.image) {
-        setSelectedImage(metadata.metadata.image);
-        console.log('Updated image preview with:', metadata.metadata.image);
+        // Convert relative URLs to absolute URLs
+        let imageUrl = metadata.metadata.image;
+        if (imageUrl.startsWith('/')) {
+          // If it's a relative URL, convert to absolute using the original URL's domain
+          const urlObj = new URL(formData.url);
+          imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+        }
+        
+        // Validate the image URL
+        try {
+          const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
+          if (imageResponse.ok) {
+            setSelectedImage(imageUrl);
+            console.log('Updated image preview with:', imageUrl);
+          } else {
+            console.warn('Image URL is not accessible:', imageUrl);
+            setError('Could not load image from the provided URL');
+          }
+        } catch (error) {
+          console.error('Error validating image URL:', error);
+          setError('Could not validate image URL');
+        }
       }
 
       // Verify if the URL is from a social media platform
@@ -146,6 +166,7 @@ export default function SavePage() {
       }
     } catch (error) {
       console.error('Error processing URL:', error);
+      setError('Failed to process URL. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -527,50 +548,6 @@ export default function SavePage() {
                   }}
                 />
               </div>
-
-              {!isMobile && (
-                <div style={{ marginBottom: "1rem" }}>
-                  <Label
-                    htmlFor="image"
-                    style={{
-                      fontSize: "0.875rem",
-                      fontWeight: "500",
-                      color: "#374151",
-                      display: "block",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    Note Preview
-                  </Label>
-                  <div
-                    style={{
-                      width: "100%",
-                      height: isMobile ? "200px" : "250px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "0.5rem",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#f9fafb",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
-                      alt="Note Preview"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        padding: "2rem",
-                      }}
-                    />
-                  </div>
-                  <p style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>
-                    This is the default note icon that will be used for your note
-                  </p>
-                </div>
-              )}
 
               <div>
                 <Label
