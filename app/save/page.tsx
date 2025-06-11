@@ -88,14 +88,9 @@ export default function SavePage() {
       console.log('Received metadata:', metadata);
 
       // Update the image preview if metadata contains an image
-      if (metadata.metadata.image) {
-        // Convert relative URLs to absolute URLs
-        let imageUrl = metadata.metadata.image;
-        if (imageUrl.startsWith('/')) {
-          // If it's a relative URL, convert to absolute using the original URL's domain
-          const urlObj = new URL(formData.url);
-          imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
-        }
+      if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
+        // Get the first image URL from ogImage array
+        let imageUrl = metadata.metadata.ogImage[0].url;
         
         // Validate the image URL
         try {
@@ -137,8 +132,8 @@ export default function SavePage() {
       if (isSocialMedia) {
         console.log('Processing social media URL...');
         // For social media links, use the title from metadata and let user write summary
-        setTitleInput(metadata.metadata.title || '');
-        console.log('Set title from metadata:', metadata.metadata.title);
+        setTitleInput(metadata.metadata.ogTitle || '');
+        console.log('Set title from metadata:', metadata.metadata.ogTitle);
         setShowInShortModal(true);
       } else {
         console.log('Processing non-social media URL...');
