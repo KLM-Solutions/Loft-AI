@@ -686,7 +686,7 @@ export default function LibraryPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
+        <main className="flex-1 min-h-0 flex flex-col px-4 md:px-8 bg-[#f5f8fa]">
           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
             <div className="mt-6">
               {/* Fixed All Bookmarks Header */}
@@ -870,15 +870,6 @@ export default function LibraryPage() {
           {/* Input Form - Fixed at bottom */}
           <div className="pt-4">
             {/* ... */}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-2 text-center text-xs text-gray-500 pb-2">
-            <div className="flex justify-center items-center space-x-3">
-              <span>Powered by PxlBrain</span>
-              <span>Privacy</span>
-              <span>Report</span>
-            </div>
           </div>
         </main>
 
