@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import got from 'got';
-import * as cheerio from 'cheerio';
+import ogs from 'open-graph-scraper';
 
 export async function POST(request: Request) {
   try {
@@ -15,47 +14,28 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('📥 Fetching webpage content...');
-    const { body: html, url: finalUrl } = await got(url, {
+    // Use open-graph-scraper
+    const options = {
+      url,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
-    });
-    console.log('📄 HTML content received, length:', html.length);
-
-    // Load HTML into cheerio
-    const $ = cheerio.load(html);
-
-    // Extract metadata
-    const metadata = {
-      // Open Graph tags
-      title: $('meta[property="og:title"]').attr('content') || $('title').text(),
-      description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content'),
-      image: $('meta[property="og:image"]').attr('content'),
-      url: $('meta[property="og:url"]').attr('content') || finalUrl,
-      site_name: $('meta[property="og:site_name"]').attr('content'),
-      type: $('meta[property="og:type"]').attr('content'),
-
-      // Twitter Card tags (fallback)
-      twitter_title: $('meta[name="twitter:title"]').attr('content'),
-      twitter_description: $('meta[name="twitter:description"]').attr('content'),
-      twitter_image: $('meta[name="twitter:image"]').attr('content'),
     };
+    const { error, result } = await ogs(options);
+    if (error) {
+      console.error('❌ Error extracting metadata:', result?.error || 'Unknown error');
+      return NextResponse.json(
+        { error: 'Failed to extract metadata', details: result?.error },
+        { status: 500 }
+      );
+    }
 
-    console.log('🔍 Extracted metadata:', {
-      title: metadata.title,
-      description: metadata.description?.substring(0, 100) + '...',
-      image: metadata.image,
-      url: metadata.url,
-      site_name: metadata.site_name,
-      type: metadata.type
-    });
-
+    // Log and return the result
+    console.log('🔍 Extracted metadata:', result);
     return NextResponse.json({
       success: true,
-      metadata
+      metadata: result
     });
-
   } catch (error) {
     console.error('❌ Error extracting metadata:', error);
     return NextResponse.json(
