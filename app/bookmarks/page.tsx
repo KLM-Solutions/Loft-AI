@@ -18,6 +18,7 @@ import {
   Settings,
   Loader2,
   ExternalLink,
+  Upload,
 } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn } from "@clerk/nextjs"
@@ -95,8 +96,9 @@ export default function BookmarksPage() {
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const DEFAULT_SUMMARY = "This is a sample description for the article you're saving.";
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [metadata, setMetadata] = useState<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   // Add temporary state for success modal
   const [tempSavedImage, setTempSavedImage] = useState<string | null>(null);
   const [tempSavedTags, setTempSavedTags] = useState<string[]>([]);
@@ -112,6 +114,7 @@ export default function BookmarksPage() {
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isLoadingLinks, setIsLoadingLinks] = useState(false)
   const [tagColorMap] = useState(new Map<string, string>());
+  const [error, setError] = useState("")
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -454,6 +457,44 @@ export default function BookmarksPage() {
       // Remove **** from title if present
       const cleanTitle = titleInput.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '$1');
       
+      // If there's no URL input, save as a note
+      if (!urlInput) {
+        const response = await fetch('/api/notes-save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: cleanTitle,
+            summary: summaryInput,
+            note: summaryInput, // Using summary as note content
+            image: selectedImage,
+            tags: selectedTags,
+            collections: collectionNames
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save note');
+        }
+
+        const data = await response.json();
+        setShowInShortModal(false);
+        setShowSaveModal(false);
+        setShowSuccessModal(true);
+        setSavedTitle(cleanTitle);
+        
+        // Reset form
+        setUrlInput('');
+        setTitleInput('');
+        setSummaryInput('');
+        setSelectedTags([]);
+        setSelectedCollections([]);
+        setSelectedImage(null);
+        return;
+      }
+      
+      // If there is a URL, proceed with bookmark save
       const response = await fetch('/api/bookmark-save', {
         method: 'POST',
         headers: {
@@ -487,7 +528,7 @@ export default function BookmarksPage() {
       setSelectedCollections([]);
       setSelectedImage(null);
     } catch (error) {
-      console.error('Error saving bookmark:', error);
+      console.error('Error saving:', error);
     } finally {
       setIsSaving(false);
     }
@@ -1878,34 +1919,99 @@ export default function BookmarksPage() {
                 {/* Content */}
                 <div className="flex-grow overflow-y-auto">
                   <div className="p-6">
-                    {/* Media Upload (shared) */}
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
-                      <p className="text-sm text-gray-500 mb-2 md:mb-4">
-                        Add your documents here, and you can upload up to 5 files max
-                      </p>
-                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
+                    {/* Initial Form Fields */}
+                    {!showInShortModal && (
+                      <>
+                        {/* URL Field */}
+                        <div className={`mb-6 ${summaryInput || selectedImage ? 'hidden' : 'block'}`}>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Enter link</h3>
+                          <input
+                            type="url"
+                            value={urlInput}
+                            onChange={(e) => {
+                              setUrlInput(e.target.value);
+                              if (e.target.value) {
+                                setSummaryInput('');
+                              }
+                            }}
+                            onPaste={handleUrlPaste}
+                            placeholder="https://example.com"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                          {selectedImage && (
+                            <div className="mt-4">
+                              <h3 className="text-sm font-medium text-gray-700 mb-2">Image Preview</h3>
+                              <div className="relative w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
+                                <img 
+                                  src={selectedImage} 
+                                  alt="Preview" 
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  onClick={() => setSelectedImage("")}
+                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Note Field */}
+                        <div className={`mb-6 ${urlInput ? 'hidden' : 'block'}`}>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Create a note</h3>
+                          <textarea
+                            value={summaryInput}
+                            onChange={(e) => {
+                              setSummaryInput(e.target.value);
+                              if (e.target.value) {
+                                setUrlInput('');
+                              }
+                            }}
+                            placeholder="Add a note..."
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            rows={4}
+                          />
+                          <div className="mt-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-3 py-1 text-sm text-blue-500 border border-blue-200 rounded-full hover:bg-blue-50 flex items-center gap-1"
+                              >
+                                <Upload className="h-4 w-4" />
+                                Upload Image
+                              </button>
+                              <span className="text-xs text-gray-500">(Optional)</span>
+                              <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                                className="hidden"
+                              />
+                            </div>
+                            <div className="w-full h-48 border-2 border-dashed border-gray-200 rounded-lg p-4 flex items-center justify-center bg-gray-50">
                         {selectedImage ? (
-                          <div className="relative w-full">
+                                <div className="relative w-full h-full">
                             <img 
                               src={selectedImage} 
                               alt="Uploaded" 
-                              className="w-full h-48 object-cover"
+                                    className="w-full h-full object-cover rounded-lg"
                             />
                             <button
-                              onClick={() => setSelectedImage(null)}
+                                    onClick={() => setSelectedImage("")}
                               className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                             >
                               <X className="h-4 w-4" />
                             </button>
                           </div>
                         ) : (
-                          <>
-                            <div className="mb-2 md:mb-4">
-                              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
-                                  className="h-5 w-5 md:h-6 md:w-6 text-white"
+                                      className="h-5 w-5 text-white"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
@@ -1918,7 +2024,242 @@ export default function BookmarksPage() {
                                   />
                                 </svg>
                               </div>
+                                  <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
+                                  <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB</p>
                             </div>
+                        )}
+                      </div>
+                    </div>
+                              </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-3 mt-6">
+                          <button
+                            onClick={closeSaveModal}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (urlInput) {
+                                // Handle URL paste
+                                try {
+                                  setIsGenerating(true);
+                                  setTitleInput("");
+                                  setSummaryInput("");
+
+                                  // First fetch metadata
+                                  const metadataResponse = await fetch('/api/metadata', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ url: urlInput }),
+                                  });
+
+                                  if (!metadataResponse.ok) {
+                                    throw new Error('Failed to fetch metadata');
+                                  }
+
+                                  const metadata = await metadataResponse.json();
+                                  setMetadata(metadata); // Store metadata in state
+
+                                  // Update the image preview if metadata contains an image
+                                  if (metadata.metadata.ogImage && metadata.metadata.ogImage[0]?.url) {
+                                    setSelectedImage(metadata.metadata.ogImage[0].url);
+                                  }
+
+                                  // Verify if the URL is from a social media platform
+                                  const verifyResponse = await fetch('/api/verify', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ 
+                                      url: urlInput,
+                                      metadata: metadata.metadata
+                                    }),
+                                  });
+
+                                  if (!verifyResponse.ok) {
+                                    throw new Error('Failed to verify URL');
+                                  }
+
+                                  const verifyData = await verifyResponse.json();
+                                  const isSocialMedia = verifyData.isSocialMedia;
+
+                                  if (isSocialMedia) {
+                                    setTitleInput(metadata.metadata.title || '');
+                                    // Keep the image from metadata for social media URLs
+                                    if (metadata.metadata.image) {
+                                      let imageUrl = metadata.metadata.image;
+                                      if (imageUrl.startsWith('/')) {
+                                        const urlObj = new URL(urlInput);
+                                        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+                                      }
+                                      setSelectedImage(imageUrl);
+                                    }
+                                    setShowInShortModal(true);
+                                  } else {
+                                    const response = await fetch('/api/bookmarks', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ 
+                                        url: urlInput,
+                                        image: selectedImage 
+                                      }),
+                                    });
+
+                                    if (!response.ok) {
+                                      throw new Error('Failed to process URL');
+                                    }
+
+                                    const data = await response.json();
+                                    setTitleInput(data.title);
+                                    setSummaryInput(data.summary);
+                                    // Keep the image from metadata for non-social media URLs
+                                    if (metadata.metadata.image) {
+                                      let imageUrl = metadata.metadata.image;
+                                      if (imageUrl.startsWith('/')) {
+                                        const urlObj = new URL(urlInput);
+                                        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+                                      }
+                                      setSelectedImage(imageUrl);
+                                    }
+                                    setShowInShortModal(true);
+                                  }
+                                } catch (error) {
+                                  console.error('Error processing URL:', error);
+                                  setError('Failed to process URL. Please try again.');
+                                } finally {
+                                  setIsGenerating(false);
+                                }
+                              } else if (summaryInput) {
+                                // Handle note creation
+                                try {
+                                  setIsGenerating(true);
+                                  const response = await fetch('/api/notes', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      note: summaryInput
+                                    }),
+                                  });
+
+                                  if (!response.ok) {
+                                    throw new Error('Failed to generate title and summary');
+                                  }
+
+                                  const data = await response.json();
+                                  setTitleInput(data.title);
+                                  setSummaryInput(data.summary);
+                                  setShowInShortModal(true);
+                                } catch (error) {
+                                  console.error('Error generating title and summary:', error);
+                                  setTitleInput('');
+                                  setSummaryInput(summaryInput);
+                                  setShowInShortModal(true);
+                                } finally {
+                                  setIsGenerating(false);
+                                }
+                              }
+                            }}
+                            disabled={(!urlInput && !summaryInput) || isGenerating}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
+                              (!urlInput && !summaryInput) || isGenerating
+                                ? 'bg-gray-300 cursor-not-allowed' 
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            {isGenerating ? (
+                              <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              </div>
+                            ) : (
+                              'Continue'
+                            )}
+                          </button>
+                          </div>
+                      </>
+                    )}
+
+                    {/* In-Short Modal Content */}
+                    {showInShortModal && (
+                      <div className="mt-6">
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Title</h3>
+                          <input
+                            type="text"
+                            value={titleInput}
+                            onChange={(e) => setTitleInput(e.target.value)}
+                            placeholder="Enter title"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                              </div>
+
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Summary</h3>
+                            <textarea
+                              value={summaryInput}
+                              onChange={(e) => setSummaryInput(e.target.value)}
+                            placeholder="Enter summary"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              rows={4}
+                            />
+                          </div>
+
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Image Preview</h3>
+                          <div className="w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
+                            {selectedImage ? (
+                              <div className="relative w-full h-full">
+                                <img 
+                                  src={selectedImage} 
+                                  alt="Preview" 
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                {urlInput && metadata?.metadata?.ogImage?.[0]?.url ? (
+                                  <div className="relative w-full h-full">
+                                    <img 
+                                      src={metadata.metadata.ogImage[0].url}
+                                      alt="Metadata Preview" 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="text-center">
+                                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5 text-white"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <p className="text-sm text-gray-500">No image selected</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-2">
+                            
                             <input
                               type="file"
                               ref={fileInputRef}
@@ -1926,116 +2267,29 @@ export default function BookmarksPage() {
                               accept="image/*"
                               className="hidden"
                             />
-                            <button 
-                              onClick={() => fileInputRef.current?.click()}
-                              className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
-                            >
-                              Browse the image file to upload
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 md:mt-2">
-                        Supported formats: JPG, PNG, GIF, SVG
-                      </p>
-                    </div>
-                    {/* --- FORM AREA: This is the only part that changes! --- */}
-                    {showInShortModal ? (
-                      <>
-                        {/* InShort Modal Form Fields */}
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={urlInput}
-                              onChange={(e) => setUrlInput(e.target.value)}
-                              onPaste={handleUrlPaste}
-                              placeholder="https://example.com"
-                              className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              disabled={isGenerating}
-                            />
-                            {isGenerating && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                              </div>
-                            )}
                           </div>
                         </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Title</h3>
-                          <input
-                            type="text"
-                            value={titleInput}
-                            onChange={(e) => setTitleInput(e.target.value)}
-                            placeholder={isGenerating ? "Generating title..." : "Title"}
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4"
-                            disabled={isGenerating}
-                          />
-                          {titleInput && (
-                            <div className="mt-2 p-4 bg-gray-50 rounded-xl">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
-                              <div className="prose prose-sm max-w-none">
-                                <ReactMarkdown>{titleInput}</ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Summary</h3>
-                          <div className="relative">
-                            <textarea
-                              value={summaryInput}
-                              onChange={(e) => setSummaryInput(e.target.value)}
-                              placeholder={isGenerating ? "Generating summary..." : "Summary"}
-                              className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4 pr-10"
-                              rows={4}
-                              disabled={isGenerating}
-                            />
-                          </div>
-                          {summaryInput && (
-                            <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
-                              <div className="prose prose-sm max-w-none">
-                                <ReactMarkdown>{summaryInput}</ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* Loft Modal Form Fields */}
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
-                          <input
-                            type="text"
-                            value={urlInput}
-                            onChange={(e) => setUrlInput(e.target.value)}
-                            placeholder="https://in.pinterest.com/pin/..."
-                            className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Tags <span className="text-red-500">*</span></h3>
+
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Tags <span className="text-red-500">*</span></h3>
                           <div className="relative">
                             <div className="flex flex-wrap gap-2 mb-2">
                               {selectedTags.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
                                 >
                                   {tag}
                                   <button
                                     onClick={() => removeTag(tag)}
-                                    className="ml-1 text-blue-500 hover:text-blue-700"
+                                    className="ml-2 text-blue-500"
                                   >
                                     <X className="h-3 w-3" />
                                   </button>
                                 </span>
                               ))}
                             </div>
-                          <div className="flex items-center border border-gray-300 rounded-full p-2">
+                            <div className="flex items-center border border-gray-300 rounded-full px-3 py-2">
                             <input
                               type="text"
                               value={tagInput}
@@ -2044,12 +2298,12 @@ export default function BookmarksPage() {
                                 onBlur={handleTagInputBlur}
                                 onKeyDown={handleTagInputKeyDown}
                                 placeholder="Type and press Enter to add a tag"
-                              className="flex-1 focus:outline-none rounded-full"
+                                className="flex-1 border-none outline-none bg-transparent"
                             />
                               <button 
                                 onClick={() => {
-                                  setShowTagDropdown(!showTagDropdown)
-                                  setShowCollectionDropdown(false)
+                                  setShowTagDropdown(!showTagDropdown);
+                                  setShowCollectionDropdown(false);
                                 }}
                                 className="text-blue-500"
                               >
@@ -2057,11 +2311,12 @@ export default function BookmarksPage() {
                             </button>
                             </div>
                             {showTagDropdown && (
-                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+                                <div className="flex flex-wrap gap-2">
                                 {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
                                   <button
                                     onClick={() => addTag(tagInput.trim())}
-                                    className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
+                                      className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
                                   >
                                     Add "{tagInput.trim()}"
                                   </button>
@@ -2072,42 +2327,41 @@ export default function BookmarksPage() {
                                     <button
                                       key={tag}
                                       onClick={() => addTag(tag)}
-                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                                        className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
                                     >
                                       {tag}
                                     </button>
                                   ))}
+                                </div>
                               </div>
                             )}
                           </div>
                         </div>
-                      </>
-                    )}
-                    {/* Add to Collection (shared) */}
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Add to Collection <span className="text-red-500">*</span></h3>
+
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Add to Collection <span className="text-red-500">*</span></h3>
                       <div className="relative">
                         <div className="flex flex-wrap gap-2 mb-2">
                           {selectedCollections.map((collectionId) => {
-                            const collection = availableCollections.find(c => c.id === collectionId)
+                                const collection = availableCollections.find(c => c.id === collectionId);
                             return collection ? (
                               <span
                                 key={collection.id}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
                               >
-                                <div className={`w-3 h-3 ${collection.color} rounded-sm mr-1`}></div>
+                                    <div className={`w-2 h-2 rounded-sm ${collection.color} mr-2`}></div>
                                 {collection.name}
                         <button
-                                  onClick={() => setSelectedCollections(selectedCollections.filter(id => id !== collectionId))}
-                                  className="ml-1 text-blue-500 hover:text-blue-700"
+                                      onClick={() => toggleCollection(collection.id)}
+                                      className="ml-2 text-blue-500"
                                 >
                                   <X className="h-3 w-3" />
                         </button>
                               </span>
-                            ) : null
+                                ) : null;
                           })}
                         </div>
-                        <div className="flex items-center border border-gray-300 rounded-full p-2">
+                            <div className="flex items-center border border-gray-300 rounded-full px-3 py-2">
                           <input
                             type="text"
                             value={collectionInput}
@@ -2116,12 +2370,12 @@ export default function BookmarksPage() {
                             onBlur={handleCollectionInputBlur}
                             onKeyDown={handleCollectionInputKeyDown}
                             placeholder="Type and press Enter to add a collection"
-                            className="flex-1 focus:outline-none rounded-full"
+                                className="flex-1 border-none outline-none bg-transparent"
                           />
                         <button
                             onClick={() => {
-                              setShowCollectionDropdown(!showCollectionDropdown)
-                              setShowTagDropdown(false)
+                                  setShowCollectionDropdown(!showCollectionDropdown);
+                                  setShowTagDropdown(false);
                             }}
                             className="text-blue-500"
                           >
@@ -2129,12 +2383,13 @@ export default function BookmarksPage() {
                         </button>
                         </div>
                         {showCollectionDropdown && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
+                                <div className="flex flex-wrap gap-2">
                             {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                               <button
                                 onClick={() => {
                                   const newCollection = {
-                                    id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-') ,
+                                          id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
                                     name: collectionInput.trim(),
                                     color: "bg-gray-500"
                                   };
@@ -2144,7 +2399,7 @@ export default function BookmarksPage() {
                                   }
                                   setCollectionInput("");
                                 }}
-                                className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
+                                      className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
                               >
                                 Add "{collectionInput.trim()}"
                               </button>
@@ -2154,48 +2409,40 @@ export default function BookmarksPage() {
                               .map((collection) => (
                                 <button
                                   key={collection.id}
-                                  onClick={() => {
-                                    if (!selectedCollections.includes(collection.id)) {
-                                      setSelectedCollections([...selectedCollections, collection.id]);
-                                    }
-                                  }}
-                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
-                                >
-                                  <div className={`w-4 h-4 ${collection.color} rounded-sm mr-2`}></div>
-                                  <span className="text-sm">{collection.name}</span>
+                                        onClick={() => toggleCollection(collection.id)}
+                                        className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700 flex items-center gap-2"
+                                      >
+                                        <div className={`w-2 h-2 rounded-sm ${collection.color}`}></div>
+                                        {collection.name}
                                 </button>
                               ))}
+                                </div>
                           </div>
                         )}
                       </div>
                     </div>
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-2 mt-4">
+
+                        <div className="flex justify-end gap-3 mt-6">
                       <button
-                        onClick={closeSaveModal}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50"
-                        disabled={isGenerating || isSaving}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={showInShortModal ? handleInShortSave : handleSave}
-                        className={`px-4 py-2 rounded-full flex items-center justify-center min-w-[80px] ${
-                          (!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving)
+                            onClick={handleInShortSave}
+                            disabled={!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
+                              !titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving
                             ? 'bg-gray-300 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        }`}
-                        disabled={!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving}
-                      >
-                        {isGenerating || isSaving ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : showInShortModal ? (
-                          'Save'
-                        ) : (
-                          'Next'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            {isSaving ? (
+                              <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              </div>
+                            ) : (
+                              'Save'
                         )}
                       </button>
                     </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {/* Footer (shared) */}
