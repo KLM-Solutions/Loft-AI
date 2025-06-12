@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Upload, Camera, Plus, X, Loader2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SavePage() {
   const router = useRouter()
@@ -46,6 +47,7 @@ export default function SavePage() {
   });
   const [isLoadingCollections, setIsLoadingCollections] = useState(false);
   const [collectionsError, setCollectionsError] = useState("");
+  const { toast } = useToast()
 
   const tagColors = [
     "bg-red-100 text-red-700 border-red-200",
@@ -237,7 +239,23 @@ export default function SavePage() {
       }
     } catch (error) {
       console.error('Error processing URL:', error);
-      setError('Failed to process URL. Please try again.');
+      if (error instanceof Error && error.message === 'Failed to fetch metadata') {
+        setError('Unable to process this URL. The link might be encrypted or restricted. Please try a different URL.');
+        toast({
+          variant: "destructive",
+          title: "URL Processing Error",
+          description: "Unable to process this URL. The link might be encrypted or restricted. Please try a different URL.",
+          className: "bg-red-50 border-red-200"
+        });
+      } else {
+        setError('Failed to process URL. Please try again.');
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to process URL. Please try again.",
+          className: "bg-red-50 border-red-200"
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -693,6 +711,7 @@ export default function SavePage() {
                         outline: "none",
                         fontSize: isMobile ? "1rem" : "0.875rem",
                         backgroundColor: "transparent",
+                        boxShadow: "none",
                       }}
                     />
                     <button
@@ -834,6 +853,7 @@ export default function SavePage() {
                         outline: "none",
                         fontSize: isMobile ? "1rem" : "0.875rem",
                         backgroundColor: "transparent",
+                        boxShadow: "none",
                       }}
                     />
                     <button
@@ -1283,6 +1303,7 @@ export default function SavePage() {
                     outline: "none",
               fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -1424,6 +1445,7 @@ export default function SavePage() {
                     outline: "none",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -1948,6 +1970,7 @@ export default function SavePage() {
                     outline: "none",
               fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -2089,6 +2112,7 @@ export default function SavePage() {
                     outline: "none",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
