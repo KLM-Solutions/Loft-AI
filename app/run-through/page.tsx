@@ -464,8 +464,8 @@ export default function RunThroughPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-h-0 flex flex-col px-4 md:px-8 bg-[#f5f8fa]">
-          <div className="flex-1 overflow-y-auto space-y-4 pb-20 md:pb-4">
+        <main className="flex-1 min-h-0 flex flex-col px-4 md:px-8 bg-[#f5f8fa] overflow-y-auto">
+          <div className="flex-1 space-y-4 pb-20 md:pb-4">
             {messages.length === 0 ? (
               // Default Content
               <div className="flex flex-col h-full md:justify-center">
