@@ -87,25 +87,9 @@ export default function SavePage() {
       const metadata = await metadataResponse.json();
       console.log('Received metadata:', metadata);
 
-      // Update the image preview if metadata contains an image
+      // Always update the image preview if metadata contains an ogImage
       if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
-        // Get the first image URL from ogImage array
-        let imageUrl = metadata.metadata.ogImage[0].url;
-        
-        // Validate the image URL
-        try {
-          const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
-          if (imageResponse.ok) {
-            setSelectedImage(imageUrl);
-            console.log('Updated image preview with:', imageUrl);
-          } else {
-            console.warn('Image URL is not accessible:', imageUrl);
-            setError('Could not load image from the provided URL');
-          }
-        } catch (error) {
-          console.error('Error validating image URL:', error);
-          setError('Could not validate image URL');
-        }
+        setSelectedImage(metadata.metadata.ogImage[0].url);
       }
 
       // Verify if the URL is from a social media platform

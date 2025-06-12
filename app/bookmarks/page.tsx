@@ -115,6 +115,8 @@ export default function BookmarksPage() {
   const [isLoadingLinks, setIsLoadingLinks] = useState(false)
   const [tagColorMap] = useState(new Map<string, string>());
   const [error, setError] = useState("")
+  const [availableTags, setAvailableTags] = useState<any[]>([]);
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -278,7 +280,17 @@ export default function BookmarksPage() {
 
   // Close save modal
   const closeSaveModal = () => {
-    setShowSaveModal(false)
+    setShowSaveModal(false);
+    setUrlInput("");
+    setSummaryInput("");
+    setTitleInput("");
+    setSelectedImage(null);
+    setSelectedTags([]);
+    setSelectedCollections([]);
+    setTagInput("");
+    setCollectionInput("");
+    setMetadata(null);
+    setError("");
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -437,98 +449,47 @@ export default function BookmarksPage() {
   )
 
   const handleInShortSave = async () => {
-    if (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0) {
+    if (!titleInput.trim() || !summaryInput.trim() || selectedCollections.length === 0) {
+      setError("Please fill in all required fields");
       return;
     }
 
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      // Store temporary values for success modal
-      setTempSavedImage(selectedImage);
-      setTempSavedTags([...selectedTags]);
-      setTempSavedCollections([...selectedCollections]);
-      
-      // Convert collection IDs to names
-      const collectionNames = selectedCollections.map(collectionId => {
-        const collection = availableCollections.find(c => c.id === collectionId);
-        return collection ? collection.name : collectionId;
-      });
-
-      // Remove **** from title if present
-      const cleanTitle = titleInput.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '$1');
-      
-      // If there's no URL input, save as a note
-      if (!urlInput) {
-        const response = await fetch('/api/notes-save', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: cleanTitle,
-            summary: summaryInput,
-            note: summaryInput, // Using summary as note content
-            image: selectedImage,
-            tags: selectedTags,
-            collections: collectionNames
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to save note');
-        }
-
-        const data = await response.json();
-        setShowInShortModal(false);
-        setShowSaveModal(false);
-        setShowSuccessModal(true);
-        setSavedTitle(cleanTitle);
-        
-        // Reset form
-        setUrlInput('');
-        setTitleInput('');
-        setSummaryInput('');
-        setSelectedTags([]);
-        setSelectedCollections([]);
-        setSelectedImage(null);
-        return;
-      }
-      
-      // If there is a URL, proceed with bookmark save
-      const response = await fetch('/api/bookmark-save', {
-        method: 'POST',
+      const response = await fetch("/api/bookmarks", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title: cleanTitle,
-          summary: summaryInput,
-          url: urlInput,
-          image: selectedImage,
+          title: titleInput.trim(),
+          summary: summaryInput.trim(),
+          collections: selectedCollections,
           tags: selectedTags,
-          collections: collectionNames
+          image: selectedImage,
+          type: "inshort"
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save bookmark');
+        throw new Error("Failed to save bookmark");
       }
 
       const data = await response.json();
-      setShowInShortModal(false);
-      setShowSaveModal(false);
-      setShowSuccessModal(true);
-      setSavedTitle(cleanTitle);
-      
-      // Reset form
-      setUrlInput('');
-      setTitleInput('');
-      setSummaryInput('');
-      setSelectedTags([]);
-      setSelectedCollections([]);
-      setSelectedImage(null);
+      if (data.success) {
+        setSavedTitle(titleInput);
+        setShowInShortModal(false);
+        setShowSuccessModal(true);
+        setTitleInput("");
+        setSummaryInput("");
+        setSelectedTags([]);
+        setSelectedCollections([]);
+        setSelectedImage(null);
+        setError("");
+      }
     } catch (error) {
-      console.error('Error saving:', error);
+      console.error("Error saving bookmark:", error);
+      setError("Failed to save bookmark. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -855,25 +816,9 @@ export default function BookmarksPage() {
       const metadata = await metadataResponse.json();
       console.log('Received metadata:', metadata);
 
-      // Update the image preview if metadata contains an image
+      // Always update the image preview if metadata contains an ogImage
       if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
-        // Get the first image URL from ogImage array
-        let imageUrl = metadata.metadata.ogImage[0].url;
-        
-        // Validate the image URL
-        try {
-          const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
-          if (imageResponse.ok) {
-            setSelectedImage(imageUrl);
-            console.log('Updated image preview with:', imageUrl);
-          } else {
-            console.warn('Image URL is not accessible:', imageUrl);
-            setError('Could not load image from the provided URL');
-          }
-        } catch (error) {
-          console.error('Error validating image URL:', error);
-          setError('Could not validate image URL');
-        }
+        setSelectedImage(metadata.metadata.ogImage[0].url);
       }
 
       // Verify if the URL is from a social media platform
@@ -932,6 +877,73 @@ export default function BookmarksPage() {
       setError('Failed to process URL. Please try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Add this function after the other fetch functions
+  const fetchCollections = async () => {
+    try {
+      const response = await fetch('/api/collections');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableCollections(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error);
+    }
+  };
+
+  // Add this useEffect to fetch collections when the component mounts
+  useEffect(() => {
+    fetchCollections();
+  }, []);
+
+  // Add this function after the other fetch functions
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  // Add this useEffect to fetch tags when the component mounts
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  // Add this function to handle tag creation
+  const handleCreateTag = async () => {
+    if (!tagInput.trim()) return;
+    
+    setIsCreatingTag(true);
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: tagInput.trim(),
+          color: getRandomColor(),
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(prev => [...prev, data.data]);
+        setSelectedTags(prev => [...prev, data.data.name]);
+        setTagInput('');
+        setShowTagDropdown(false);
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error);
+    } finally {
+      setIsCreatingTag(false);
     }
   };
 
@@ -2343,157 +2355,147 @@ export default function BookmarksPage() {
                           </div>
                         </div>
 
+                        {/* Tags Section */}
                         <div className="mb-6">
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">Tags <span className="text-red-500">*</span></h3>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 rounded-xl">Tags <span className="text-red-500">*</span></h3>
+                          {/* Tags Dropdown */}
                           <div className="relative">
                             <div className="flex flex-wrap gap-2 mb-2">
                               {selectedTags.map((tag) => (
-                                <span
+                                <div
                                   key={tag}
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm"
                                 >
-                                  {tag}
+                                  <span>{tag}</span>
                                   <button
                                     onClick={() => removeTag(tag)}
-                                    className="ml-2 text-blue-500"
+                                    className="text-gray-500 hover:text-gray-700"
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X className="w-3 h-3" />
                                   </button>
-                                </span>
+                                </div>
                               ))}
                             </div>
-                            <div className="flex items-center border border-gray-300 rounded-full px-3 py-2">
-                            <input
-                              type="text"
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                                onFocus={handleTagInputFocus}
-                                onBlur={handleTagInputBlur}
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onFocus={() => setShowTagDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
                                 onKeyDown={handleTagInputKeyDown}
-                                placeholder="Type and press Enter to add a tag"
-                                className="flex-1 border-none outline-none bg-transparent"
-                            />
-                              <button 
-                                onClick={() => {
-                                  setShowTagDropdown(!showTagDropdown);
-                                  setShowCollectionDropdown(false);
-                                }}
-                                className="text-blue-500"
-                              >
-                              <Plus className="h-5 w-5" />
-                            </button>
-                            </div>
-                            {showTagDropdown && (
-                              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
-                                <div className="flex flex-wrap gap-2">
-                                {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
-                                  <button
-                                    onClick={() => addTag(tagInput.trim())}
-                                      className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                                  >
-                                    Add "{tagInput.trim()}"
-                                  </button>
-                                )}
-                                {defaultTags
-                                  .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                                  .map((tag) => (
+                                placeholder="Add tags..."
+                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              {showTagDropdown && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
+                                  {tagInput && !availableTags.some(t => t.name.toLowerCase() === tagInput.toLowerCase()) && (
                                     <button
-                                      key={tag}
-                                      onClick={() => addTag(tag)}
-                                        className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                      onClick={handleCreateTag}
+                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 rounded-t-xl"
                                     >
-                                      {tag}
+                                      <Plus className="w-4 h-4" />
+                                      Create "{tagInput}"
                                     </button>
-                                  ))}
+                                  )}
+                                  {availableTags
+                                    .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                                    .map((tag, index, array) => (
+                                      <button
+                                        key={tag.id}
+                                        onClick={() => {
+                                          if (!selectedTags.includes(tag.name)) {
+                                            setSelectedTags([...selectedTags, tag.name]);
+                                          }
+                                          setTagInput('');
+                                          setShowTagDropdown(false);
+                                        }}
+                                        className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                          index === array.length - 1 ? 'rounded-b-xl' : ''
+                                        }`}
+                                      >
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                                        {tag.name}
+                                      </button>
+                                    ))}
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
 
+                        {/* Collections Section */}
                         <div className="mb-6">
-                          <h3 className="text-sm font-medium text-gray-700 mb-2">Add to Collection <span className="text-red-500">*</span></h3>
-                      <div className="relative">
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {selectedCollections.map((collectionId) => {
-                                const collection = availableCollections.find(c => c.id === collectionId);
-                            return collection ? (
-                              <span
-                                key={collection.id}
-                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                              >
-                                    <div className={`w-2 h-2 rounded-sm ${collection.color} mr-2`}></div>
-                                {collection.name}
-                        <button
-                                      onClick={() => toggleCollection(collection.id)}
-                                      className="ml-2 text-blue-500"
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 rounded-xl">Add to Collection <span className="text-red-500">*</span></h3>
+                          {/* Collections Dropdown */}
+                          <div className="relative">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {selectedCollections.map((collection) => (
+                                <div
+                                  key={collection}
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm"
                                 >
-                                  <X className="h-3 w-3" />
-                        </button>
-                              </span>
-                                ) : null;
-                          })}
-                        </div>
-                            <div className="flex items-center border border-gray-300 rounded-full px-3 py-2">
-                          <input
-                            type="text"
-                            value={collectionInput}
-                            onChange={(e) => setCollectionInput(e.target.value)}
-                            onFocus={handleCollectionInputFocus}
-                            onBlur={handleCollectionInputBlur}
-                            onKeyDown={handleCollectionInputKeyDown}
-                            placeholder="Type and press Enter to add a collection"
-                                className="flex-1 border-none outline-none bg-transparent"
-                          />
-                        <button
-                            onClick={() => {
-                                  setShowCollectionDropdown(!showCollectionDropdown);
-                                  setShowTagDropdown(false);
-                            }}
-                            className="text-blue-500"
-                          >
-                            <Plus className="h-5 w-5" />
-                        </button>
-                        </div>
-                        {showCollectionDropdown && (
-                              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2">
-                                <div className="flex flex-wrap gap-2">
-                            {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                              <button
-                                onClick={() => {
-                                  const newCollection = {
-                                          id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                                    name: collectionInput.trim(),
-                                    color: "bg-gray-500"
-                                  };
-                                  setAvailableCollections([...availableCollections, newCollection]);
-                                  if (!selectedCollections.includes(newCollection.id)) {
-                                    setSelectedCollections([...selectedCollections, newCollection.id]);
-                                  }
-                                  setCollectionInput("");
-                                }}
-                                      className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                              >
-                                Add "{collectionInput.trim()}"
-                              </button>
-                            )}
-                            {availableCollections
-                              .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                              .map((collection) => (
-                                <button
-                                  key={collection.id}
-                                        onClick={() => toggleCollection(collection.id)}
-                                        className="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700 flex items-center gap-2"
-                                      >
-                                        <div className={`w-2 h-2 rounded-sm ${collection.color}`}></div>
-                                        {collection.name}
-                                </button>
-                              ))}
+                                  <span>{collection}</span>
+                                  <button
+                                    onClick={() => removeTag(collection)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
                                 </div>
+                              ))}
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={collectionInput}
+                                onChange={(e) => setCollectionInput(e.target.value)}
+                                onFocus={() => setShowCollectionDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowCollectionDropdown(false), 200)}
+                                onKeyDown={handleCollectionInputKeyDown}
+                                placeholder="Add to collection..."
+                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              {showCollectionDropdown && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
+                                  {collectionInput && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.toLowerCase()) && (
+                                    <button
+                                      onClick={() => {
+                                        setNewCollectionName(collectionInput);
+                                        setShowNewCollectionModal(true);
+                                        setShowCollectionDropdown(false);
+                                      }}
+                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 rounded-t-xl"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                      Create "{collectionInput}"
+                                    </button>
+                                  )}
+                                  {availableCollections
+                                    .filter(c => c.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                                    .map((collection, index, array) => (
+                                      <button
+                                        key={collection.id}
+                                        onClick={() => {
+                                          if (!selectedCollections.includes(collection.name)) {
+                                            setSelectedCollections([...selectedCollections, collection.name]);
+                                          }
+                                          setCollectionInput('');
+                                          setShowCollectionDropdown(false);
+                                        }}
+                                        className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                          index === array.length - 1 ? 'rounded-b-xl' : ''
+                                        }`}
+                                      >
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: collection.color }} />
+                                        {collection.name}
+                                      </button>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
 
                         <div className="flex justify-end gap-3 mt-6">
                       <button
@@ -2658,59 +2660,33 @@ export default function BookmarksPage() {
         ) : null}
         {/* New Collection Modal */}
         {showNewCollectionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Create New Collection</h2>
-                  <button 
-                    onClick={() => setShowNewCollectionModal(false)} 
-                    className="text-gray-500 hover:text-gray-700"
-                    disabled={isCreatingCollection}
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Collection Name
-                  </label>
-                  <input
-                    type="text"
-                    id="collectionName"
-                    value={newCollectionName}
-                    onChange={(e) => setNewCollectionName(e.target.value)}
-                    placeholder="Enter collection name"
-                    className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isCreatingCollection}
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setShowNewCollectionModal(false)}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50"
-                    disabled={isCreatingCollection}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateCollection}
-                    className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
-                      !newCollectionName.trim() || isCreatingCollection
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                    disabled={!newCollectionName.trim() || isCreatingCollection}
-                  >
-                    {isCreatingCollection ? (
-                      <div className="relative">
-                        <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                      </div>
-                    ) : (
-                      'Create'
-                    )}
-                  </button>
-                </div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-96">
+              <h3 className="text-lg font-semibold mb-4 rounded-xl">Create New Collection</h3>
+              <input
+                type="text"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                placeholder="Collection name"
+                className="w-full px-3 py-2 border rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowNewCollectionModal(false);
+                    setNewCollectionName('');
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCollection}
+                  disabled={isCreatingCollection}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isCreatingCollection ? 'Creating...' : 'Create'}
+                </button>
               </div>
             </div>
           </div>
