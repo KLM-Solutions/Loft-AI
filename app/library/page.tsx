@@ -260,7 +260,7 @@ export default function LibraryPage() {
       setIsGenerating(true);
       setTitleInput("");
       setSummaryInput("");
-      const response = await fetch('/api/bookmarks', {
+      const response = await fetch('/api/bookmark-save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

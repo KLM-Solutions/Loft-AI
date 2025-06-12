@@ -457,7 +457,10 @@ export default function BookmarksPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch("/api/bookmarks", {
+      // Use default note image if no image is selected
+      const imageToUse = selectedImage || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4=";
+
+      const response = await fetch("/api/bookmark-save", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -467,7 +470,7 @@ export default function BookmarksPage() {
           summary: summaryInput.trim(),
           collections: selectedCollections,
           tags: selectedTags,
-          image: selectedImage,
+          image: imageToUse,
           type: "inshort"
         }),
       });
@@ -483,6 +486,7 @@ export default function BookmarksPage() {
         setShowSuccessModal(true);
         setTitleInput("");
         setSummaryInput("");
+        setUrlInput("");
         setSelectedTags([]);
         setSelectedCollections([]);
         setSelectedImage(null);
@@ -2312,35 +2316,16 @@ export default function BookmarksPage() {
                               </div>
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                                {urlInput && metadata?.metadata?.ogImage?.[0]?.url ? (
-                                  <div className="relative w-full h-full">
-                                    <img 
-                                      src={metadata.metadata.ogImage[0].url}
-                                      alt="Metadata Preview" 
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="text-center">
-                                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-white"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
-                                        />
-                                      </svg>
-                                    </div>
-                                    <p className="text-sm text-gray-500">No image selected</p>
-                                  </div>
-                                )}
+                                <img 
+                                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
+                                  alt="Note Preview"
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                    padding: "2rem",
+                                  }}
+                                />
                               </div>
                             )}
                           </div>
