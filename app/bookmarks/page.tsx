@@ -830,41 +830,106 @@ export default function BookmarksPage() {
   );
 
   const handleUrlPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pastedUrl = e.clipboardData.getData('text');
-    if (!pastedUrl) return;
-
-    console.log('📋 URL pasted:', pastedUrl);
+    const url = e.clipboardData.getData('text');
+    if (!url) return;
 
     try {
       setIsGenerating(true);
-      console.log('🔄 Fetching metadata from:', pastedUrl);
-      
-      const response = await fetch('/api/metadata', {
+      setTitleInput("");
+      setSummaryInput("");
+
+      // First fetch metadata
+      console.log('Fetching metadata for URL:', url);
+      const metadataResponse = await fetch('/api/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: pastedUrl }),
+        body: JSON.stringify({ url }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to extract metadata');
+      if (!metadataResponse.ok) {
+        throw new Error('Failed to fetch metadata');
       }
 
-      const data = await response.json();
-      console.log('✅ Metadata received:', data.metadata);
+      const metadata = await metadataResponse.json();
+      console.log('Received metadata:', metadata);
 
-      if (data.success) {
-        setUrlInput(pastedUrl);
-        setTitleInput(data.metadata.title || '');
-        setSummaryInput(data.metadata.description || '');
-        if (data.metadata.image) {
-          setSelectedImage(data.metadata.image);
+      // Update the image preview if metadata contains an image
+      if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
+        // Get the first image URL from ogImage array
+        let imageUrl = metadata.metadata.ogImage[0].url;
+        
+        // Validate the image URL
+        try {
+          const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
+          if (imageResponse.ok) {
+            setSelectedImage(imageUrl);
+            console.log('Updated image preview with:', imageUrl);
+          } else {
+            console.warn('Image URL is not accessible:', imageUrl);
+            setError('Could not load image from the provided URL');
+          }
+        } catch (error) {
+          console.error('Error validating image URL:', error);
+          setError('Could not validate image URL');
         }
-        console.log('✨ Form updated with metadata');
+      }
+
+      // Verify if the URL is from a social media platform
+      console.log('Starting URL verification process...');
+      const verifyResponse = await fetch('/api/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          url,
+          metadata: metadata.metadata
+        }),
+      });
+
+      if (!verifyResponse.ok) {
+        throw new Error('Failed to verify URL');
+      }
+
+      const verifyData = await verifyResponse.json();
+      const isSocialMedia = verifyData.isSocialMedia;
+      console.log('URL verification result:', { isSocialMedia });
+
+      if (isSocialMedia) {
+        console.log('Processing social media URL...');
+        // For social media links, use the title from metadata and let user write summary
+        setTitleInput(metadata.metadata.ogTitle || '');
+        console.log('Set title from metadata:', metadata.metadata.ogTitle);
+        setShowInShortModal(true);
+      } else {
+        console.log('Processing non-social media URL...');
+        // For non-social media links, use the existing bookmark creation flow
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            url,
+            image: selectedImage 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process URL');
+        }
+
+        const data = await response.json();
+        console.log('Received bookmark data:', data);
+        setTitleInput(data.title);
+        setSummaryInput(data.summary);
+        setShowInShortModal(true);
       }
     } catch (error) {
-      console.error('❌ Error extracting metadata:', error);
+      console.error('Error processing URL:', error);
+      setError('Failed to process URL. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -1922,8 +1987,8 @@ export default function BookmarksPage() {
                     {/* Initial Form Fields */}
                     {!showInShortModal && (
                       <>
-                        {/* URL Field */}
-                        <div className={`mb-6 ${summaryInput || selectedImage ? 'hidden' : 'block'}`}>
+                        {/* URL Field - only show if no note is being created */}
+                        <div className={`mb-6 ${summaryInput ? 'hidden' : 'block'}`}>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">Enter link</h3>
                           <input
                             type="url"
@@ -1934,9 +1999,17 @@ export default function BookmarksPage() {
                                 setSummaryInput('');
                               }
                             }}
-                            onPaste={handleUrlPaste}
+                            onPaste={(e) => {
+                              const pastedText = e.clipboardData.getData('text');
+                              setUrlInput(pastedText);
+                              if (pastedText) {
+                                setSummaryInput('');
+                              }
+                              handleUrlPaste(e);
+                            }}
                             placeholder="https://example.com"
                             className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            disabled={isGenerating}
                           />
                           {selectedImage && (
                             <div className="mt-4">
@@ -1958,7 +2031,7 @@ export default function BookmarksPage() {
                           )}
                         </div>
 
-                        {/* Note Field */}
+                        {/* Note Field - only show if no URL is being pasted/typed */}
                         <div className={`mb-6 ${urlInput ? 'hidden' : 'block'}`}>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">Create a note</h3>
                           <textarea
