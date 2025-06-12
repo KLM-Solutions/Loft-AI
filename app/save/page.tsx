@@ -739,6 +739,15 @@ export default function SavePage() {
                             Create "{tagInput.trim()}"
                           </button>
                         )}
+                        {availableTags.length === 0 && !tagInput.trim() && (
+                          <div style={{
+                            color: "#6B7280",
+                            fontSize: "0.875rem",
+                            padding: "0.5rem 0.75rem"
+                          }}>
+                            No tags found
+                          </div>
+                        )}
                         {availableTags
                           .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
                           .map((tag, index, array) => (
@@ -1319,6 +1328,15 @@ export default function SavePage() {
                             <Plus className="h-4 w-4" />
                             Create "{tagInput.trim()}"
                           </button>
+                        )}
+                        {availableTags.length === 0 && !tagInput.trim() && (
+                          <div style={{
+                            color: "#6B7280",
+                            fontSize: "0.875rem",
+                            padding: "0.5rem 0.75rem"
+                          }}>
+                            No tags found
+                          </div>
                         )}
                         {availableTags
                           .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
@@ -1975,6 +1993,15 @@ export default function SavePage() {
                             <Plus className="h-4 w-4" />
                             Create "{tagInput.trim()}"
                           </button>
+                        )}
+                        {availableTags.length === 0 && !tagInput.trim() && (
+                          <div style={{
+                            color: "#6B7280",
+                            fontSize: "0.875rem",
+                            padding: "0.5rem 0.75rem"
+                          }}>
+                            No tags found
+                          </div>
                         )}
                         {availableTags
                           .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
