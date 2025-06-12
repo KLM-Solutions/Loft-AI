@@ -2013,7 +2013,7 @@ export default function SavePage() {
                 cursor: "pointer",
                             }}
                           >
-                            <Plus className="h-4 w-4" />
+                            
                             Create "{tagInput.trim()}"
                           </button>
                         )}
