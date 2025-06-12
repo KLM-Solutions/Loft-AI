@@ -994,7 +994,7 @@ export default function BookmarksPage() {
             {/* MY COLLECTIONS moved here as a regular nav item */}
             <div className="pt-4">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">MY COLLECTIONS</h3>
-              <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto">
+              <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto [overflow-y:scroll] [-webkit-overflow-scrolling:touch]">
                 {availableCollections.length === 0 ? (
                   <div className="px-2 py-2 text-sm text-gray-500">No collections yet</div>
                 ) : (
