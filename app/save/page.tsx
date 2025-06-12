@@ -328,19 +328,36 @@ export default function SavePage() {
     }, 200)
   }
 
-  const handleCollectionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleCollectionInputKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && collectionInput.trim()) {
       e.preventDefault();
-      const newCollection = {
-        id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-        name: collectionInput.trim(),
-        color: "bg-gray-500"
-      };
-      setAvailableCollections([...availableCollections, newCollection]);
-      if (!selectedCollections.includes(newCollection.id)) {
-        setSelectedCollections([...selectedCollections, newCollection.id]);
+      try {
+        const response = await fetch('/api/collections', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: collectionInput.trim(),
+            color: "bg-gray-500"
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create collection');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setAvailableCollections([...availableCollections, data.data]);
+          if (!selectedCollections.includes(data.data.id)) {
+            setSelectedCollections([...selectedCollections, data.data.id]);
+          }
+          setCollectionInput("");
+        }
+      } catch (error) {
+        console.error('Error creating collection:', error);
       }
-      setCollectionInput("");
     }
   }
 
@@ -845,17 +862,34 @@ export default function SavePage() {
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                           {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                             <button
-                              onClick={() => {
-                                const newCollection = {
-                                  id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                                  name: collectionInput.trim(),
-                                  color: "bg-gray-500"
-                                };
-                                setAvailableCollections([...availableCollections, newCollection]);
-                                if (!selectedCollections.includes(newCollection.id)) {
-                                  setSelectedCollections([...selectedCollections, newCollection.id]);
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch('/api/collections', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      name: collectionInput.trim(),
+                                      color: "bg-gray-500"
+                                    }),
+                                  });
+
+                                  if (!response.ok) {
+                                    throw new Error('Failed to create collection');
+                                  }
+
+                                  const data = await response.json();
+                                  if (data.success) {
+                                    setAvailableCollections([...availableCollections, data.data]);
+                                    if (!selectedCollections.includes(data.data.id)) {
+                                      setSelectedCollections([...selectedCollections, data.data.id]);
+                                    }
+                                    setCollectionInput("");
+                                  }
+                                } catch (error) {
+                                  console.error('Error creating collection:', error);
                                 }
-                                setCollectionInput("");
                               }}
                               style={{
                                 padding: "0.25rem 0.75rem",
@@ -1409,17 +1443,34 @@ export default function SavePage() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                       {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
-                          onClick={() => {
-                            const newCollection = {
-                              id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                              name: collectionInput.trim(),
-                              color: "bg-gray-500"
-                            };
-                            setAvailableCollections([...availableCollections, newCollection]);
-                            if (!selectedCollections.includes(newCollection.id)) {
-                              setSelectedCollections([...selectedCollections, newCollection.id]);
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/collections', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  name: collectionInput.trim(),
+                                  color: "bg-gray-500"
+                                }),
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Failed to create collection');
+                              }
+
+                              const data = await response.json();
+                              if (data.success) {
+                                setAvailableCollections([...availableCollections, data.data]);
+                                if (!selectedCollections.includes(data.data.id)) {
+                                  setSelectedCollections([...selectedCollections, data.data.id]);
+                                }
+                                setCollectionInput("");
+                              }
+                            } catch (error) {
+                              console.error('Error creating collection:', error);
                             }
-                            setCollectionInput("");
                           }}
                           style={{
                             padding: "0.25rem 0.75rem",
@@ -2048,17 +2099,34 @@ export default function SavePage() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                       {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
-                          onClick={() => {
-                            const newCollection = {
-                              id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                              name: collectionInput.trim(),
-                              color: "bg-gray-500"
-                            };
-                            setAvailableCollections([...availableCollections, newCollection]);
-                            if (!selectedCollections.includes(newCollection.id)) {
-                              setSelectedCollections([...selectedCollections, newCollection.id]);
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/collections', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  name: collectionInput.trim(),
+                                  color: "bg-gray-500"
+                                }),
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Failed to create collection');
+                              }
+
+                              const data = await response.json();
+                              if (data.success) {
+                                setAvailableCollections([...availableCollections, data.data]);
+                                if (!selectedCollections.includes(data.data.id)) {
+                                  setSelectedCollections([...selectedCollections, data.data.id]);
+                                }
+                                setCollectionInput("");
+                              }
+                            } catch (error) {
+                              console.error('Error creating collection:', error);
                             }
-                            setCollectionInput("");
                           }}
                           style={{
                             padding: "0.25rem 0.75rem",
