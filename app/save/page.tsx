@@ -735,7 +735,7 @@ export default function SavePage() {
                 cursor: "pointer",
                             }}
                           >
-                            <Plus className="h-4 w-4" />
+                            
                             Create "{tagInput.trim()}"
                           </button>
                         )}
@@ -1297,7 +1297,7 @@ export default function SavePage() {
               </div>
               {showTagDropdown && (
                 <div
-                  style={{
+                  style={{ 
                     position: "absolute",
                     zIndex: 10,
                     width: "100%",
@@ -1325,7 +1325,7 @@ export default function SavePage() {
                 cursor: "pointer",
                             }}
                           >
-                            <Plus className="h-4 w-4" />
+                            
                             Create "{tagInput.trim()}"
                           </button>
                         )}
@@ -1400,7 +1400,7 @@ export default function SavePage() {
                         onClick={() => toggleCollection(collection.id)}
                         style={{
                           marginLeft: "0.25rem",
-                          color: "#3b82f6",
+                    color: "#3b82f6",
                         }}
                       >
                         <X style={{ height: "0.75rem", width: "0.75rem" }} />
@@ -1840,9 +1840,9 @@ export default function SavePage() {
                 height: isMobile ? "200px" : "250px",
                 border: "1px solid #d1d5db",
                 borderRadius: "0.5rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 backgroundColor: "#f9fafb",
                 overflow: "hidden",
                 position: "relative",
@@ -1868,7 +1868,7 @@ export default function SavePage() {
                       right: "0.5rem",
                       backgroundColor: "rgba(0, 0, 0, 0.5)",
                       color: "white",
-                      border: "none",
+                    border: "none",
                       borderRadius: "9999px",
                       padding: "0.25rem",
                       cursor: "pointer",
@@ -1924,7 +1924,7 @@ export default function SavePage() {
                     <button
                       onClick={() => removeTag(tag)}
                       style={{
-                        marginLeft: "0.25rem",
+                    marginLeft: "0.25rem",
                         color: "#3b82f6",
                       }}
                     >
