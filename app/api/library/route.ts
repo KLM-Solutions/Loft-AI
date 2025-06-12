@@ -3,7 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { currentUser } from '@clerk/nextjs/server';
 
 const sql = neon(process.env.DATABASE_URL || 'postgresql://loft-bookmark_owner:npg_U3kjcvQ1SVdy@ep-flat-bread-a5q8218o-pooler.us-east-2.aws.neon.tech/loft-bookmark?sslmode=require');
-
+export const maxDuration = 300;
 export async function GET() {
   try {
     const user = await currentUser();

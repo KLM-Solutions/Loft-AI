@@ -149,7 +149,7 @@ async function getLLMResponse(query: string, relatedTopics: any[]) {
 
   return stream;
 }
-
+export const maxDuration = 300;
 // API route for getting LLM response
 export async function POST(request: Request) {
   try {

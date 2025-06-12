@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { perplexity } from '@ai-sdk/perplexity';
 import { generateText } from 'ai';
 import { currentUser } from '@clerk/nextjs/server';
-
+export const maxDuration = 300;
 export async function POST(request: Request) {
   try {
     const user = await currentUser();

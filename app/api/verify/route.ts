@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { perplexity } from '@ai-sdk/perplexity';
 import { generateText } from 'ai';
-
+export const maxDuration = 300;
 export async function POST(request: Request) {
   try {
     const { url, metadata } = await request.json()
