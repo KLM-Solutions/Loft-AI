@@ -26,26 +26,109 @@ export default function SavePage() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([])
   const [showCollectionDropdown, setShowCollectionDropdown] = useState(false)
   const [collectionInput, setCollectionInput] = useState("")
-  const [availableCollections, setAvailableCollections] = useState<Array<{ id: string; name: string; color: string }>>([
-    { id: "design", name: "Design", color: "bg-blue-500" },
-    { id: "development", name: "Development", color: "bg-green-500" },
-    { id: "inspiration", name: "Inspiration", color: "bg-purple-500" },
-  ])
+  const [availableCollections, setAvailableCollections] = useState<any[]>([])
+  const [availableTags, setAvailableTags] = useState<any[]>([])
+  const [isCreatingTag, setIsCreatingTag] = useState(false)
+  const [tagColorMap] = useState(new Map<string, string>())
   const [selectedImage, setSelectedImage] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState("")
-
-  const defaultTags = [
-    "design", "ui", "ux", "inspiration", "web", "mobile", "development",
-    "code", "art", "photography", "minimalism", "modern"
-  ]
-
+  const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("paste")
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [savedTitle, setSavedTitle] = useState("")
   const [formData, setFormData] = useState({
     url: "",
     title: "",
+    summary: "",
     note: "",
-    file: null as File | null,
-  })
+  });
+
+  const tagColors = [
+    "bg-red-100 text-red-700 border-red-200",
+    "bg-pink-100 text-pink-700 border-pink-200",
+    "bg-purple-100 text-purple-700 border-purple-200",
+    "bg-indigo-100 text-indigo-700 border-indigo-200",
+    "bg-blue-100 text-blue-700 border-blue-200",
+    "bg-cyan-100 text-cyan-700 border-cyan-200",
+    "bg-teal-100 text-teal-700 border-teal-200",
+    "bg-green-100 text-green-700 border-green-200",
+    "bg-lime-100 text-lime-700 border-lime-200",
+    "bg-yellow-100 text-yellow-700 border-yellow-200",
+    "bg-orange-100 text-orange-700 border-orange-200"
+  ];
+
+  const getTagColor = (tag: string) => {
+    if (!tagColorMap.has(tag)) {
+      tagColorMap.set(tag, tagColors[Math.floor(Math.random() * tagColors.length)]);
+    }
+    return tagColorMap.get(tag);
+  };
+
+  const getRandomColor = () => {
+    return tagColors[Math.floor(Math.random() * tagColors.length)];
+  };
+
+  // Add useEffect to fetch tags and collections on component mount
+  useEffect(() => {
+    fetchTags();
+    fetchCollections();
+  }, []);
+
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  const fetchCollections = async () => {
+    try {
+      const response = await fetch('/api/collections');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableCollections(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error);
+    }
+  };
+
+  const handleCreateTag = async () => {
+    if (!tagInput.trim()) return;
+    
+    setIsCreatingTag(true);
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: tagInput.trim(),
+          color: getRandomColor(),
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(prev => [...prev, data.data]);
+        setSelectedTags(prev => [...prev, data.data.name]);
+        setTagInput('');
+        setShowTagDropdown(false);
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error);
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -210,7 +293,7 @@ export default function SavePage() {
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
-      addTag(tagInput.trim());
+      handleCreateTag();
     }
   }
 
@@ -612,9 +695,10 @@ export default function SavePage() {
                       }}
                     >
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                        {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                        {tagInput.trim() && !availableTags.some(t => t.name === tagInput.trim()) && (
                           <button
-                            onClick={() => addTag(tagInput.trim())}
+                            onClick={handleCreateTag}
+                            disabled={isCreatingTag}
                             style={{
                               padding: "0.25rem 0.75rem",
                               borderRadius: "9999px",
@@ -625,26 +709,28 @@ export default function SavePage() {
                 cursor: "pointer",
                             }}
                           >
-                            Add "{tagInput.trim()}"
+                            <Plus className="h-4 w-4" />
+                            Create "{tagInput.trim()}"
                           </button>
                         )}
-                        {defaultTags
-                          .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                          .map((tag) => (
+                        {availableTags
+                          .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag, index, array) => (
                             <button
-                              key={tag}
-                              onClick={() => addTag(tag)}
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                borderRadius: "9999px",
-                                fontSize: "0.875rem",
-                                backgroundColor: "#dbeafe",
-                                color: "#1d4ed8",
-                                border: "none",
-                                cursor: "pointer",
+                              key={tag.id}
+                              onClick={() => {
+                                if (!selectedTags.includes(tag.name)) {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setTagInput('');
+                                setShowTagDropdown(false);
                               }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                index === array.length - 1 ? 'rounded-b-xl' : ''
+                              }`}
                             >
-                              {tag}
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                              {tag.name}
                             </button>
                           ))}
                       </div>
@@ -1161,9 +1247,10 @@ export default function SavePage() {
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                    {tagInput.trim() && !availableTags.some(t => t.name === tagInput.trim()) && (
                       <button
-                        onClick={() => addTag(tagInput.trim())}
+                        onClick={handleCreateTag}
+                        disabled={isCreatingTag}
                         style={{
                           padding: "0.25rem 0.75rem",
                           borderRadius: "9999px",
@@ -1174,26 +1261,28 @@ export default function SavePage() {
                 cursor: "pointer",
                             }}
                           >
-                            Add "{tagInput.trim()}"
+                            <Plus className="h-4 w-4" />
+                            Create "{tagInput.trim()}"
                           </button>
                         )}
-                        {defaultTags
-                          .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                          .map((tag) => (
+                        {availableTags
+                          .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag, index, array) => (
                             <button
-                              key={tag}
-                              onClick={() => addTag(tag)}
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                borderRadius: "9999px",
-                                fontSize: "0.875rem",
-                                backgroundColor: "#dbeafe",
-                                color: "#1d4ed8",
-                                border: "none",
-                                cursor: "pointer",
+                              key={tag.id}
+                              onClick={() => {
+                                if (!selectedTags.includes(tag.name)) {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setTagInput('');
+                                setShowTagDropdown(false);
                               }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                index === array.length - 1 ? 'rounded-b-xl' : ''
+                              }`}
                             >
-                              {tag}
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                              {tag.name}
                             </button>
                           ))}
                       </div>
@@ -1785,9 +1874,10 @@ export default function SavePage() {
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                    {tagInput.trim() && !availableTags.some(t => t.name === tagInput.trim()) && (
                       <button
-                        onClick={() => addTag(tagInput.trim())}
+                        onClick={handleCreateTag}
+                        disabled={isCreatingTag}
                         style={{
                           padding: "0.25rem 0.75rem",
                           borderRadius: "9999px",
@@ -1795,42 +1885,44 @@ export default function SavePage() {
                           backgroundColor: "#dbeafe",
                           color: "#1d4ed8",
                           border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{tagInput.trim()}"
-                      </button>
-                    )}
-                    {defaultTags
-                      .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                      .map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => addTag(tag)}
-                          style={{
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "9999px",
-                            fontSize: "0.875rem",
-                            backgroundColor: "#dbeafe",
-                            color: "#1d4ed8",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                  </div>
+                cursor: "pointer",
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                            Create "{tagInput.trim()}"
+                          </button>
+                        )}
+                        {availableTags
+                          .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag, index, array) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => {
+                                if (!selectedTags.includes(tag.name)) {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setTagInput('');
+                                setShowTagDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                index === array.length - 1 ? 'rounded-b-xl' : ''
+                              }`}
+                            >
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                              {tag.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div style={{ marginTop: "1rem" }}>
-            <Label
-              htmlFor="collections"
-              style={{
-                fontSize: "0.875rem",
+              <div style={{ marginTop: "1rem" }}>
+                <Label
+                  htmlFor="collections"
+                  style={{
+                    fontSize: "0.875rem",
               fontWeight: "500",
                 color: "#374151",
                 display: "block",
