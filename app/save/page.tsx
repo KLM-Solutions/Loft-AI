@@ -651,6 +651,7 @@ export default function SavePage() {
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     resize: "none",
                     fontFamily: "inherit",
+                    color: "#6B7280"
                   }}
                 />
               </div>
@@ -1839,6 +1840,7 @@ export default function SavePage() {
                 fontSize: isMobile ? "1rem" : "0.875rem",
                 resize: "none",
                 fontFamily: "inherit",
+                color: "#6B7280"
               }}
             />
           </div>
