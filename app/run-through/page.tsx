@@ -60,13 +60,13 @@ export default function RunThroughPage() {
   // Example prompts
   const examplePrompts = [
     {
-      text: "What were those productivity tips I saved?",
+      text: "Give the latest bookmark that I stored",
     },
     {
-      text: "Find that recipe with avocado and lime",
+      text: "Give all the bookmarks",
     },
     {
-      text: "Show me design inspiration for living rooms",
+      text: "Is there any bookmarks that I stored?",
     },
   ]
 
