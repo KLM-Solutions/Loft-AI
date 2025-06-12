@@ -724,30 +724,30 @@ export default function LibraryPage() {
 
         {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col px-4 md:px-8 bg-[#f5f8fa] overflow-y-auto [overflow-y:scroll] [-webkit-overflow-scrolling:touch] pb-20 md:pb-4">
-          <div className="flex-1 space-y-4">
-            <div className="mt-6">
-              {/* Fixed All Bookmarks Header */}
-              <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold">All Bookmarks</h1>
-                  <div className="flex space-x-2">
-                    <button
-                      className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                      onClick={() => setCardView("list")}
-                      aria-label="List view"
-                    >
-                      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
-                    </button>
-                    <button
-                      className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                      onClick={() => setCardView("grid")}
-                      aria-label="Grid view"
-                    >
-                      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
-                    </button>
-                  </div>
+          <div className="flex-1">
+            {/* Fixed All Bookmarks Header */}
+            <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">All Bookmarks</h1>
+                <div className="flex space-x-2">
+                  <button
+                    className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                    onClick={() => setCardView("list")}
+                    aria-label="List view"
+                  >
+                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                  </button>
+                  <button
+                    className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                    onClick={() => setCardView("grid")}
+                    aria-label="Grid view"
+                  >
+                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                  </button>
                 </div>
               </div>
+            </div>
+            <div className="space-y-4">
               {isLoading ? (
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="relative">
