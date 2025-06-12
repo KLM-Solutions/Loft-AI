@@ -666,7 +666,7 @@ export default function LibraryPage() {
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">MY COLLECTIONS</h3>
               <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto">
                 {availableCollections.length === 0 ? (
-                  <div className="px-2 py-2 text-sm text-gray-500">Loading collections...</div>
+                  <div className="px-2 py-2 text-sm text-gray-500">No collections yet</div>
                 ) : (
                   availableCollections.map((collection) => (
                     <div

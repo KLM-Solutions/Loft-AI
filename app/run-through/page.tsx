@@ -402,7 +402,7 @@ export default function RunThroughPage() {
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">MY COLLECTIONS</h3>
               <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto">
                 {availableCollections.length === 0 ? (
-                  <div className="px-2 py-2 text-sm text-gray-500">Loading collections...</div>
+                  <div className="px-2 py-2 text-sm text-gray-500">No collections yet</div>
                 ) : (
                   availableCollections.map((collection) => (
                     <div
@@ -528,27 +528,25 @@ export default function RunThroughPage() {
                     {/* Show related topics right after each assistant message */}
                     {message.role === 'assistant' && (
                       <div className="mt-4 px-4">
-                        {message.content && (
+                        {message.content && !message.isLoadingTopics && message.relatedTopics && message.relatedTopics.length > 0 && (
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-semibold">Related Topics</h3>
-                            {!message.isLoadingTopics && message.relatedTopics && message.relatedTopics.length > 0 && (
-                              <div className="flex space-x-2">
-                                <button
-                                  className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                                  onClick={() => setCardView("list")}
-                                  aria-label="List view"
-                                >
-                                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
-                                </button>
-                                <button
-                                  className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                                  onClick={() => setCardView("grid")}
-                                  aria-label="Grid view"
-                                >
-                                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
-                                </button>
-                              </div>
-                            )}
+                            <div className="flex space-x-2">
+                              <button
+                                className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                onClick={() => setCardView("list")}
+                                aria-label="List view"
+                              >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                              </button>
+                              <button
+                                className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                onClick={() => setCardView("grid")}
+                                aria-label="Grid view"
+                              >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                              </button>
+                            </div>
                           </div>
                         )}
                         {message.isLoadingTopics ? (
