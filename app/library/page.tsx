@@ -747,7 +747,7 @@ export default function LibraryPage() {
                 </div>
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 pb-20 md:pb-4">
               {isLoading ? (
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="relative">
