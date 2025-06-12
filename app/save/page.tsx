@@ -44,6 +44,8 @@ export default function SavePage() {
     summary: "",
     note: "",
   });
+  const [isLoadingCollections, setIsLoadingCollections] = useState(false);
+  const [collectionsError, setCollectionsError] = useState("");
 
   const tagColors = [
     "bg-red-100 text-red-700 border-red-200",
@@ -90,13 +92,20 @@ export default function SavePage() {
 
   const fetchCollections = async () => {
     try {
+      setIsLoadingCollections(true);
+      setCollectionsError("");
       const response = await fetch('/api/collections');
       const data = await response.json();
       if (data.success) {
         setAvailableCollections(data.data);
+      } else {
+        setCollectionsError("Failed to fetch collections");
       }
     } catch (error) {
       console.error('Error fetching collections:', error);
+      setCollectionsError("Failed to fetch collections");
+    } finally {
+      setIsLoadingCollections(false);
     }
   };
 
@@ -826,40 +835,28 @@ export default function SavePage() {
                         marginBottom: "1rem", // Add margin to push content below
                       }}
                     >
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                        {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                          <button
-                            onClick={() => {
-                              const newCollection = {
-                                id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                                name: collectionInput.trim(),
-                                color: "bg-gray-500"
-                              };
-                              setAvailableCollections([...availableCollections, newCollection]);
-                              if (!selectedCollections.includes(newCollection.id)) {
-                                setSelectedCollections([...selectedCollections, newCollection.id]);
-                              }
-                              setCollectionInput("");
-                            }}
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              borderRadius: "9999px",
-                              fontSize: "0.875rem",
-                              backgroundColor: "#dbeafe",
-                              color: "#1d4ed8",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Add "{collectionInput.trim()}"
-                          </button>
-                        )}
-                        {availableCollections
-                          .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                          .map((collection) => (
+                      {isLoadingCollections ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                        </div>
+                      ) : collectionsError ? (
+                        <div className="text-red-500 text-sm p-2">{collectionsError}</div>
+                      ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                          {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                             <button
-                              key={collection.id}
-                              onClick={() => toggleCollection(collection.id)}
+                              onClick={() => {
+                                const newCollection = {
+                                  id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
+                                  name: collectionInput.trim(),
+                                  color: "bg-gray-500"
+                                };
+                                setAvailableCollections([...availableCollections, newCollection]);
+                                if (!selectedCollections.includes(newCollection.id)) {
+                                  setSelectedCollections([...selectedCollections, newCollection.id]);
+                                }
+                                setCollectionInput("");
+                              }}
                               style={{
                                 padding: "0.25rem 0.75rem",
                                 borderRadius: "9999px",
@@ -868,16 +865,40 @@ export default function SavePage() {
                                 color: "#1d4ed8",
                                 border: "none",
                                 cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.25rem",
                               }}
                             >
-                              <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
-                              {collection.name}
+                              Add "{collectionInput.trim()}"
                             </button>
-                          ))}
-                      </div>
+                          )}
+                          {availableCollections.length === 0 ? (
+                            <div className="text-gray-500 text-sm p-2">No collections found</div>
+                          ) : (
+                            availableCollections
+                              .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                              .map((collection) => (
+                                <button
+                                  key={collection.id}
+                                  onClick={() => toggleCollection(collection.id)}
+                                  style={{
+                                    padding: "0.25rem 0.75rem",
+                                    borderRadius: "9999px",
+                                    fontSize: "0.875rem",
+                                    backgroundColor: "#dbeafe",
+                                    color: "#1d4ed8",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.25rem",
+                                  }}
+                                >
+                                  <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
+                                  {collection.name}
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1378,40 +1399,28 @@ export default function SavePage() {
                     marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                      <button
-                        onClick={() => {
-                          const newCollection = {
-                            id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                            name: collectionInput.trim(),
-                            color: "bg-gray-500"
-                          };
-                          setAvailableCollections([...availableCollections, newCollection]);
-                          if (!selectedCollections.includes(newCollection.id)) {
-                            setSelectedCollections([...selectedCollections, newCollection.id]);
-                          }
-                          setCollectionInput("");
-                        }}
-                        style={{
-                          padding: "0.25rem 0.75rem",
-                          borderRadius: "9999px",
-                          fontSize: "0.875rem",
-                          backgroundColor: "#dbeafe",
-                          color: "#1d4ed8",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{collectionInput.trim()}"
-                      </button>
-                    )}
-                    {availableCollections
-                      .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                      .map((collection) => (
+                  {isLoadingCollections ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                    </div>
+                  ) : collectionsError ? (
+                    <div className="text-red-500 text-sm p-2">{collectionsError}</div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                      {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
-                          key={collection.id}
-                          onClick={() => toggleCollection(collection.id)}
+                          onClick={() => {
+                            const newCollection = {
+                              id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
+                              name: collectionInput.trim(),
+                              color: "bg-gray-500"
+                            };
+                            setAvailableCollections([...availableCollections, newCollection]);
+                            if (!selectedCollections.includes(newCollection.id)) {
+                              setSelectedCollections([...selectedCollections, newCollection.id]);
+                            }
+                            setCollectionInput("");
+                          }}
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "9999px",
@@ -1420,16 +1429,40 @@ export default function SavePage() {
                             color: "#1d4ed8",
                             border: "none",
                             cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
                           }}
                         >
-                          <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
-                          {collection.name}
+                          Add "{collectionInput.trim()}"
                         </button>
-                      ))}
-                  </div>
+                      )}
+                      {availableCollections.length === 0 ? (
+                        <div className="text-gray-500 text-sm p-2">No collections found</div>
+                      ) : (
+                        availableCollections
+                          .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                          .map((collection) => (
+                            <button
+                              key={collection.id}
+                              onClick={() => toggleCollection(collection.id)}
+                              style={{
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "9999px",
+                                fontSize: "0.875rem",
+                                backgroundColor: "#dbeafe",
+                                color: "#1d4ed8",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                              }}
+                            >
+                              <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
+                              {collection.name}
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -2005,40 +2038,28 @@ export default function SavePage() {
                     marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                      <button
-                        onClick={() => {
-                          const newCollection = {
-                            id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                            name: collectionInput.trim(),
-                            color: "bg-gray-500"
-                          };
-                          setAvailableCollections([...availableCollections, newCollection]);
-                          if (!selectedCollections.includes(newCollection.id)) {
-                            setSelectedCollections([...selectedCollections, newCollection.id]);
-                          }
-                          setCollectionInput("");
-                        }}
-                        style={{
-                          padding: "0.25rem 0.75rem",
-                          borderRadius: "9999px",
-                          fontSize: "0.875rem",
-                          backgroundColor: "#dbeafe",
-                          color: "#1d4ed8",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{collectionInput.trim()}"
-                      </button>
-                    )}
-                    {availableCollections
-                      .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                      .map((collection) => (
+                  {isLoadingCollections ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                    </div>
+                  ) : collectionsError ? (
+                    <div className="text-red-500 text-sm p-2">{collectionsError}</div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                      {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
-                          key={collection.id}
-                          onClick={() => toggleCollection(collection.id)}
+                          onClick={() => {
+                            const newCollection = {
+                              id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
+                              name: collectionInput.trim(),
+                              color: "bg-gray-500"
+                            };
+                            setAvailableCollections([...availableCollections, newCollection]);
+                            if (!selectedCollections.includes(newCollection.id)) {
+                              setSelectedCollections([...selectedCollections, newCollection.id]);
+                            }
+                            setCollectionInput("");
+                          }}
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "9999px",
@@ -2047,16 +2068,40 @@ export default function SavePage() {
                             color: "#1d4ed8",
                             border: "none",
                             cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
                           }}
                         >
-                          <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
-                          {collection.name}
+                          Add "{collectionInput.trim()}"
                         </button>
-                      ))}
-                  </div>
+                      )}
+                      {availableCollections.length === 0 ? (
+                        <div className="text-gray-500 text-sm p-2">No collections found</div>
+                      ) : (
+                        availableCollections
+                          .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                          .map((collection) => (
+                            <button
+                              key={collection.id}
+                              onClick={() => toggleCollection(collection.id)}
+                              style={{
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "9999px",
+                                fontSize: "0.875rem",
+                                backgroundColor: "#dbeafe",
+                                color: "#1d4ed8",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                              }}
+                            >
+                              <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
+                              {collection.name}
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
