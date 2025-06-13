@@ -240,13 +240,15 @@ export default function SavePage() {
     } catch (error) {
       console.error('Error processing URL:', error);
       if (error instanceof Error && error.message === 'Failed to fetch metadata') {
-        setError('Unable to process this URL. The link might be encrypted or restricted. Please try a different URL.');
+        setError('Auto content fetch restricted by provider. Please enter additional details to enrich context');
         toast({
           variant: "destructive",
           title: "URL Processing Error",
-          description: "Unable to process this URL. The link might be encrypted or restricted. Please try a different URL.",
+          description: "Auto content fetch restricted by provider. Please enter additional details to enrich context",
           className: "bg-red-50 border-red-200"
         });
+        // Allow user to proceed to next page after showing error
+        setShowInShortModal(true);
       } else {
         setError('Failed to process URL. Please try again.');
         toast({
@@ -620,6 +622,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     minHeight: isMobile ? "44px" : "auto",
+                    color: "#6B7280"
                   }}
                 />
               </div>
