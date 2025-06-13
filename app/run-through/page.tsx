@@ -715,7 +715,7 @@ export default function RunThroughPage() {
             )}
           </div>
           {/* Input Form - Always at the bottom */}
-          <div className="fixed bottom-0 left-0 right-0 md:relative pt-4 bg-[#f5f8fa] pb-20 md:pb-0">
+          <div className="sticky bottom-0 left-0 right-0 md:relative pt-4 bg-[#f5f8fa] pb-20 md:pb-0">
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full px-4 md:px-0">
               <div className="relative">
                 <input
