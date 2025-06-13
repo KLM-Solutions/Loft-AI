@@ -440,7 +440,7 @@ export default function RunThroughPage() {
       {/* Main Content */}
       <div className="flex-1 md:ml-60 overflow-hidden flex flex-col">
         {/* Desktop Header */}
-        <header className="hidden md:flex items-center justify-between p-4 bg-white border-b border-gray-200">
+        <header className="hidden md:flex items-center justify-between p-4 bg-white border-b border-gray-200 flex-shrink-0">
           <h1 className="text-2xl font-semibold">Ask Loft AI</h1>
           <div className="flex items-center space-x-4">
             <button className="p-2 rounded-full hover:bg-gray-100" onClick={toggleNotifications}>
@@ -459,7 +459,7 @@ export default function RunThroughPage() {
         </header>
 
         {/* Mobile Header - Hidden on Desktop */}
-        <header className="md:hidden p-4 bg-[#f5f8fa] border-b border-gray-200">
+        <header className="md:hidden p-4 bg-[#f5f8fa] border-b border-gray-200 flex-shrink-0">
           <h1 className="text-2xl font-semibold">Ask Loft AI</h1>
         </header>
 
