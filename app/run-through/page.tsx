@@ -746,7 +746,7 @@ export default function RunThroughPage() {
           {/* Footer */}
           <div className="mt-4 text-center text-xs text-gray-500 pb-4">
             <div className="flex justify-center items-center space-x-4">
-              <span>Powered by Loft</span>
+              <span>Powered by pxlbrain</span>
               <span>Privacy</span>
               <span>Report</span>
             </div>
