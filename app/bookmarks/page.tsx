@@ -141,7 +141,7 @@ export default function BookmarksPage() {
           setIsLoading(false)
         })
         .catch(error => {
-          console.error('Error fetching bookmarks:', error)
+          console.error('Error fetching bookmarks:', error)//
           setIsLoading(false)
         })
     }
