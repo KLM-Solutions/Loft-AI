@@ -460,23 +460,33 @@ export default function BookmarksPage() {
       // Use default note image if no image is selected
       const imageToUse = selectedImage || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4=";
 
-      const response = await fetch("/api/bookmark-save", {
+      // Determine if this is a link or a note based on the URL input
+      const isLink = urlInput && urlInput.trim().length > 0;
+      const endpoint = isLink ? "/api/bookmark-save" : "/api/notes-save";
+
+      const payload = {
+        title: titleInput.trim(),
+        summary: summaryInput.trim(),
+        collections: selectedCollections,
+        tags: selectedTags,
+        image: imageToUse,
+        type: "inshort",
+        ...(isLink
+          ? { url: urlInput.trim() }
+          : { note: summaryInput.trim() } // Add note field for notes
+        )
+      };
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: titleInput.trim(),
-          summary: summaryInput.trim(),
-          collections: selectedCollections,
-          tags: selectedTags,
-          image: imageToUse,
-          type: "inshort"
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save bookmark");
+        throw new Error(isLink ? "Failed to save bookmark" : "Failed to save note");
       }
 
       const data = await response.json();
@@ -493,8 +503,8 @@ export default function BookmarksPage() {
         setError("");
       }
     } catch (error) {
-      console.error("Error saving bookmark:", error);
-      setError("Failed to save bookmark. Please try again.");
+      console.error("Error saving:", error);
+      setError("Failed to save. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -1143,14 +1153,7 @@ export default function BookmarksPage() {
             >
               Links
             </button>
-            <button
-              onClick={() => setContentFilter("images")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Images
-            </button>
+            
             <button
               onClick={() => setContentFilter("notes")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
@@ -1262,14 +1265,7 @@ export default function BookmarksPage() {
             >
               Links
             </button>
-            <button
-              onClick={() => setContentFilter("images")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Images
-            </button>
+            
             <button
               onClick={() => setContentFilter("notes")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
@@ -1305,14 +1301,7 @@ export default function BookmarksPage() {
                     >
                       Links
                     </button>
-                    <button
-                      onClick={() => setContentFilter("images")}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      Images
-                    </button>
+                    
                     <button
                       onClick={() => setContentFilter("notes")}
                       className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${

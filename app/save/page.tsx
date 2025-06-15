@@ -2252,6 +2252,12 @@ export default function SavePage() {
                 if (!titleInput || !summaryInput || !formData.note || selectedTags.length === 0 || selectedCollections.length === 0) return;
                 setIsSaving(true);
                 try {
+                  // Convert collection IDs to names
+                  const collectionNames = selectedCollections.map(collectionId => {
+                    const collection = availableCollections.find(c => c.id === collectionId);
+                    return collection ? collection.name : collectionId;
+                  });
+
                   const response = await fetch("/api/notes-save", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -2260,7 +2266,7 @@ export default function SavePage() {
                       summary: summaryInput,
                       note: formData.note,
                       tags: selectedTags,
-                      collections: selectedCollections,
+                      collections: collectionNames,
                       image: selectedImage || null
                     }),
                   });
