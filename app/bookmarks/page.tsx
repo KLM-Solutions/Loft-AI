@@ -136,7 +136,7 @@ export default function BookmarksPage() {
         })
         .catch(error => {
           console.error('Error fetching bookmarks:', error)
-          setIsLoadingLinks(false)
+          setIsLoading(false)
         })
     }
   }, [activeTab])
@@ -2002,15 +2002,89 @@ export default function BookmarksPage() {
                 {/* Content */}
                 <div className="flex-grow overflow-y-auto">
                   <div className="p-6">
-                    {/* Media Upload (shared) */}
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
-                      <p className="text-sm text-gray-500 mb-2 md:mb-4">
-                        Add your documents here, and you can upload up to 5 files max
-                      </p>
-                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
+                    {/* Initial Form Fields */}
+                    {!showInShortModal && (
+                      <>
+                        {/* URL Field - only show if no note is being created */}
+                        <div className={`mb-6 ${summaryInput ? 'hidden' : 'block'}`}>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Enter link</h3>
+                          <input
+                            type="url"
+                            value={urlInput}
+                            onChange={(e) => {
+                              setUrlInput(e.target.value);
+                              if (e.target.value) {
+                                setSummaryInput('');
+                              }
+                            }}
+                            onPaste={(e) => {
+                              const pastedText = e.clipboardData.getData('text');
+                              setUrlInput(pastedText);
+                              if (pastedText) {
+                                setSummaryInput('');
+                              }
+                              handleUrlPaste(e);
+                            }}
+                            placeholder="https://example.com"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            disabled={isGenerating}
+                          />
+                          {selectedImage && (
+                            <div className="mt-4">
+                              <h3 className="text-sm font-medium text-gray-700 mb-2">Image Preview</h3>
+                              <div className="relative w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
+                                <img 
+                                  src={selectedImage} 
+                                  alt="Preview" 
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  onClick={() => setSelectedImage("")}
+                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Note Field - only show if no URL is being pasted/typed */}
+                        <div className={`mb-6 ${urlInput ? 'hidden' : 'block'}`}>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Create a note</h3>
+                          <textarea
+                            value={summaryInput}
+                            onChange={(e) => {
+                              setSummaryInput(e.target.value);
+                              if (e.target.value) {
+                                setUrlInput('');
+                              }
+                            }}
+                            placeholder="Add a note..."
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            rows={4}
+                          />
+                          <div className="mt-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-3 py-1 text-sm text-blue-500 border border-blue-200 rounded-full hover:bg-blue-50 flex items-center gap-1"
+                              >
+                                <Upload className="h-4 w-4" />
+                                Upload Image
+                              </button>
+                              <span className="text-xs text-gray-500">(Optional)</span>
+                              <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                                className="hidden"
+                              />
+                            </div>
+                            <div className="w-full h-48 border-2 border-dashed border-gray-200 rounded-lg p-4 flex items-center justify-center bg-gray-50">
                         {selectedImage ? (
-                          <div className="relative w-full">
+                                <div className="relative w-full h-full">
                             <img 
                               src={selectedImage} 
                               alt="Uploaded" 
@@ -2044,10 +2118,8 @@ export default function BookmarksPage() {
                                   <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
                                   <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB</p>
                             </div>
-                        )}
-                      </div>
-                    </div>
-                              </div>
+                          )}
+                        </div>
 
                         {/* Action Buttons */}
                         <div className="flex justify-end gap-3 mt-6">
