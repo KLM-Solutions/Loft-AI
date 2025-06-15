@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Upload, Camera, Plus, X, Loader2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SavePage() {
   const router = useRouter()
@@ -26,25 +27,119 @@ export default function SavePage() {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([])
   const [showCollectionDropdown, setShowCollectionDropdown] = useState(false)
   const [collectionInput, setCollectionInput] = useState("")
-  const [availableCollections, setAvailableCollections] = useState<Array<{ id: string; name: string; color: string }>>([
-    { id: "design", name: "Design", color: "bg-blue-500" },
-    { id: "development", name: "Development", color: "bg-green-500" },
-    { id: "inspiration", name: "Inspiration", color: "bg-purple-500" },
-  ])
+  const [availableCollections, setAvailableCollections] = useState<any[]>([])
+  const [availableTags, setAvailableTags] = useState<any[]>([])
+  const [isCreatingTag, setIsCreatingTag] = useState(false)
+  const [tagColorMap] = useState(new Map<string, string>())
   const [selectedImage, setSelectedImage] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const defaultTags = [
-    "design", "ui", "ux", "inspiration", "web", "mobile", "development",
-    "code", "art", "photography", "minimalism", "modern"
-  ]
-
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("paste")
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [savedTitle, setSavedTitle] = useState("")
   const [formData, setFormData] = useState({
     url: "",
     title: "",
+    summary: "",
     note: "",
-    file: null as File | null,
-  })
+  });
+  const [isLoadingCollections, setIsLoadingCollections] = useState(false);
+  const [collectionsError, setCollectionsError] = useState("");
+  const { toast } = useToast()
+
+  const tagColors = [
+    "bg-red-100 text-red-700 border-red-200",
+    "bg-pink-100 text-pink-700 border-pink-200",
+    "bg-purple-100 text-purple-700 border-purple-200",
+    "bg-indigo-100 text-indigo-700 border-indigo-200",
+    "bg-blue-100 text-blue-700 border-blue-200",
+    "bg-cyan-100 text-cyan-700 border-cyan-200",
+    "bg-teal-100 text-teal-700 border-teal-200",
+    "bg-green-100 text-green-700 border-green-200",
+    "bg-lime-100 text-lime-700 border-lime-200",
+    "bg-yellow-100 text-yellow-700 border-yellow-200",
+    "bg-orange-100 text-orange-700 border-orange-200"
+  ];
+
+  const getTagColor = (tag: string) => {
+    if (!tagColorMap.has(tag)) {
+      tagColorMap.set(tag, tagColors[Math.floor(Math.random() * tagColors.length)]);
+    }
+    return tagColorMap.get(tag);
+  };
+
+  const getRandomColor = () => {
+    return tagColors[Math.floor(Math.random() * tagColors.length)];
+  };
+
+  // Add useEffect to fetch tags and collections on component mount
+  useEffect(() => {
+    fetchTags();
+    fetchCollections();
+  }, []);
+
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  const fetchCollections = async () => {
+    try {
+      setIsLoadingCollections(true);
+      setCollectionsError("");
+      const response = await fetch('/api/collections');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableCollections(data.data);
+      } else {
+        setCollectionsError("Failed to fetch collections");
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error);
+      setCollectionsError("Failed to fetch collections");
+    } finally {
+      setIsLoadingCollections(false);
+    }
+  };
+
+  const handleCreateTag = async () => {
+    if (!tagInput.trim()) return;
+    
+    setIsCreatingTag(true);
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: tagInput.trim(),
+          color: getRandomColor(),
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(prev => [...prev, data.data]);
+        setSelectedTags(prev => [...prev, data.data.name]);
+        setTagInput('');
+        setShowTagDropdown(false);
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error);
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -68,31 +163,105 @@ export default function SavePage() {
       setIsGenerating(true);
       setTitleInput("");
       setSummaryInput("");
-      const response = await fetch('/api/bookmarks', {
+
+      // First fetch metadata
+      console.log('Fetching metadata for URL:', formData.url);
+      const metadataResponse = await fetch('/api/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: formData.url }),
+      });
+
+      if (!metadataResponse.ok) {
+        throw new Error('Failed to fetch metadata');
+      }
+
+      const metadata = await metadataResponse.json();
+      console.log('Received metadata:', metadata);
+
+      // Always update the image preview if metadata contains an ogImage
+      if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
+        setSelectedImage(metadata.metadata.ogImage[0].url);
+      }
+
+      // Verify if the URL is from a social media platform
+      console.log('Starting URL verification process...');
+      const verifyResponse = await fetch('/api/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           url: formData.url,
-          image: selectedImage 
+          metadata: metadata.metadata
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to process URL');
+      if (!verifyResponse.ok) {
+        throw new Error('Failed to verify URL');
       }
 
-      const data = await response.json();
-      setTitleInput(data.title);
-      setSummaryInput(data.summary);
-      setShowInShortModal(true);
+      const verifyData = await verifyResponse.json();
+      const isSocialMedia = verifyData.isSocialMedia;
+      console.log('URL verification result:', { isSocialMedia });
+
+      if (isSocialMedia) {
+        console.log('Processing social media URL...');
+        // For social media links, use the title from metadata and let user write summary
+        setTitleInput(metadata.metadata.ogTitle || '');
+        console.log('Set title from metadata:', metadata.metadata.ogTitle);
+        setShowInShortModal(true);
+      } else {
+        console.log('Processing non-social media URL...');
+        // For non-social media links, use the existing bookmark creation flow
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            url: formData.url,
+            image: selectedImage 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process URL');
+        }
+
+        const data = await response.json();
+        console.log('Received bookmark data:', data);
+        setTitleInput(data.title);
+        setSummaryInput(data.summary);
+        setShowInShortModal(true);
+      }
     } catch (error) {
       console.error('Error processing URL:', error);
+      if (error instanceof Error && error.message === 'Failed to fetch metadata') {
+        setError('Auto content fetch restricted by provider. Please enter additional details to enrich context');
+        toast({
+          variant: "destructive",
+          title: "URL Processing Error",
+          description: "Auto content fetch restricted by provider. Please enter additional details to enrich context",
+          className: "bg-red-50 border-red-200"
+        });
+        // Allow user to proceed to next page after showing error
+        setShowInShortModal(true);
+      } else {
+        setError('Failed to process URL. Please try again.');
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to process URL. Please try again.",
+          className: "bg-red-50 border-red-200"
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
-  }
+  };
 
   const handleInShortSave = async () => {
     if (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0) {
@@ -153,7 +322,7 @@ export default function SavePage() {
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
-      addTag(tagInput.trim());
+      handleCreateTag();
     }
   }
 
@@ -179,19 +348,36 @@ export default function SavePage() {
     }, 200)
   }
 
-  const handleCollectionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleCollectionInputKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && collectionInput.trim()) {
       e.preventDefault();
-      const newCollection = {
-        id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-        name: collectionInput.trim(),
-        color: "bg-gray-500"
-      };
-      setAvailableCollections([...availableCollections, newCollection]);
-      if (!selectedCollections.includes(newCollection.id)) {
-        setSelectedCollections([...selectedCollections, newCollection.id]);
+      try {
+        const response = await fetch('/api/collections', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: collectionInput.trim(),
+            color: "bg-gray-500"
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create collection');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setAvailableCollections([...availableCollections, data.data]);
+          if (!selectedCollections.includes(data.data.id)) {
+            setSelectedCollections([...selectedCollections, data.data.id]);
+          }
+          setCollectionInput("");
+        }
+      } catch (error) {
+        console.error('Error creating collection:', error);
       }
-      setCollectionInput("");
     }
   }
 
@@ -296,95 +482,6 @@ export default function SavePage() {
                 )}
           </Button>
         </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0.625rem" : "0.75rem" }}>
-        {[
-          { action: "upload", icon: Upload, title: "Upload", desc: "image, video, pdf, etc." },
-          { action: "snap", icon: Camera, title: "Take snap", desc: "take photo or video" },
-          { action: "create", icon: Plus, title: "Create Note", desc: "create new note" },
-        ].map((item) => {
-          const IconComponent = item.icon
-          return (
-            <Button
-              key={item.action}
-              onClick={() => router.push(`/save?action=${item.action}`)}
-              style={{
-                width: "100%",
-                height: "auto",
-                padding: isMobile ? "0.875rem" : "1rem",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: "transparent",
-                border: "1px solid #e5e7eb",
-                borderRadius: "0.75rem",
-                cursor: "pointer",
-                transition: "background-color 0.2s",
-                minHeight: isMobile ? "60px" : "auto",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f9fafb"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent"
-              }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.backgroundColor = "#f9fafb"
-              }}
-              onTouchEnd={(e) => {
-                setTimeout(() => {
-                  e.currentTarget.style.backgroundColor = "transparent"
-                }, 150)
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "0.75rem" : "1rem" }}>
-                <div
-                  style={{
-                    padding: isMobile ? "0.625rem" : "0.5rem",
-                    backgroundColor: "#f3f4f6",
-                    borderRadius: "0.5rem",
-                  }}
-                >
-                  <IconComponent
-                    style={{
-                      height: isMobile ? "1.375rem" : "1.25rem",
-                      width: isMobile ? "1.375rem" : "1.25rem",
-                      color: "#4b5563",
-                    }}
-                  />
-                </div>
-                <div style={{ textAlign: "left" }}>
-                  <div
-                    style={{
-                      fontWeight: "500",
-                      color: "#111827",
-                      fontSize: isMobile ? "1rem" : "0.875rem",
-                      marginBottom: "0.125rem",
-                    }}
-                  >
-                    {item.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.875rem",
-                      color: "#6b7280",
-                    }}
-                  >
-                    {item.desc}
-                  </div>
-                </div>
-              </div>
-              <Plus
-                style={{
-                  height: isMobile ? "1.25rem" : "1rem",
-                  width: isMobile ? "1.25rem" : "1rem",
-                  color: "#9ca3af",
-                }}
-              />
-            </Button>
-          )
-        })}
       </div>
         </>
       ) : (
@@ -525,6 +622,7 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     minHeight: isMobile ? "44px" : "auto",
+                    color: "#6B7280"
                   }}
                 />
               </div>
@@ -556,6 +654,7 @@ export default function SavePage() {
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     resize: "none",
                     fontFamily: "inherit",
+                    color: "#6B7280"
                   }}
                 />
               </div>
@@ -573,7 +672,7 @@ export default function SavePage() {
                 >
                   Tags <span style={{ color: "#ef4444" }}>*</span>
                 </Label>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", marginBottom: showTagDropdown ? "8rem" : "1rem" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                     {selectedTags.map((tag) => (
                       <span
@@ -616,6 +715,7 @@ export default function SavePage() {
                         outline: "none",
                         fontSize: isMobile ? "1rem" : "0.875rem",
                         backgroundColor: "transparent",
+                        boxShadow: "none",
                       }}
                     />
                     <button
@@ -640,12 +740,14 @@ export default function SavePage() {
                         borderRadius: "0.5rem",
                         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                         padding: "0.5rem",
+                        marginBottom: "0.5rem", // Changed from 1rem to 0.5rem (2 in Tailwind)
                       }}
                     >
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                        {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                        {tagInput.trim() && !availableTags.some(t => t.name === tagInput.trim()) && (
                           <button
-                            onClick={() => addTag(tagInput.trim())}
+                            onClick={handleCreateTag}
+                            disabled={isCreatingTag}
                             style={{
                               padding: "0.25rem 0.75rem",
                               borderRadius: "9999px",
@@ -656,26 +758,37 @@ export default function SavePage() {
                 cursor: "pointer",
                             }}
                           >
-                            Add "{tagInput.trim()}"
+                            
+                            Create "{tagInput.trim()}"
                           </button>
                         )}
-                        {defaultTags
-                          .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                          .map((tag) => (
+                        {availableTags.length === 0 && !tagInput.trim() && (
+                          <div style={{
+                            color: "#6B7280",
+                            fontSize: "0.875rem",
+                            padding: "0.5rem 0.75rem"
+                          }}>
+                            No tags found
+                          </div>
+                        )}
+                        {availableTags
+                          .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag, index, array) => (
                             <button
-                              key={tag}
-                              onClick={() => addTag(tag)}
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                borderRadius: "9999px",
-                                fontSize: "0.875rem",
-                                backgroundColor: "#dbeafe",
-                                color: "#1d4ed8",
-                                border: "none",
-                                cursor: "pointer",
+                              key={tag.id}
+                              onClick={() => {
+                                if (!selectedTags.includes(tag.name)) {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setTagInput('');
+                                setShowTagDropdown(false);
                               }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                index === array.length - 1 ? 'rounded-b-xl' : ''
+                              }`}
                             >
-                              {tag}
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                              {tag.name}
                             </button>
                           ))}
                       </div>
@@ -697,7 +810,7 @@ export default function SavePage() {
                 >
                   Add to Collection <span style={{ color: "#ef4444" }}>*</span>
                 </Label>
-                <div style={{ position: "relative" }}>
+                <div style={{ position: "relative", marginBottom: showCollectionDropdown ? "8rem" : "1rem" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                     {selectedCollections.map((collectionId) => {
                       const collection = availableCollections.find(c => c.id === collectionId);
@@ -744,6 +857,7 @@ export default function SavePage() {
                         outline: "none",
                         fontSize: isMobile ? "1rem" : "0.875rem",
                         backgroundColor: "transparent",
+                        boxShadow: "none",
                       }}
                     />
                     <button
@@ -768,42 +882,48 @@ export default function SavePage() {
                         borderRadius: "0.5rem",
                         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                         padding: "0.5rem",
+                        marginBottom: "1rem", // Add margin to push content below
                       }}
                     >
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                        {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                          <button
-                            onClick={() => {
-                              const newCollection = {
-                                id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                                name: collectionInput.trim(),
-                                color: "bg-gray-500"
-                              };
-                              setAvailableCollections([...availableCollections, newCollection]);
-                              if (!selectedCollections.includes(newCollection.id)) {
-                                setSelectedCollections([...selectedCollections, newCollection.id]);
-                              }
-                              setCollectionInput("");
-                            }}
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              borderRadius: "9999px",
-                              fontSize: "0.875rem",
-                              backgroundColor: "#dbeafe",
-                              color: "#1d4ed8",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Add "{collectionInput.trim()}"
-                          </button>
-                        )}
-                        {availableCollections
-                          .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                          .map((collection) => (
+                      {isLoadingCollections ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                        </div>
+                      ) : collectionsError ? (
+                        <div className="text-red-500 text-sm p-2">{collectionsError}</div>
+                      ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                          {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                             <button
-                              key={collection.id}
-                              onClick={() => toggleCollection(collection.id)}
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch('/api/collections', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      name: collectionInput.trim(),
+                                      color: "bg-gray-500"
+                                    }),
+                                  });
+
+                                  if (!response.ok) {
+                                    throw new Error('Failed to create collection');
+                                  }
+
+                                  const data = await response.json();
+                                  if (data.success) {
+                                    setAvailableCollections([...availableCollections, data.data]);
+                                    if (!selectedCollections.includes(data.data.id)) {
+                                      setSelectedCollections([...selectedCollections, data.data.id]);
+                                    }
+                                    setCollectionInput("");
+                                  }
+                                } catch (error) {
+                                  console.error('Error creating collection:', error);
+                                }
+                              }}
                               style={{
                                 padding: "0.25rem 0.75rem",
                                 borderRadius: "9999px",
@@ -812,16 +932,40 @@ export default function SavePage() {
                                 color: "#1d4ed8",
                                 border: "none",
                                 cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.25rem",
                               }}
                             >
-                              <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
-                              {collection.name}
+                              Add "{collectionInput.trim()}"
                             </button>
-                          ))}
-                      </div>
+                          )}
+                          {availableCollections.length === 0 ? (
+                            <div className="text-gray-500 text-sm p-2">No collections found</div>
+                          ) : (
+                            availableCollections
+                              .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                              .map((collection) => (
+                                <button
+                                  key={collection.id}
+                                  onClick={() => toggleCollection(collection.id)}
+                                  style={{
+                                    padding: "0.25rem 0.75rem",
+                                    borderRadius: "9999px",
+                                    fontSize: "0.875rem",
+                                    backgroundColor: "#dbeafe",
+                                    color: "#1d4ed8",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.25rem",
+                                  }}
+                                >
+                                  <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
+                                  {collection.name}
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1120,7 +1264,7 @@ export default function SavePage() {
             >
               Tags <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showTagDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedTags.map((tag) => (
                   <span
@@ -1163,6 +1307,7 @@ export default function SavePage() {
                     outline: "none",
               fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -1177,7 +1322,7 @@ export default function SavePage() {
               </div>
               {showTagDropdown && (
                 <div
-                  style={{
+                  style={{ 
                     position: "absolute",
                     zIndex: 10,
                     width: "100%",
@@ -1187,12 +1332,14 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "0.5rem", // Changed from 1rem to 0.5rem (2 in Tailwind)
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                    {tagInput.trim() && !availableTags.some(t => t.name === tagInput.trim()) && (
                       <button
-                        onClick={() => addTag(tagInput.trim())}
+                        onClick={handleCreateTag}
+                        disabled={isCreatingTag}
                         style={{
                           padding: "0.25rem 0.75rem",
                           borderRadius: "9999px",
@@ -1200,42 +1347,53 @@ export default function SavePage() {
                           backgroundColor: "#dbeafe",
                           color: "#1d4ed8",
                           border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{tagInput.trim()}"
-                      </button>
-                    )}
-                    {defaultTags
-                      .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                      .map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => addTag(tag)}
-                          style={{
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "9999px",
+                cursor: "pointer",
+                            }}
+                          >
+                            
+                            Create "{tagInput.trim()}"
+                          </button>
+                        )}
+                        {availableTags.length === 0 && !tagInput.trim() && (
+                          <div style={{
+                            color: "#6B7280",
                             fontSize: "0.875rem",
-                            backgroundColor: "#dbeafe",
-                            color: "#1d4ed8",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                  </div>
+                            padding: "0.5rem 0.75rem"
+                          }}>
+                            No tags found
+                          </div>
+                        )}
+                        {availableTags
+                          .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag, index, array) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => {
+                                if (!selectedTags.includes(tag.name)) {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setTagInput('');
+                                setShowTagDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                index === array.length - 1 ? 'rounded-b-xl' : ''
+                              }`}
+                            >
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                              {tag.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div style={{ marginTop: "1rem" }}>
-            <Label
-              htmlFor="collections"
-              style={{
-                fontSize: "0.875rem",
+              <div style={{ marginTop: "1rem" }}>
+                <Label
+                  htmlFor="collections"
+                  style={{
+                    fontSize: "0.875rem",
               fontWeight: "500",
                 color: "#374151",
                 display: "block",
@@ -1244,7 +1402,7 @@ export default function SavePage() {
             >
               Add to Collection <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showCollectionDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedCollections.map((collectionId) => {
                   const collection = availableCollections.find(c => c.id === collectionId);
@@ -1267,7 +1425,7 @@ export default function SavePage() {
                         onClick={() => toggleCollection(collection.id)}
                         style={{
                           marginLeft: "0.25rem",
-                          color: "#3b82f6",
+                    color: "#3b82f6",
                         }}
                       >
                         <X style={{ height: "0.75rem", width: "0.75rem" }} />
@@ -1291,6 +1449,7 @@ export default function SavePage() {
                     outline: "none",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -1315,42 +1474,48 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                      <button
-                        onClick={() => {
-                          const newCollection = {
-                            id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                            name: collectionInput.trim(),
-                            color: "bg-gray-500"
-                          };
-                          setAvailableCollections([...availableCollections, newCollection]);
-                          if (!selectedCollections.includes(newCollection.id)) {
-                            setSelectedCollections([...selectedCollections, newCollection.id]);
-                          }
-                          setCollectionInput("");
-                        }}
-                        style={{
-                          padding: "0.25rem 0.75rem",
-                          borderRadius: "9999px",
-                          fontSize: "0.875rem",
-                          backgroundColor: "#dbeafe",
-                          color: "#1d4ed8",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{collectionInput.trim()}"
-                      </button>
-                    )}
-                    {availableCollections
-                      .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                      .map((collection) => (
+                  {isLoadingCollections ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                    </div>
+                  ) : collectionsError ? (
+                    <div className="text-red-500 text-sm p-2">{collectionsError}</div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                      {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
-                          key={collection.id}
-                          onClick={() => toggleCollection(collection.id)}
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/collections', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  name: collectionInput.trim(),
+                                  color: "bg-gray-500"
+                                }),
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Failed to create collection');
+                              }
+
+                              const data = await response.json();
+                              if (data.success) {
+                                setAvailableCollections([...availableCollections, data.data]);
+                                if (!selectedCollections.includes(data.data.id)) {
+                                  setSelectedCollections([...selectedCollections, data.data.id]);
+                                }
+                                setCollectionInput("");
+                              }
+                            } catch (error) {
+                              console.error('Error creating collection:', error);
+                            }
+                          }}
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "9999px",
@@ -1359,16 +1524,40 @@ export default function SavePage() {
                             color: "#1d4ed8",
                             border: "none",
                             cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
                           }}
                         >
-                          <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
-                          {collection.name}
+                          Add "{collectionInput.trim()}"
                         </button>
-                      ))}
-                  </div>
+                      )}
+                      {availableCollections.length === 0 ? (
+                        <div className="text-gray-500 text-sm p-2">No collections found</div>
+                      ) : (
+                        availableCollections
+                          .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                          .map((collection) => (
+                            <button
+                              key={collection.id}
+                              onClick={() => toggleCollection(collection.id)}
+                              style={{
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "9999px",
+                                fontSize: "0.875rem",
+                                backgroundColor: "#dbeafe",
+                                color: "#1d4ed8",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                              }}
+                            >
+                              <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
+                              {collection.name}
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1462,7 +1651,7 @@ export default function SavePage() {
           <div style={{ marginBottom: "1rem" }}>
             <Label
               htmlFor="note"
-          style={{
+              style={{
                 fontSize: "0.875rem",
                 fontWeight: "500",
                 color: "#374151",
@@ -1490,68 +1679,110 @@ export default function SavePage() {
             />
           </div>
 
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-            <button
-              onClick={handleBack}
-              style={{
-                padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
-                fontSize: isMobile ? "0.875rem" : "0.75rem",
-                color: "#374151",
-                backgroundColor: "#F3F4F6",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor: "pointer",
-                fontWeight: "500",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={async () => {
-                if (!formData.note) return;
-                setIsGenerating(true);
-                try {
-                  const response = await fetch("/api/notes", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ note: formData.note }),
-                  });
-                  const data = await response.json();
-                  if (data.title && data.summary) {
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                }}
+              >
+                <Upload style={{ height: "0.875rem", width: "0.875rem" }} />
+                Upload Image
+              </button>
+              <span style={{ fontSize: "0.75rem", color: "#6B7280" }}>(Optional)</span>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                style={{ display: "none" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                onClick={handleBack}
+                style={{
+                  padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
+                  fontSize: isMobile ? "0.875rem" : "0.75rem",
+                  color: "#374151",
+                  backgroundColor: "#F3F4F6",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: "pointer",
+                  fontWeight: "500",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!formData.note) return;
+                  setIsGenerating(true);
+                  try {
+                    const response = await fetch('/api/notes', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        note: formData.note
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to generate title and summary');
+                    }
+
+                    const data = await response.json();
                     setTitleInput(data.title);
                     setSummaryInput(data.summary);
                     setShowInShortModal(true);
+                  } catch (error) {
+                    console.error('Error generating title and summary:', error);
+                    // If API fails, still show modal but with empty title/summary
+                    setTitleInput('');
+                    setSummaryInput(formData.note);
+                    setShowInShortModal(true);
+                  } finally {
+                    setIsGenerating(false);
                   }
-                } catch (error) {
-                  console.error("Error generating title and summary:", error);
-                } finally {
-                  setIsGenerating(false);
-                }
-              }}
-              disabled={!formData.note || isGenerating}
-              style={{
-                padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
-                fontSize: isMobile ? "0.875rem" : "0.75rem",
-                color: "white",
-                backgroundColor: !formData.note || isGenerating ? "#9CA3AF" : "#3B82F6",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor: !formData.note || isGenerating ? "not-allowed" : "pointer",
-                fontWeight: "500",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
-                  Generating...
-                </>
-              ) : (
-                "Continue"
-              )}
-            </button>
+                }}
+                disabled={!formData.note || isGenerating}
+                style={{
+                  padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
+                  fontSize: isMobile ? "0.875rem" : "0.75rem",
+                  color: "white",
+                  backgroundColor: !formData.note || isGenerating ? "#9CA3AF" : "#3B82F6",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: !formData.note || isGenerating ? "not-allowed" : "pointer",
+                  fontWeight: "500",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
+                    Generating...
+                  </>
+                ) : (
+                  "Continue"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -1612,6 +1843,7 @@ export default function SavePage() {
                 fontSize: isMobile ? "1rem" : "0.875rem",
                 resize: "none",
                 fontFamily: "inherit",
+                color: "#6B7280"
               }}
             />
           </div>
@@ -1630,32 +1862,61 @@ export default function SavePage() {
               Note Preview
             </Label>
             <div
-            style={{
-              width: "100%",
+              style={{
+                width: "100%",
                 height: isMobile ? "200px" : "250px",
                 border: "1px solid #d1d5db",
                 borderRadius: "0.5rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 backgroundColor: "#f9fafb",
                 overflow: "hidden",
+                position: "relative",
               }}
             >
-              <img
-                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
-                alt="Note Preview"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  padding: "2rem",
-                }}
-              />
+              {selectedImage ? (
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                  <img
+                    src={selectedImage}
+                    alt="Note Preview"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      padding: "0",
+                    }}
+                  />
+                  <button
+                    onClick={() => setSelectedImage("")}
+                    style={{
+                      position: "absolute",
+                      top: "0.5rem",
+                      right: "0.5rem",
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      color: "white",
+                    border: "none",
+                      borderRadius: "9999px",
+                      padding: "0.25rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <X style={{ height: "1rem", width: "1rem" }} />
+                  </button>
+                </div>
+              ) : (
+                <img
+                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
+                  alt="Note Preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    padding: "2rem",
+                  }}
+                />
+              )}
             </div>
-            <p style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.5rem" }}>
-              This is the default note icon that will be used for your note
-            </p>
           </div>
 
           <div>
@@ -1671,7 +1932,7 @@ export default function SavePage() {
             >
               Tags <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showTagDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedTags.map((tag) => (
                   <span
@@ -1690,7 +1951,7 @@ export default function SavePage() {
                     <button
                       onClick={() => removeTag(tag)}
                       style={{
-                        marginLeft: "0.25rem",
+                    marginLeft: "0.25rem",
                         color: "#3b82f6",
                       }}
                     >
@@ -1714,6 +1975,7 @@ export default function SavePage() {
                     outline: "none",
               fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -1738,12 +2000,14 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "0.5rem", // Changed from 1rem to 0.5rem (2 in Tailwind)
                   }}
                 >
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
+                    {tagInput.trim() && !availableTags.some(t => t.name === tagInput.trim()) && (
                       <button
-                        onClick={() => addTag(tagInput.trim())}
+                        onClick={handleCreateTag}
+                        disabled={isCreatingTag}
                         style={{
                           padding: "0.25rem 0.75rem",
                           borderRadius: "9999px",
@@ -1751,42 +2015,53 @@ export default function SavePage() {
                           backgroundColor: "#dbeafe",
                           color: "#1d4ed8",
                           border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{tagInput.trim()}"
-                      </button>
-                    )}
-                    {defaultTags
-                      .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                      .map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => addTag(tag)}
-                          style={{
-                            padding: "0.25rem 0.75rem",
-                            borderRadius: "9999px",
+                cursor: "pointer",
+                            }}
+                          >
+                            
+                            Create "{tagInput.trim()}"
+                          </button>
+                        )}
+                        {availableTags.length === 0 && !tagInput.trim() && (
+                          <div style={{
+                            color: "#6B7280",
                             fontSize: "0.875rem",
-                            backgroundColor: "#dbeafe",
-                            color: "#1d4ed8",
-                            border: "none",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                  </div>
+                            padding: "0.5rem 0.75rem"
+                          }}>
+                            No tags found
+                          </div>
+                        )}
+                        {availableTags
+                          .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                          .map((tag, index, array) => (
+                            <button
+                              key={tag.id}
+                              onClick={() => {
+                                if (!selectedTags.includes(tag.name)) {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setTagInput('');
+                                setShowTagDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                index === array.length - 1 ? 'rounded-b-xl' : ''
+                              }`}
+                            >
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                              {tag.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div style={{ marginTop: "1rem" }}>
-            <Label
-              htmlFor="collections"
-              style={{
-                fontSize: "0.875rem",
+              <div style={{ marginTop: "1rem" }}>
+                <Label
+                  htmlFor="collections"
+                  style={{
+                    fontSize: "0.875rem",
               fontWeight: "500",
                 color: "#374151",
                 display: "block",
@@ -1795,7 +2070,7 @@ export default function SavePage() {
             >
               Add to Collection <span style={{ color: "#ef4444" }}>*</span>
             </Label>
-            <div style={{ position: "relative" }}>
+            <div style={{ position: "relative", marginBottom: showCollectionDropdown ? "8rem" : "1rem" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 {selectedCollections.map((collectionId) => {
                   const collection = availableCollections.find(c => c.id === collectionId);
@@ -1842,6 +2117,7 @@ export default function SavePage() {
                     outline: "none",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     backgroundColor: "transparent",
+                    boxShadow: "none",
                   }}
                 />
                 <button
@@ -1866,42 +2142,48 @@ export default function SavePage() {
                     borderRadius: "0.5rem",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     padding: "0.5rem",
+                    marginBottom: "1rem", // Add margin to push content below
                   }}
                 >
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                    {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                      <button
-                        onClick={() => {
-                          const newCollection = {
-                            id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
-                            name: collectionInput.trim(),
-                            color: "bg-gray-500"
-                          };
-                          setAvailableCollections([...availableCollections, newCollection]);
-                          if (!selectedCollections.includes(newCollection.id)) {
-                            setSelectedCollections([...selectedCollections, newCollection.id]);
-                          }
-                          setCollectionInput("");
-                        }}
-                        style={{
-                          padding: "0.25rem 0.75rem",
-                          borderRadius: "9999px",
-                          fontSize: "0.875rem",
-                          backgroundColor: "#dbeafe",
-                          color: "#1d4ed8",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Add "{collectionInput.trim()}"
-                      </button>
-                    )}
-                    {availableCollections
-                      .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                      .map((collection) => (
+                  {isLoadingCollections ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                    </div>
+                  ) : collectionsError ? (
+                    <div className="text-red-500 text-sm p-2">{collectionsError}</div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                      {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
-                          key={collection.id}
-                          onClick={() => toggleCollection(collection.id)}
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/collections', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  name: collectionInput.trim(),
+                                  color: "bg-gray-500"
+                                }),
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Failed to create collection');
+                              }
+
+                              const data = await response.json();
+                              if (data.success) {
+                                setAvailableCollections([...availableCollections, data.data]);
+                                if (!selectedCollections.includes(data.data.id)) {
+                                  setSelectedCollections([...selectedCollections, data.data.id]);
+                                }
+                                setCollectionInput("");
+                              }
+                            } catch (error) {
+                              console.error('Error creating collection:', error);
+                            }
+                          }}
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "9999px",
@@ -1910,16 +2192,40 @@ export default function SavePage() {
                             color: "#1d4ed8",
                             border: "none",
                             cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
                           }}
                         >
-                          <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
-                          {collection.name}
+                          Add "{collectionInput.trim()}"
                         </button>
-                      ))}
-                  </div>
+                      )}
+                      {availableCollections.length === 0 ? (
+                        <div className="text-gray-500 text-sm p-2">No collections found</div>
+                      ) : (
+                        availableCollections
+                          .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                          .map((collection) => (
+                            <button
+                              key={collection.id}
+                              onClick={() => toggleCollection(collection.id)}
+                              style={{
+                                padding: "0.25rem 0.75rem",
+                                borderRadius: "9999px",
+                                fontSize: "0.875rem",
+                                backgroundColor: "#dbeafe",
+                                color: "#1d4ed8",
+                                border: "none",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                              }}
+                            >
+                              <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem" }}></div>
+                              {collection.name}
+                            </button>
+                          ))
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1946,6 +2252,12 @@ export default function SavePage() {
                 if (!titleInput || !summaryInput || !formData.note || selectedTags.length === 0 || selectedCollections.length === 0) return;
                 setIsSaving(true);
                 try {
+                  // Convert collection IDs to names
+                  const collectionNames = selectedCollections.map(collectionId => {
+                    const collection = availableCollections.find(c => c.id === collectionId);
+                    return collection ? collection.name : collectionId;
+                  });
+
                   const response = await fetch("/api/notes-save", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -1954,7 +2266,8 @@ export default function SavePage() {
                       summary: summaryInput,
                       note: formData.note,
                       tags: selectedTags,
-                      collections: selectedCollections,
+                      collections: collectionNames,
+                      image: selectedImage || null
                     }),
                   });
                   const data = await response.json();

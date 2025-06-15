@@ -31,6 +31,43 @@ function removeQuotes(str: string) {
   return str.replace(/^"|"$/g, '');
 }
 
+// Add TagIcon component after the imports
+const TagIcon = ({ className = "w-4 h-4" }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M7 7H7.01M7.2 20H16.8C17.9201 20 18.4802 20 18.908 19.782C19.2843 19.5903 19.5903 19.2843 19.782 18.908C20 18.4802 20 17.9201 20 16.8V7.2C20 6.07989 20 5.51984 19.782 5.09202C19.5903 4.71569 19.2843 4.40973 18.908 4.21799C18.4802 4 17.9201 4 16.8 4H7.2C6.07989 4 5.51984 4 5.09202 4.21799C4.71569 4.40973 4.40973 4.71569 4.21799 5.09202C4 5.51984 4 6.07989 4 7.2V16.8C4 17.9201 4 18.4802 4.21799 18.908C4.40973 19.2843 4.71569 19.5903 5.09202 19.782C5.51984 20 6.07989 20 7.2 20Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// Add getTagColor function after TagIcon component
+const getTagColor = (tag: string) => {
+  const colors: { [key: string]: string } = {
+    design: "bg-blue-100 text-blue-700 border-blue-200",
+    ui: "bg-purple-100 text-purple-700 border-purple-200",
+    ux: "bg-pink-100 text-pink-700 border-pink-200",
+    inspiration: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    web: "bg-green-100 text-green-700 border-green-200",
+    mobile: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    development: "bg-red-100 text-red-700 border-red-200",
+    code: "bg-gray-100 text-gray-700 border-gray-200",
+    art: "bg-orange-100 text-orange-700 border-orange-200",
+    photography: "bg-teal-100 text-teal-700 border-teal-200",
+    minimalism: "bg-slate-100 text-slate-700 border-slate-200",
+    modern: "bg-cyan-100 text-cyan-700 border-cyan-200"
+  };
+  return colors[tag.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200";
+};
+//hi
 export default function LibraryPage() {
   const router = useRouter()
   const pathname = usePathname()
@@ -50,12 +87,7 @@ export default function LibraryPage() {
   const [collectionInput, setCollectionInput] = useState("")
   const [showNewCollectionModal, setShowNewCollectionModal] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState("")
-  const [availableCollections, setAvailableCollections] = useState([
-    { id: "ui-mockup", name: "UI mockup", color: "bg-green-500" },
-    { id: "inspiration", name: "Inspiration", color: "bg-purple-500" },
-    { id: "design", name: "Design", color: "bg-blue-500" },
-    { id: "development", name: "Development", color: "bg-yellow-500" },
-  ])
+  const [availableCollections, setAvailableCollections] = useState<any[]>([])
   const [bookmarks, setBookmarks] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [cardView, setCardView] = useState<"list" | "grid">("list")
@@ -228,7 +260,7 @@ export default function LibraryPage() {
       setIsGenerating(true);
       setTitleInput("");
       setSummaryInput("");
-      const response = await fetch('/api/bookmarks', {
+      const response = await fetch('/api/bookmark-save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -632,16 +664,20 @@ export default function LibraryPage() {
             {/* MY COLLECTIONS moved here as a regular nav item */}
             <div className="pt-4">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">MY COLLECTIONS</h3>
-              <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto">
-                {availableCollections.map((collection) => (
-                  <div
-                    key={collection.id}
-                    className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
-                  >
-                    <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
-                    <span>{collection.name}</span>
-                  </div>
-                ))}
+              <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto [overflow-y:scroll] [-webkit-overflow-scrolling:touch]">
+                {availableCollections.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-gray-500">No collections yet</div>
+                ) : (
+                  availableCollections.map((collection) => (
+                    <div
+                      key={collection.id}
+                      className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
+                    >
+                      <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
+                      <span>{collection.name}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -687,31 +723,31 @@ export default function LibraryPage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-            <div className="mt-6">
-              {/* Fixed All Bookmarks Header */}
-              <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold">All Bookmarks</h1>
-                  <div className="flex space-x-2">
-                    <button
-                      className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                      onClick={() => setCardView("list")}
-                      aria-label="List view"
-                    >
-                      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
-                    </button>
-                    <button
-                      className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                      onClick={() => setCardView("grid")}
-                      aria-label="Grid view"
-                    >
-                      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
-                    </button>
-                  </div>
+        <main className="flex-1 min-h-0 flex flex-col px-4 md:px-8 bg-[#f5f8fa] overflow-y-auto [overflow-y:scroll] [-webkit-overflow-scrolling:touch] pb-20 md:pb-4">
+          <div className="flex-1">
+            {/* Fixed All Bookmarks Header */}
+            <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">All Bookmarks</h1>
+                <div className="flex space-x-2">
+                  <button
+                    className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                    onClick={() => setCardView("list")}
+                    aria-label="List view"
+                  >
+                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                  </button>
+                  <button
+                    className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                    onClick={() => setCardView("grid")}
+                    aria-label="Grid view"
+                  >
+                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                  </button>
                 </div>
               </div>
+            </div>
+            <div className="space-y-4 pb-20 md:pb-4">
               {isLoading ? (
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="relative">
@@ -740,6 +776,13 @@ export default function LibraryPage() {
                 <div className="space-y-4 px-0">
                   {bookmarks.map((bm: any) => {
                     const isExpanded = expandedId === bm.id;
+                    const totalTags = (bm.tags || []).length;
+                    const totalCollections = (bm.collections || []).length;
+                    const showTagCount = totalTags > 1;
+                    const showCollectionCount = totalCollections > 1;
+                    const firstTag = bm.tags?.[0];
+                    const firstCollection = bm.collections?.[0];
+
                     return (
                       <div
                         key={bm.id}
@@ -753,7 +796,7 @@ export default function LibraryPage() {
                               <img 
                                 src={bm.image} 
                                 alt={bm.title}
-                                className="w-full h-full object-cover rounded-2xl"
+                                className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                               />
                             ) : (
                               <div className="w-full h-full bg-gray-100" />
@@ -765,7 +808,7 @@ export default function LibraryPage() {
                               <img 
                                 src={bm.image} 
                                 alt={bm.title}
-                                className="w-full h-full object-cover rounded-2xl"
+                                className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                               />
                             ) : (
                               <div className="w-full h-full bg-gray-100" />
@@ -774,43 +817,51 @@ export default function LibraryPage() {
                         )}
                         <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                            {/* Launch icon at end of row for mobile, only when expanded */}
-                            {isExpanded && bm.url && (
+                            <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                            {bm.url && (
                               <a 
                                 href={bm.url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </a>
                             )}
                           </div>
-                          <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                          <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                            {(bm.tags || []).map((tag: string, i: number) => (
-                              <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                            ))}
-                            {(bm.collections || []).map((col: string, i: number) => (
-                              <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                            ))}
-                          </div>
+                          <div className="text-xs text-gray-400 mb-1">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                          {isExpanded ? (
+                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                              {(bm.tags || []).map((tag: string, i: number) => (
+                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
+                                  <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                  {tag}
+                                </span>
+                              ))}
+                              {(bm.collections || []).map((col: string, i: number) => (
+                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {firstTag && (
+                                <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}>
+                                  <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                  {firstTag}
+                                  {showTagCount && <span className="ml-1">+{totalTags - 1}</span>}
+                                </span>
+                              )}
+                              {firstCollection && (
+                                <span className="bg-green-200 text-xs rounded px-2 py-0.5">
+                                  {firstCollection}
+                                  {showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        {/* Remove the launch icon from the bottom right for expanded mobile cards */}
-                        {(!isExpanded && bm.url) && (
-                          <a 
-                            href={bm.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
                       </div>
                     );
                   })}
@@ -831,14 +882,16 @@ export default function LibraryPage() {
                           <img 
                             src={bm.image} 
                             alt={bm.title}
-                            className="w-full h-full object-cover rounded-2xl"
+                            className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100" />
                         )}
                       </div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                        <span className="font-semibold text-lg truncate">
+                          {bm.title || bm.note || 'Untitled'}
+                        </span>
                         {bm.url && (
                           <a 
                             href={bm.url} 
@@ -851,16 +904,23 @@ export default function LibraryPage() {
                           </a>
                         )}
                       </div>
-                      <div className="text-gray-500 text-sm truncate"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                      <div className="text-gray-500 text-sm truncate">
+                        {bm.summary || bm.note || ''}
+                      </div>
                       <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                         {(bm.tags || []).map((tag: string, i: number) => (
-                          <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                          <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
+                            <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                            {tag}
+                          </span>
                         ))}
                         {(bm.collections || []).map((col: string, i: number) => (
                           <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
                         ))}
                       </div>
-                      <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                      <div className="text-xs text-gray-400 mt-2">
+                        {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -872,15 +932,10 @@ export default function LibraryPage() {
           <div className="pt-4">
             {/* ... */}
           </div>
-
-          {/* Footer */}
-          <div className="mt-4 text-center text-xs text-gray-500 pb-4">
-            {/* ... */}
-          </div>
         </main>
 
         {/* Mobile Bottom Navigation - Hidden on Desktop */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 flex-shrink-0">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 z-50">
           <Link href="/bookmarks" className="flex flex-col items-center text-gray-500">
             <Search className="h-6 w-6" />
             <span className="text-xs mt-1">Explore</span>
@@ -952,7 +1007,10 @@ export default function LibraryPage() {
                 <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
                 <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
                   {(selectedBookmark.tags || []).map((tag: string, i: number) => (
-                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                    <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
+                      <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                      {tag}
+                    </span>
                   ))}
                   {(selectedBookmark.collections || []).map((col: string, i: number) => (
                     <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>

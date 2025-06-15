@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent, useRef, useEffect } from "react"
+import { useState, type FormEvent, useRef, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import {
@@ -18,10 +18,13 @@ import {
   Settings,
   Loader2,
   ExternalLink,
+  Upload,
 } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn } from "@clerk/nextjs"
 import SaveModal from "@/components/save-modal"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 // Helper to convert ****text**** to **text**
 function normalizeBold(str: string) {
@@ -31,6 +34,26 @@ function normalizeBold(str: string) {
 function removeQuotes(str: string) {
   return str.replace(/^"|"$/g, '');
 }
+
+// 1. Add the SVG for the tag icon (from screenshot) as a React component at the top of the file:
+const TagIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="#7C6A8A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.59 7.59a2 2 0 0 1-2.83 0l-7.59-7.59a2 2 0 0 1 0-2.83l7.59-7.59a2 2 0 0 1 2.83 0l7.59 7.59a2 2 0 0 1 0 2.83z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg>
+);
+
+// 2. Add a helper to generate a random color for each tag (memoized per tag):
+const tagColors = [
+  "bg-red-100 text-red-700 border-red-200",
+  "bg-pink-100 text-pink-700 border-pink-200",
+  "bg-purple-100 text-purple-700 border-purple-200",
+  "bg-indigo-100 text-indigo-700 border-indigo-200",
+  "bg-blue-100 text-blue-700 border-blue-200",
+  "bg-cyan-100 text-cyan-700 border-cyan-200",
+  "bg-teal-100 text-teal-700 border-teal-200",
+  "bg-green-100 text-green-700 border-green-200",
+  "bg-lime-100 text-lime-700 border-lime-200",
+  "bg-yellow-100 text-yellow-700 border-yellow-200",
+  "bg-orange-100 text-orange-700 border-orange-200"
+];
 
 export default function BookmarksPage() {
   const router = useRouter()
@@ -51,12 +74,7 @@ export default function BookmarksPage() {
   const [collectionInput, setCollectionInput] = useState("")
   const [showNewCollectionModal, setShowNewCollectionModal] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState("")
-  const [availableCollections, setAvailableCollections] = useState([
-    { id: "ui-mockup", name: "UI mockup", color: "bg-green-500" },
-    { id: "inspiration", name: "Inspiration", color: "bg-purple-500" },
-    { id: "design", name: "Design", color: "bg-blue-500" },
-    { id: "development", name: "Development", color: "bg-yellow-500" },
-  ])
+  const [availableCollections, setAvailableCollections] = useState<any[]>([])
   const [bookmarks, setBookmarks] = useState<any[]>([])
   const [cardView, setCardView] = useState<"list" | "grid">("list")
   const [expandedId, setExpandedId] = useState<string | number | null>(null)
@@ -76,8 +94,9 @@ export default function BookmarksPage() {
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const DEFAULT_SUMMARY = "This is a sample description for the article you're saving.";
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [metadata, setMetadata] = useState<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   // Add temporary state for success modal
   const [tempSavedImage, setTempSavedImage] = useState<string | null>(null);
   const [tempSavedTags, setTempSavedTags] = useState<string[]>([]);
@@ -92,12 +111,18 @@ export default function BookmarksPage() {
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isLoadingLinks, setIsLoadingLinks] = useState(false);
-  const [savedSearches, setSavedSearches] = useState<any[]>([]);
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
     "code", "art", "photography", "minimalism", "modern"
   ]
+
+  const getTagColor = (tag: string) => {
+    if (!tagColorMap.has(tag)) {
+      tagColorMap.set(tag, tagColors[Math.floor(Math.random() * tagColors.length)]);
+    }
+    return tagColorMap.get(tag);
+  };
 
   // Fetch bookmarks when Recent Saves tab is active
   useEffect(() => {
@@ -138,11 +163,24 @@ export default function BookmarksPage() {
     e.preventDefault()
     setIsSearching(true)
     
-    // Always fetch fresh data when searching
     try {
-      const response = await fetch("/api/library")
-      const data = await response.json()
-      const allBookmarks = data.data || []
+      let filteredBookmarks: any[] = []
+      
+      // Fetch data based on content filter
+      if (contentFilter === "all") {
+        const [linksData, notesData, imagesData] = await Promise.all([
+          fetchLinks(),
+          fetchNotes(),
+          fetchImages()
+        ])
+        filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+      } else if (contentFilter === "links") {
+        filteredBookmarks = await fetchLinks()
+      } else if (contentFilter === "images") {
+        filteredBookmarks = await fetchImages()
+      } else if (contentFilter === "notes") {
+        filteredBookmarks = await fetchNotes()
+      }
 
       if (searchQuery.trim()) {
         // Save the search query
@@ -159,7 +197,7 @@ export default function BookmarksPage() {
         }
 
         // Filter bookmarks based on search query
-        const filteredBookmarks = allBookmarks.filter((bm: { 
+        filteredBookmarks = filteredBookmarks.filter((bm: { 
           title?: string; 
           summary?: string; 
           tags?: string[]; 
@@ -173,13 +211,10 @@ export default function BookmarksPage() {
             bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
           )
         })
-
-        // Update the bookmarks state with filtered results
-        setBookmarks(filteredBookmarks)
-      } else {
-        // If search query is empty, show all bookmarks
-        setBookmarks(allBookmarks)
       }
+
+      // Update the bookmarks state with filtered results
+      setBookmarks(filteredBookmarks)
     } catch (error) {
       console.error('Error fetching bookmarks:', error)
     }
@@ -193,15 +228,43 @@ export default function BookmarksPage() {
   // Clear search
   const clearSearch = () => {
     setSearchQuery("")
-    // Reset bookmarks to original state
-    fetch("/api/library")
-      .then(res => res.json())
-      .then(data => {
-        setBookmarks(data.data || [])
+    setIsLoading(true)
+    
+    // Fetch data based on content filter
+    if (contentFilter === "all") {
+      Promise.all([
+        fetchLinks(),
+        fetchNotes(),
+        fetchImages()
+      ]).then(([linksData, notesData, imagesData]) => {
+        const allData = [...linksData, ...notesData, ...imagesData]
+        setBookmarks(allData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
       })
-      .catch(error => {
-        console.error('Error fetching bookmarks:', error)
+    } else if (contentFilter === "links") {
+      fetchLinks().then((linksData) => {
+        setBookmarks(linksData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
       })
+    } else if (contentFilter === "images") {
+      fetchImages().then((imagesData) => {
+        setBookmarks(imagesData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
+      })
+    } else if (contentFilter === "notes") {
+      fetchNotes().then((notesData) => {
+        setBookmarks(notesData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
+      })
+    }
   }
 
   // Open save modal
@@ -211,7 +274,18 @@ export default function BookmarksPage() {
 
   // Close save modal
   const closeSaveModal = () => {
-    setShowSaveModal(false)
+    setShowSaveModal(false);
+    setShowInShortModal(false);
+    setUrlInput("");
+    setSummaryInput("");
+    setTitleInput("");
+    setSelectedImage(null);
+    setSelectedTags([]);
+    setSelectedCollections([]);
+    setTagInput("");
+    setCollectionInput("");
+    setMetadata(null);
+    setError("");
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -370,60 +444,61 @@ export default function BookmarksPage() {
   )
 
   const handleInShortSave = async () => {
-    if (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0) {
+    if (!titleInput.trim() || !summaryInput.trim() || selectedCollections.length === 0) {
+      setError("Please fill in all required fields");
       return;
     }
 
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      // Store temporary values for success modal
-      setTempSavedImage(selectedImage);
-      setTempSavedTags([...selectedTags]);
-      setTempSavedCollections([...selectedCollections]);
-      
-      // Convert collection IDs to names
-      const collectionNames = selectedCollections.map(collectionId => {
-        const collection = availableCollections.find(c => c.id === collectionId);
-        return collection ? collection.name : collectionId;
-      });
+      // Use default note image if no image is selected
+      const imageToUse = selectedImage || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4=";
 
-      // Remove **** from title if present
-      const cleanTitle = titleInput.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '$1');
-      
-      const response = await fetch('/api/bookmark-save', {
-        method: 'POST',
+      // Determine if this is a link or a note based on the URL input
+      const isLink = urlInput && urlInput.trim().length > 0;
+      const endpoint = isLink ? "/api/bookmark-save" : "/api/notes-save";
+
+      const payload = {
+        title: titleInput.trim(),
+        summary: summaryInput.trim(),
+        collections: selectedCollections,
+        tags: selectedTags,
+        image: imageToUse,
+        type: "inshort",
+        ...(isLink
+          ? { url: urlInput.trim() }
+          : { note: summaryInput.trim() } // Add note field for notes
+        )
+      };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title: cleanTitle,
-          summary: summaryInput,
-          url: urlInput,
-          image: selectedImage,
-          tags: selectedTags,
-          collections: collectionNames
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save bookmark');
+        throw new Error(isLink ? "Failed to save bookmark" : "Failed to save note");
       }
 
       const data = await response.json();
-      setShowInShortModal(false);
-      setShowSaveModal(false);
-      setShowSuccessModal(true);
-      setSavedTitle(cleanTitle);
-      
-      // Reset form
-      setUrlInput('');
-      setTitleInput('');
-      setSummaryInput('');
-      setSelectedTags([]);
-      setSelectedCollections([]);
-      setSelectedImage(null);
+      if (data.success) {
+        setSavedTitle(titleInput);
+        setShowInShortModal(false);
+        setShowSuccessModal(true);
+        setTitleInput("");
+        setSummaryInput("");
+        setUrlInput("");
+        setSelectedTags([]);
+        setSelectedCollections([]);
+        setSelectedImage(null);
+        setError("");
+      }
     } catch (error) {
-      console.error('Error saving bookmark:', error);
+      console.error("Error saving:", error);
+      setError("Failed to save. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -615,7 +690,6 @@ export default function BookmarksPage() {
 
   // Add function to fetch links
   const fetchLinks = async () => {
-    setIsLoadingLinks(true);
     try {
       const response = await fetch('/api/library');
       if (!response.ok) throw new Error('Failed to fetch links');
@@ -627,16 +701,15 @@ export default function BookmarksPage() {
         contentType: 'link'
       }));
       setLinks(processedLinks);
+      return processedLinks;
     } catch (error) {
       console.error('Error fetching links:', error);
-    } finally {
-      setIsLoadingLinks(false);
+      throw error;
     }
   };
 
   // Add function to fetch notes
   const fetchNotes = async () => {
-    setIsLoadingNotes(true);
     try {
       const response = await fetch('/api/notes-save');
       if (!response.ok) throw new Error('Failed to fetch notes');
@@ -649,16 +722,15 @@ export default function BookmarksPage() {
         contentType: 'note'
       }));
       setNotes(processedNotes);
+      return processedNotes;
     } catch (error) {
       console.error('Error fetching notes:', error);
-    } finally {
-      setIsLoadingNotes(false);
+      throw error;
     }
   };
 
   // Add function to fetch images
   const fetchImages = async () => {
-    setIsLoadingImages(true);
     try {
       const response = await fetch('/api/upload');
       if (!response.ok) throw new Error('Failed to fetch images');
@@ -670,91 +742,39 @@ export default function BookmarksPage() {
         contentType: 'image'
       }));
       setImages(processedImages);
+      return processedImages;
     } catch (error) {
       console.error('Error fetching images:', error);
-    } finally {
-      setIsLoadingImages(false);
+      throw error;
     }
   };
 
   // Add useEffect to fetch data when content filter changes
   useEffect(() => {
-    const fetchData = async () => {
-      if (contentFilter === "all") {
-        setIsLoadingLinks(true);
-        try {
-          const response = await fetch('/api/all');
-          const data = await response.json();
-          if (data.success) {
-            setBookmarks(data.data);
-          }
-        } catch (error) {
-          console.error('Error fetching all content:', error);
-        } finally {
-          setIsLoadingLinks(false);
-        }
-      } else if (contentFilter === "links") {
-        setIsLoadingLinks(true);
-        try {
-          const response = await fetch('/api/library');
-          if (!response.ok) throw new Error('Failed to fetch links');
-          const data = await response.json();
-          // Prefix link IDs with 'link_'
-          const processedLinks = data.data.map((link: any) => ({
-            ...link,
-            id: `link_${link.id}`,
-            contentType: 'link'
-          }));
-          setLinks(processedLinks);
-          setBookmarks(processedLinks);
-        } catch (error) {
-          console.error('Error fetching links:', error);
-        } finally {
-          setIsLoadingLinks(false);
-        }
-      } else if (contentFilter === "images") {
-        setIsLoadingImages(true);
-        try {
-          const response = await fetch('/api/upload');
-          if (!response.ok) throw new Error('Failed to fetch images');
-          const data = await response.json();
-          // Prefix image IDs with 'image_'
-          const processedImages = data.data.map((image: any) => ({
-            ...image,
-            id: `image_${image.id}`,
-            contentType: 'image'
-          }));
-          setImages(processedImages);
-          setBookmarks(processedImages);
-        } catch (error) {
-          console.error('Error fetching images:', error);
-        } finally {
-          setIsLoadingImages(false);
-        }
-      } else if (contentFilter === "notes") {
-        setIsLoadingNotes(true);
-        try {
-          const response = await fetch('/api/notes-save');
-          if (!response.ok) throw new Error('Failed to fetch notes');
-          const data = await response.json();
-          if (!data.success) throw new Error('Failed to fetch notes');
-          // Prefix note IDs with 'note_'
-          const processedNotes = data.data.map((note: any) => ({
-            ...note,
-            id: `note_${note.id}`,
-            contentType: 'note'
-          }));
-          setNotes(processedNotes);
-          setBookmarks(processedNotes);
-        } catch (error) {
-          console.error('Error fetching notes:', error);
-        } finally {
-          setIsLoadingNotes(false);
-        }
-      }
-    };
-
-    fetchData();
+    if (contentFilter === "all") {
+      // Fetch all data
+      Promise.all([
+        fetchLinks(),
+        fetchNotes(),
+        fetchImages()
+      ]).then(() => {
+        // Combine all data into bookmarks
+        const allData = [...links, ...notes, ...images];
+        setBookmarks(allData);
+      });
+    } else if (contentFilter === "links") {
+      fetchLinks().then(() => {
+        setBookmarks(links);
+      });
+    } else if (contentFilter === "images") {
+      fetchImages().then(() => {
+        setBookmarks(images);
+      });
+    } else if (contentFilter === "notes") {
+      fetchNotes().then(() => {
+        setBookmarks(notes);
+      });
+    }
   }, [contentFilter]);
 
   // Update the loading state check
@@ -768,6 +788,163 @@ export default function BookmarksPage() {
       </div>
     </div>
   );
+
+  const handleUrlPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const url = e.clipboardData.getData('text');
+    if (!url) return;
+
+    try {
+      setIsGenerating(true);
+      setTitleInput("");
+      setSummaryInput("");
+
+      // First fetch metadata
+      console.log('Fetching metadata for URL:', url);
+      const metadataResponse = await fetch('/api/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!metadataResponse.ok) {
+        throw new Error('Failed to fetch metadata');
+      }
+
+      const metadata = await metadataResponse.json();
+      console.log('Received metadata:', metadata);
+
+      // Always update the image preview if metadata contains an ogImage
+      if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
+        setSelectedImage(metadata.metadata.ogImage[0].url);
+      }
+
+      // Verify if the URL is from a social media platform
+      console.log('Starting URL verification process...');
+      const verifyResponse = await fetch('/api/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          url,
+          metadata: metadata.metadata
+        }),
+      });
+
+      if (!verifyResponse.ok) {
+        throw new Error('Failed to verify URL');
+      }
+
+      const verifyData = await verifyResponse.json();
+      const isSocialMedia = verifyData.isSocialMedia;
+      console.log('URL verification result:', { isSocialMedia });
+
+      if (isSocialMedia) {
+        console.log('Processing social media URL...');
+        // For social media links, use the title from metadata and let user write summary
+        setTitleInput(metadata.metadata.ogTitle || '');
+        console.log('Set title from metadata:', metadata.metadata.ogTitle);
+        setShowInShortModal(true);
+      } else {
+        console.log('Processing non-social media URL...');
+        // For non-social media links, use the existing bookmark creation flow
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            url,
+            image: selectedImage 
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to process URL');
+        }
+
+        const data = await response.json();
+        console.log('Received bookmark data:', data);
+        setTitleInput(data.title);
+        setSummaryInput(data.summary);
+        setShowInShortModal(true);
+      }
+    } catch (error) {
+      console.error('Error processing URL:', error);
+      setError('Failed to process URL. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Add this function after the other fetch functions
+  const fetchCollections = async () => {
+    try {
+      const response = await fetch('/api/collections');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableCollections(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching collections:', error);
+    }
+  };
+
+  // Add this useEffect to fetch collections when the component mounts
+  useEffect(() => {
+    fetchCollections();
+  }, []);
+
+  // Add this function after the other fetch functions
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags');
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  // Add this useEffect to fetch tags when the component mounts
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  // Add this function to handle tag creation
+  const handleCreateTag = async () => {
+    if (!tagInput.trim()) return;
+    
+    setIsCreatingTag(true);
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: tagInput.trim(),
+          color: getRandomColor(),
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setAvailableTags(prev => [...prev, data.data]);
+        setSelectedTags(prev => [...prev, data.data.name]);
+        setTagInput('');
+        setShowTagDropdown(false);
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error);
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-[#f5f8fa] overflow-hidden">
@@ -811,16 +988,20 @@ export default function BookmarksPage() {
             {/* MY COLLECTIONS moved here as a regular nav item */}
             <div className="pt-4">
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">MY COLLECTIONS</h3>
-              <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto">
-                {availableCollections.map((collection) => (
-                  <div
-                    key={collection.id}
-                    className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
-                  >
-                    <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
-                    <span>{collection.name}</span>
-                  </div>
-                ))}
+              <div className="mt-2 space-y-1 max-h-[calc(100vh-400px)] overflow-y-auto [overflow-y:scroll] [-webkit-overflow-scrolling:touch]">
+                {availableCollections.length === 0 ? (
+                  <div className="px-2 py-2 text-sm text-gray-500">No collections yet</div>
+                ) : (
+                  availableCollections.map((collection) => (
+                    <div
+                      key={collection.id}
+                      className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
+                    >
+                      <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
+                      <span>{collection.name}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -880,13 +1061,27 @@ export default function BookmarksPage() {
                   setIsSearching(true);
                   
                   try {
-                    const response = await fetch("/api/library");
-                    const data = await response.json();
-                    const allBookmarks = data.data || [];
+                    let filteredBookmarks: any[] = []
+                    
+                    // Fetch data based on content filter
+                    if (contentFilter === "all") {
+                      const [linksData, notesData, imagesData] = await Promise.all([
+                        fetchLinks(),
+                        fetchNotes(),
+                        fetchImages()
+                      ])
+                      filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+                    } else if (contentFilter === "links") {
+                      filteredBookmarks = await fetchLinks()
+                    } else if (contentFilter === "images") {
+                      filteredBookmarks = await fetchImages()
+                    } else if (contentFilter === "notes") {
+                      filteredBookmarks = await fetchNotes()
+                    }
 
                     if (newQuery.trim()) {
                       // Filter bookmarks based on search query
-                      const filteredBookmarks = allBookmarks.filter((bm: { 
+                      filteredBookmarks = filteredBookmarks.filter((bm: { 
                         title?: string; 
                         summary?: string; 
                         tags?: string[]; 
@@ -900,11 +1095,8 @@ export default function BookmarksPage() {
                           bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
                         );
                       });
-                      setBookmarks(filteredBookmarks);
-                    } else {
-                      // If search query is empty, show all bookmarks
-                      setBookmarks(allBookmarks);
                     }
+                    setBookmarks(filteredBookmarks);
                   } catch (error) {
                     console.error('Error fetching bookmarks:', error);
                   }
@@ -945,14 +1137,7 @@ export default function BookmarksPage() {
             >
               Links
             </button>
-            <button
-              onClick={() => setContentFilter("images")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              Images
-            </button>
+            
             <button
               onClick={() => setContentFilter("notes")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
@@ -990,13 +1175,27 @@ export default function BookmarksPage() {
                     setIsSearching(true);
                     
                     try {
-                      const response = await fetch("/api/library");
-                      const data = await response.json();
-                      const allBookmarks = data.data || [];
+                      let filteredBookmarks: any[] = []
+                      
+                      // Fetch data based on content filter
+                      if (contentFilter === "all") {
+                        const [linksData, notesData, imagesData] = await Promise.all([
+                          fetchLinks(),
+                          fetchNotes(),
+                          fetchImages()
+                        ])
+                        filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+                      } else if (contentFilter === "links") {
+                        filteredBookmarks = await fetchLinks()
+                      } else if (contentFilter === "images") {
+                        filteredBookmarks = await fetchImages()
+                      } else if (contentFilter === "notes") {
+                        filteredBookmarks = await fetchNotes()
+                      }
 
                       if (newQuery.trim()) {
                         // Filter bookmarks based on search query
-                        const filteredBookmarks = allBookmarks.filter((bm: { 
+                        filteredBookmarks = filteredBookmarks.filter((bm: { 
                           title?: string; 
                           summary?: string; 
                           tags?: string[]; 
@@ -1010,11 +1209,8 @@ export default function BookmarksPage() {
                             bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
                           );
                         });
-                        setBookmarks(filteredBookmarks);
-                      } else {
-                        // If search query is empty, show all bookmarks
-                        setBookmarks(allBookmarks);
                       }
+                      setBookmarks(filteredBookmarks);
                     } catch (error) {
                       console.error('Error fetching bookmarks:', error);
                     }
@@ -1056,28 +1252,34 @@ export default function BookmarksPage() {
               All
             </button>
             <button
-              onClick={() => setContentFilter("links")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Links
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("images")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Images
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
-              onClick={() => setContentFilter("notes")}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+              onClick={() => {}}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-200 text-gray-500 cursor-not-allowed relative group"
+              title="Coming soon"
             >
               Notes
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Coming soon
+              </span>
             </button>
             <button
               onClick={() => {}}
@@ -1095,66 +1297,145 @@ export default function BookmarksPage() {
         {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col p-4 md:p-8 bg-[#f5f8fa]">
           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-            {isLoading ? (
-              <LoadingSpinner />
-            ) : bookmarks.length === 0 ? (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="w-40 h-40 mb-6">
-        <img
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
-          alt="No bookmarks"
-          className="w-full h-full"
-        />
-      </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
-      <p className="text-gray-600 mb-8 max-w-md">
-        Start saving to fill your Loft with links, social posts, images, and more
-      </p>
-      <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
-        Discover Content
-      </button>
-    </div>
-            ) : (
-    <>
-      {/* Content based on active tab */}
-      {activeTab === "recent-saves" ? (
-        <div className="mt-6">
-          {/* Fixed Recent Saves Header */}
-          <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Recent Saves</h1>
-              <div className="flex space-x-2">
-                <button
-                  className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                  onClick={() => setCardView("list")}
-                  aria-label="List view"
-                >
-                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
-                </button>
-                <button
-                  className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                  onClick={() => setCardView("grid")}
-                  aria-label="Grid view"
-                >
-                  <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
+            {searchPerformed ? (
+              <div className="space-y-6">
+                {/* Content Type Filters and Sort Options in Same Row */}
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-2 overflow-x-auto no-scrollbar">
+                    <button
+                      onClick={() => setContentFilter("all")}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                        contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setContentFilter("links")}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                        contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      Links
+                    </button>
+                    <button
+                      onClick={() => setContentFilter("images")}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                        contentFilter === "images" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      Images
+                    </button>
+                    <button
+                      onClick={() => setContentFilter("notes")}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                        contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      Notes
+                    </button>
+                    <button
+                      onClick={() => setContentFilter("articles")}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                        contentFilter === "articles"
+                          ? "bg-blue-500 text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      Articles
+                    </button>
+                  </div>
 
-          {/* Add top padding so first card is not hidden behind sticky header */}
-          <div className="pt-8">
-          {(isLoading && contentFilter === "all") || 
-           (isLoadingLinks && contentFilter === "links") || 
-           (isLoadingImages && contentFilter === "images") || 
-           (isLoadingNotes && contentFilter === "notes") ? (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+                  {/* Sort and View Options - Now in same row */}
+                  <div className="hidden md:flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-500 mr-2">Sort by</span>
+                      <button className="flex items-center text-sm text-gray-700 hover:text-gray-900">
+                        <span>Relevance</span>
+                        <ArrowUpDown className="h-4 w-4 ml-1" />
+                      </button>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button className="p-1 rounded hover:bg-gray-100">
+                        <Grid className="h-5 w-5 text-gray-700" />
+                      </button>
+                      <button className="p-1 rounded hover:bg-gray-100">
+                        <List className="h-5 w-5 text-gray-400" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* No Results Found State */}
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="w-40 h-40 mb-6">
+                    <img
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Not%20Found%20illustration-UrvV2weSLaEBzWyuYMprcREhfZTEH3.png"
+                      alt="No results found"
+                      className="w-full h-full"
+                    />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">No Result Found</h2>
+                  <p className="text-gray-600 mb-8 max-w-md">Try refining your search or explore something new</p>
+
+                  {/* Suggested Searches */}
+                  <div className="w-full max-w-2xl">
+                    <h3 className="text-gray-500 text-sm mb-4">Suggested Searches:</h3>
+                    <div className="flex flex-wrap gap-3 md:gap-4 justify-center">
+                      <button className="flex items-center bg-white rounded-full px-3 py-2 md:px-6 md:py-3 text-sm md:text-base font-medium text-gray-700 hover:bg-gray-100 shadow-sm">
+                        <Search className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-gray-500" />
+                        Recently Saved
+                      </button>
+                      <button className="flex items-center bg-white rounded-full px-3 py-2 md:px-6 md:py-3 text-sm md:text-base font-medium text-gray-700 hover:bg-gray-100 shadow-sm">
+                        <Search className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-gray-500" />
+                        AI-generated Picks
+                      </button>
+                      <button className="flex items-center bg-white rounded-full px-3 py-2 md:px-6 md:py-3 text-sm md:text-base font-medium text-gray-700 hover:bg-gray-100 shadow-sm">
+                        <Search className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-gray-500" />
+                        Popular in Your Collections
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : bookmarks.length === 0 ? (
+            ) : (
+              <>
+                {/* Content based on active tab */}
+                {activeTab === "recent-saves" ? (
+                  <div className="mt-6">
+                    {/* Fixed Recent Saves Header */}
+                    <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+                      <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-bold">Recent Saves</h1>
+                        <div className="flex space-x-2">
+                          <button
+                            className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                            onClick={() => setCardView("list")}
+                            aria-label="List view"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                          </button>
+                          <button
+                            className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                            onClick={() => setCardView("grid")}
+                            aria-label="Grid view"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add top padding so first card is not hidden behind sticky header */}
+                    <div className="pt-8">
+                    {isLoading ? (
+                      <div className="flex items-center justify-center min-h-[400px]">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
+                          <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+                        </div>
+                      </div>
+                    ) : bookmarks.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                         <div className="w-40 h-40 mb-6">
                           <img
@@ -1171,163 +1452,151 @@ export default function BookmarksPage() {
                           Discover Content
                         </button>
                       </div>
-          ) : cardView === "list" ? (
-            <div className="space-y-4 px-0">
-              {bookmarks.map((bm: any) => {
-                const isExpanded = expandedId === bm.id;
-                return (
-                  <div
-                    key={bm.type ? bm.type + '-' + bm.id : bm.id}
-                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
-                    onClick={() => setExpandedId(isExpanded ? null : bm.id)}
-                  >
-                    {/* Image or blank */}
-                    {isExpanded ? (
-                      <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
-                        {bm.image && bm.image !== '{}' ? (
-                          <img 
-                            src={bm.image} 
-                            alt={bm.title}
-                            className="w-full h-full object-cover rounded-2xl"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100" />
-                        )}
+                    ) : cardView === "list" ? (
+                      <div className="space-y-4 px-0">
+                        {bookmarks.map((bm: any) => {
+                          const isExpanded = expandedId === bm.id;
+                          return (
+                            <div
+                              key={bm.id}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                              onClick={() => setExpandedId(isExpanded ? null : bm.id)}
+                            >
+                              {/* Image or blank */}
+                              {isExpanded ? (
+                                <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                                  {bm.image ? (
+                                    <img 
+                                      src={bm.image} 
+                                      alt={bm.title}
+                                      className="w-full h-full object-cover rounded-2xl"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100" />
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                  {bm.image ? (
+                                    <img 
+                                      src={bm.image} 
+                                      alt={bm.title}
+                                      className="w-full h-full object-cover rounded-2xl"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100" />
+                                  )}
+                                </div>
+                              )}
+                              <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                  {/* Launch icon at end of row for mobile, only when expanded */}
+                                  {isExpanded && bm.url && (
+                                    <a 
+                                      href={bm.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                  {(bm.tags || []).map((tag: string, i: number) => (
+                                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                  ))}
+                                  {(bm.collections || []).map((col: string, i: number) => (
+                                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Remove the launch icon from the bottom right for expanded mobile cards */}
+                              {(!isExpanded && bm.url) && (
+                                <a 
+                                  href={bm.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
-                      <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                        {bm.image && bm.image !== '{}' ? (
-                          <img 
-                            src={bm.image} 
-                            alt={bm.title}
-                            className="w-full h-full object-cover rounded-2xl"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100" />
-                        )}
-                      </div>
-                    )}
-                    <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-lg truncate">
-                          {bm.title ? (
-                            <ReactMarkdown>{normalizeBold(removeQuotes(bm.title))}</ReactMarkdown>
-                          ) : (
-                            bm.note || 'Untitled'
-                          )}
-                        </span>
-                        {/* Launch icon at end of row for mobile, only when expanded */}
-                        {isExpanded && bm.url && (
-                          <a 
-                            href={bm.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {bookmarks.map((bm: any) => (
+                          <div
+                            key={bm.id}
+                            className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                            onClick={() => {
+                              setSelectedBookmark(bm);
+                              setShowModal(true);
+                            }}
                           >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                      <div className="md:hidden text-xs text-gray-400 mb-2">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                      <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"} ${isExpanded ? 'w-full' : ''}`}>
-                        {bm.summary ? (
-                          <ReactMarkdown>{normalizeBold(removeQuotes(bm.summary))}</ReactMarkdown>
-                        ) : (
-                          bm.note || ''
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                        {(bm.tags || []).map((tag: string, i: number) => (
-                          <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                            <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                              {bm.image ? (
+                                <img 
+                                  src={bm.image} 
+                                  alt={bm.title}
+                                  className="w-full h-full object-cover rounded-2xl"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-lg truncate">
+                                {bm.title || bm.note || 'Untitled'}
+                              </span>
+                              {bm.url && (
+                                <a 
+                                  href={bm.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                            <div className="text-gray-500 text-sm truncate">
+                              {bm.summary || bm.note || ''}
+                            </div>
+                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                              {(bm.tags || []).map((tag: string, i: number) => (
+                                <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                              ))}
+                              {(bm.collections || []).map((col: string, i: number) => (
+                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                              ))}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-2">
+                              {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </div>
+                          </div>
                         ))}
-                        {(bm.collections || []).map((col: string, i: number) => (
-                          <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                        ))}
                       </div>
+                    )}
                     </div>
-                    {/* Remove the launch icon from the bottom right for expanded mobile cards */}
-                    {(!isExpanded && bm.url) && (
-                      <a 
-                        href={bm.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {bookmarks.map((bm: any) => (
-                <div
-                  key={bm.type ? bm.type + '-' + bm.id : bm.id}
-                  className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                  onClick={() => {
-                    setSelectedBookmark(bm);
-                    setShowModal(true);
-                  }}
-                >
-                  <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
-                    {bm.image && bm.image !== '{}' ? (
-                      <img 
-                        src={bm.image} 
-                        alt={bm.title || bm.note || 'Image'}
-                        className="w-full h-full object-cover rounded-2xl"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-lg truncate">
-                      {bm.title || bm.note || ''}
-                    </span>
-                    {bm.url && (
-                      <a 
-                        href={bm.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                  <div className="text-gray-500 text-sm truncate">
-                    {bm.summary || bm.note || ''}
-                  </div>
-                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                    {(bm.tags || []).map((tag: string, i: number) => (
-                      <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                    ))}
-                    {(bm.collections || []).map((col: string, i: number) => (
-                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                    ))}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-2">
-                    {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          </div>
-        </div>
-      ) : activeTab === "suggested-tags" ? (
-        <div className="mt-6">
-          {/* Fixed Suggested Tags Header */}
-          <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Suggested Tags</h1>
-              <div className="flex space-x-2">
-        <button
+                ) : activeTab === "suggested-tags" ? (
+                  <div className="mt-6">
+                    {/* Fixed Suggested Tags Header */}
+                    <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+                      <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-bold">Suggested Tags</h1>
+                        <div className="flex space-x-2">
+                <button
                             className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
                             onClick={() => setCardView("list")}
                             aria-label="List view"
@@ -1370,172 +1639,172 @@ export default function BookmarksPage() {
                           Discover Content
                         </button>
                       </div>
-              ) : (
-                <div className="px-4 md:px-8">
-                  {/* Group bookmarks by tags */}
-                  {Object.entries(
-                    bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
-                      (bm.tags || []).forEach((tag: string) => {
-                        if (!acc[tag]) acc[tag] = [];
-                        acc[tag].push(bm);
-                      });
-                      return acc;
-                    }, {})
-                  ).map(([tag, tagBookmarks]) => (
-                    <div key={tag} className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <h2 className="text-lg font-semibold text-gray-900">{tag}</h2>
-                        <span className="text-sm text-gray-500">({tagBookmarks.length})</span>
-                      </div>
-                      {cardView === "list" ? (
-                        <div className="px-4 md:px-8">
-                          {/* List view */}
-                          <div className="space-y-4 px-0">
-                            {tagBookmarks.map((bm: any) => {
-                              const cardKey = `${tag}-${bm.type ? bm.type + '-' + bm.id : bm.id}`;
-                              const isExpanded = expandedId === cardKey;
-                              return (
-                                <div
-                                  key={cardKey}
-                                  className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
-                                  onClick={() => setExpandedId(isExpanded ? null : cardKey)}
-                                >
-                                  {/* Image or blank */}
-                                  <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                    {bm.image && bm.image !== '{}' ? (
-                                      <img 
-                                        src={bm.image} 
-                                        alt={bm.title || bm.note || 'Image'}
-                                        className="w-full h-full object-cover rounded-2xl"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gray-100" />
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
-                                      {bm.url && (
-                                        <a 
-                                          href={bm.url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
-                                        >
-                                          Site
-                                        </a>
-                                      )}
-                                    </div>
-                                    <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                    <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                      {(bm.tags || []).map((tag: string, i: number) => (
-                                        <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                      ))}
-                                      {(bm.collections || []).map((col: string, i: number) => (
-                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                      ))}
-                                      <div className="md:hidden">
-                                        {bm.url && (
-                                          <a
-                                            href={bm.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            onClick={e => e.stopPropagation()}
-                                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
-                                            style={{ marginTop: '2px' }} // optional, for vertical alignment
-                                          >
-                                            Site
-                                          </a>
-                                        )}
-                                      </div>
-                                    </div>
-                                    {isExpanded && (
-                                      <div className="mt-3">
-                                        <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="px-4 md:px-8">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {tagBookmarks.map((bm: any) => (
-                              <div key={bm.type ? bm.type + '-' + bm.id : bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
-                                <div className="h-48 overflow-hidden rounded-t-2xl">
-                                  {bm.image && bm.image !== '{}' ? (
-                                    <div className="w-full h-full overflow-hidden rounded-t-2xl">
-                                      <img
-                                        src={bm.image}
-                                        alt={bm.title || bm.note || 'Image'}
-                                        className="w-full h-full object-cover rounded-2xl"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div className="w-full h-full bg-gray-100 rounded-t-2xl" />
-                                  )}
-                                </div>
-                                <div className="p-4">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
-                                    {bm.url && (
-                                      <a 
-                                        href={bm.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                    ) : (
+                      <div className="px-4 md:px-8">
+                        {/* Group bookmarks by tags */}
+                        {Object.entries(
+                          bookmarks.reduce((acc: { [key: string]: any[] }, bm: any) => {
+                            (bm.tags || []).forEach((tag: string) => {
+                              if (!acc[tag]) acc[tag] = [];
+                              acc[tag].push(bm);
+                            });
+                            return acc;
+                          }, {})
+                        ).map(([tag, tagBookmarks]) => (
+                          <div key={tag} className="space-y-4">
+                            <div className="flex items-center space-x-2">
+                              <h2 className="text-lg font-semibold text-gray-900">{tag}</h2>
+                              <span className="text-sm text-gray-500">({tagBookmarks.length})</span>
+                            </div>
+                            {cardView === "list" ? (
+                              <div className="px-4 md:px-8">
+                                {/* List view */}
+                                <div className="space-y-4 px-0">
+                                  {tagBookmarks.map((bm: any) => {
+                                    const cardKey = `${tag}-${bm.id}`;
+                                    const isExpanded = expandedId === cardKey;
+                                    return (
+                                      <div
+                                        key={bm.id}
+                                        className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
+                                        onClick={() => setExpandedId(isExpanded ? null : cardKey)}
                                       >
-                                        Site
-                                      </a>
-                                    )}
-                                  </div>
-                                  <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
-                                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                    {(bm.tags || []).map((tag: string, i: number) => (
-                                      <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-                                    ))}
-                                    {(bm.collections || []).map((col: string, i: number) => (
-                                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                    ))}
-                                    <div className="md:hidden">
-                                      {bm.url && (
-                                        <a
-                                          href={bm.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={e => e.stopPropagation()}
-                                          className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
-                                          style={{ marginTop: '2px' }} // optional, for vertical alignment
-                                        >
-                                          Site
-                                        </a>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                        {/* Image or blank */}
+                                        <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                          {bm.image ? (
+                                            <img 
+                                              src={bm.image} 
+                                              alt={bm.title}
+                                              className="w-full h-full object-cover rounded-2xl"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full bg-gray-100" />
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="font-semibold text-lg truncate"><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                            {bm.url && (
+                                              <a 
+                                                href={bm.url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                              >
+                                                Site
+                                              </a>
+                                            )}
+                                          </div>
+                                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate"}`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                          <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                            {(bm.tags || []).map((tag: string, i: number) => (
+                                              <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                            ))}
+                                            {(bm.collections || []).map((col: string, i: number) => (
+                                              <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                            ))}
+                                            <div className="md:hidden">
+                                              {bm.url && (
+                                                <a
+                                                  href={bm.url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  onClick={e => e.stopPropagation()}
+                                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                  style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                                >
+                                                  Site
+                                                </a>
+                                              )}
+                                            </div>
+                                          </div>
+                                          {isExpanded && (
+                                            <div className="mt-3">
+                                              <div className="text-xs text-gray-400">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-gray-400 ml-4 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
-                            ))}
+                            ) : (
+                              <div className="px-4 md:px-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {tagBookmarks.map((bm: any) => (
+                                    <div key={bm.id} className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer w-full p-4" onClick={() => { setSelectedBookmark(bm); setShowModal(true); }}>
+                                      <div className="h-48 overflow-hidden rounded-t-2xl">
+                                        {bm.image ? (
+                                          <div className="w-full h-full overflow-hidden rounded-t-2xl">
+                                            <img
+                                              src={bm.image}
+                                              alt={bm.title}
+                                              className="w-full h-full object-cover rounded-2xl"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <div className="w-full h-full bg-gray-100 rounded-t-2xl" />
+                                        )}
+                                      </div>
+                                      <div className="p-4">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
+                                          {bm.url && (
+                                            <a 
+                                              href={bm.url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                            >
+                                              Site
+                                            </a>
+                                          )}
+                                        </div>
+                                        <div className="text-gray-500 text-sm truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                                        <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                          {(bm.tags || []).map((tag: string, i: number) => (
+                                            <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                                          ))}
+                                          {(bm.collections || []).map((col: string, i: number) => (
+                                            <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                          ))}
+                                          <div className="md:hidden">
+                                            {bm.url && (
+                                              <a
+                                                href={bm.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={e => e.stopPropagation()}
+                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                style={{ marginTop: '2px' }} // optional, for vertical alignment
+                                              >
+                                                Site
+                                              </a>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="text-xs text-gray-400 mt-2">{new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : activeTab === "search-saved" ? (
+                  <div className="mt-6">
+                    {/* Fixed Search Saved Header */}
+                    <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
+                      <h1 className="text-2xl font-bold">Saved Searches</h1>
                     </div>
-                  ))}
-                </div>
-              )}
-          </div>
-        ) : activeTab === "search-saved" ? (
-          <div className="mt-6">
-            {/* Fixed Search Saved Header */}
-            <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
-              <h1 className="text-2xl font-bold">Saved Searches</h1>
-            </div>
 
             {isLoadingSearches ? (
               <LoadingSpinner />
@@ -1603,164 +1872,163 @@ export default function BookmarksPage() {
     )}
   </div>
 
-  {/* Input Form - Fixed at bottom */}
-  <div className="pt-4">
-    {/* ... */}
-  </div>
-
-  {/* Footer */}
-  <div className="mt-4 text-center text-xs text-gray-500 pb-4">
-    {/* ... */}
-  </div>
-</main>
-
-{/* Mobile Bottom Navigation - Hidden on Desktop */}
-<nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3">
-  <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
-    <Search className="h-6 w-6" />
-    <span className="text-xs mt-1">Explore</span>
-  </Link>
-  <Link href="/library" className="flex flex-col items-center text-gray-500">
-    <BookmarkIcon className="h-6 w-6" />
-    <span className="text-xs mt-1">Library</span>
-  </Link>
-  <Link href="/run-through" className="flex flex-col items-center text-gray-500">
-    <Star className="h-6 w-6" />
-    <span className="text-xs mt-1">Run through</span>
-  </Link>
-  <div className="flex flex-col items-center text-gray-500">
-    <SignedIn>
-      <UserButton 
-        afterSignOutUrl="/" 
-        appearance={{ 
-          elements: { 
-            avatarBox: 'w-6 h-6',
-            card: 'w-48',
-            userPreview: 'p-2',
-            userButtonPopoverCard: 'w-48',
-            userButtonPopoverActionButton: 'p-2 text-sm'
-          } 
-        }} 
-      />
-    </SignedIn>
-    <span className="text-xs mt-1">Settings</span>
-  </div>
-</nav>
-
-{/* Mobile Save Button - Fixed at bottom right */}
-<button
-  onClick={openSaveModal}
-  className="md:hidden fixed right-4 bottom-20 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-10"
->
-  <Plus className="h-6 w-6" />
-</button>
-
-{/* Bookmark Modal */}
-{showModal && selectedBookmark && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1 flex items-center gap-2">
-            <h2 className="text-2xl font-bold">{selectedBookmark.title}</h2>
-            {selectedBookmark.url && (
-              <a 
-                href={selectedBookmark.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-              >
-                <ExternalLink className="h-5 w-5" />
-              </a>
-            )}
+          {/* Input Form - Fixed at bottom */}
+          <div className="pt-4">
+            {/* ... */}
           </div>
-          <button 
-            onClick={() => setShowModal(false)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
-          {selectedBookmark.image && selectedBookmark.image !== '{}' ? (
-            <img 
-              src={selectedBookmark.image} 
-              alt={selectedBookmark.title}
-              className="w-full h-full object-cover rounded-2xl"
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-100" />
-          )}
-        </div>
-        <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
-        <div className="flex items-center space-x-2 flex-wrap mb-4">
-          {(selectedBookmark.tags || []).map((tag: string, i: number) => (
-            <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
-          ))}
-          {(selectedBookmark.collections || []).map((col: string, i: number) => (
-            <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-          ))}
-        </div>
-        <div className="text-sm text-gray-400">
-          Created: {new Date(selectedBookmark.created_at).toLocaleString()}
-        </div>
-      </div>
-    </div>
-  </div>
-)}
 
-{/* Save Modal */}
-{showSaveModal && (
-  isMobile ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      <SaveModal isOpen={showSaveModal} onClose={closeSaveModal} />
-    </div>
-  ) : (
-    <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-50 flex md:block">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 md:hidden" onClick={closeSaveModal}></div>
-      {/* Modal */}
-      <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">
-            {showInShortModal ? "Save to InShort" : "Save to Loft"}
-          </h2>
-          <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        {/* Content */}
-        <div className="flex-grow overflow-y-auto">
-          <div className="p-6">
-            {/* Media Upload (shared) */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
-              <p className="text-sm text-gray-500 mb-2 md:mb-4">
-                Add your documents here, and you can upload up to 5 files max
-              </p>
+          {/* Footer */}
+          <div className="mt-4 text-center text-xs text-gray-500 pb-4">
+            {/* ... */}
+          </div>
+        </main>
+
+        {/* Mobile Bottom Navigation - Hidden on Desktop */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3">
+          <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
+            <Search className="h-6 w-6" />
+            <span className="text-xs mt-1">Explore</span>
+          </Link>
+          <Link href="/library" className="flex flex-col items-center text-gray-500">
+            <BookmarkIcon className="h-6 w-6" />
+            <span className="text-xs mt-1">Library</span>
+          </Link>
+          <Link href="/run-through" className="flex flex-col items-center text-gray-500">
+            <Star className="h-6 w-6" />
+            <span className="text-xs mt-1">Run through</span>
+          </Link>
+          <div className="flex flex-col items-center text-gray-500">
+            <SignedIn>
+              <UserButton 
+                afterSignOutUrl="/" 
+                appearance={{ 
+                  elements: { 
+                    avatarBox: 'w-6 h-6',
+                    card: 'w-48',
+                    userPreview: 'p-2',
+                    userButtonPopoverCard: 'w-48',
+                    userButtonPopoverActionButton: 'p-2 text-sm'
+                  } 
+                }} 
+              />
+            </SignedIn>
+            <span className="text-xs mt-1">Settings</span>
+          </div>
+        </nav>
+
+        {/* Mobile Save Button - Fixed at bottom right */}
+        <button
+          onClick={openSaveModal}
+          className="md:hidden fixed right-4 bottom-20 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-10"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+
+        {/* Bookmark Modal */}
+        {showModal && selectedBookmark && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1 flex items-center gap-2">
+                    <h2 className="text-2xl font-bold">{selectedBookmark.title}</h2>
+                    {selectedBookmark.url && (
+                      <a 
+                        href={selectedBookmark.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                      </a>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="w-full h-48 rounded-lg mb-4 overflow-hidden">
+                  {selectedBookmark.image ? (
+                    <img 
+                      src={selectedBookmark.image} 
+                      alt={selectedBookmark.title}
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100" />
+                  )}
+                </div>
+                <div className="text-gray-600 mb-4">{selectedBookmark.summary}</div>
+                <div className="flex items-center space-x-2 flex-wrap mb-4">
+                  {(selectedBookmark.tags || []).map((tag: string, i: number) => (
+                    <span key={i} className="bg-gray-200 text-xs rounded px-2 py-0.5">{tag}</span>
+                  ))}
+                  {(selectedBookmark.collections || []).map((col: string, i: number) => (
+                    <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                  ))}
+                </div>
+                <div className="text-sm text-gray-400">
+                  Created: {new Date(selectedBookmark.created_at).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Save Modal */}
+        {showSaveModal && (
+          isMobile ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <SaveModal isOpen={showSaveModal} onClose={closeSaveModal} />
+            </div>
+          ) : (
+            <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto z-50 flex md:block">
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-black bg-opacity-50 md:hidden" onClick={closeSaveModal}></div>
+              {/* Modal */}
+              <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
+                {/* Header */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold">
+                    {showInShortModal ? "Save to InShort" : "Save to Loft"}
+                  </h2>
+                  <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                {/* Content */}
+                <div className="flex-grow overflow-y-auto">
+                  <div className="p-6">
+                    {/* Media Upload (shared) */}
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Media Upload</h3>
+                      <p className="text-sm text-gray-500 mb-2 md:mb-4">
+                        Add your documents here, and you can upload up to 5 files max
+                      </p>
                       <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
-                        {selectedImage && selectedImage !== '{}' ? (
+                        {selectedImage ? (
                           <div className="relative w-full">
                             <img 
                               src={selectedImage} 
                               alt="Uploaded" 
-                              className="w-full h-48 object-cover"
+                                    className="w-full h-full object-cover rounded-lg"
                             />
                             <button
-                              onClick={() => setSelectedImage(null)}
+                                    onClick={() => setSelectedImage("")}
                               className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                             >
                               <X className="h-4 w-4" />
                             </button>
                           </div>
                         ) : (
-                          <>
-                            <div className="mb-2 md:mb-4">
-                              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
-                                  className="h-5 w-5 md:h-6 md:w-6 text-white"
+                                      className="h-5 w-5 text-white"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
@@ -1773,7 +2041,223 @@ export default function BookmarksPage() {
                                   />
                                 </svg>
                               </div>
+                                  <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
+                                  <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB</p>
                             </div>
+                        )}
+                      </div>
+                    </div>
+                              </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-end gap-3 mt-6">
+                          <button
+                            onClick={closeSaveModal}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (urlInput) {
+                                // Handle URL paste
+                                try {
+                                  setIsGenerating(true);
+                                  setTitleInput("");
+                                  setSummaryInput("");
+
+                                  // First fetch metadata
+                                  const metadataResponse = await fetch('/api/metadata', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ url: urlInput }),
+                                  });
+
+                                  if (!metadataResponse.ok) {
+                                    throw new Error('Failed to fetch metadata');
+                                  }
+
+                                  const metadata = await metadataResponse.json();
+                                  setMetadata(metadata); // Store metadata in state
+
+                                  // Update the image preview if metadata contains an image
+                                  if (metadata.metadata.ogImage && metadata.metadata.ogImage[0]?.url) {
+                                    setSelectedImage(metadata.metadata.ogImage[0].url);
+                                  }
+
+                                  // Verify if the URL is from a social media platform
+                                  const verifyResponse = await fetch('/api/verify', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ 
+                                      url: urlInput,
+                                      metadata: metadata.metadata
+                                    }),
+                                  });
+
+                                  if (!verifyResponse.ok) {
+                                    throw new Error('Failed to verify URL');
+                                  }
+
+                                  const verifyData = await verifyResponse.json();
+                                  const isSocialMedia = verifyData.isSocialMedia;
+
+                                  if (isSocialMedia) {
+                                    setTitleInput(metadata.metadata.title || '');
+                                    // Keep the image from metadata for social media URLs
+                                    if (metadata.metadata.image) {
+                                      let imageUrl = metadata.metadata.image;
+                                      if (imageUrl.startsWith('/')) {
+                                        const urlObj = new URL(urlInput);
+                                        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+                                      }
+                                      setSelectedImage(imageUrl);
+                                    }
+                                    setShowInShortModal(true);
+                                  } else {
+                                    const response = await fetch('/api/bookmarks', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ 
+                                        url: urlInput,
+                                        image: selectedImage 
+                                      }),
+                                    });
+
+                                    if (!response.ok) {
+                                      throw new Error('Failed to process URL');
+                                    }
+
+                                    const data = await response.json();
+                                    setTitleInput(data.title);
+                                    setSummaryInput(data.summary);
+                                    // Keep the image from metadata for non-social media URLs
+                                    if (metadata.metadata.image) {
+                                      let imageUrl = metadata.metadata.image;
+                                      if (imageUrl.startsWith('/')) {
+                                        const urlObj = new URL(urlInput);
+                                        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+                                      }
+                                      setSelectedImage(imageUrl);
+                                    }
+                                    setShowInShortModal(true);
+                                  }
+                                } catch (error) {
+                                  console.error('Error processing URL:', error);
+                                  setError('Failed to process URL. Please try again.');
+                                } finally {
+                                  setIsGenerating(false);
+                                }
+                              } else if (summaryInput) {
+                                // Handle note creation
+                                try {
+                                  setIsGenerating(true);
+                                  const response = await fetch('/api/notes', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      note: summaryInput
+                                    }),
+                                  });
+
+                                  if (!response.ok) {
+                                    throw new Error('Failed to generate title and summary');
+                                  }
+
+                                  const data = await response.json();
+                                  setTitleInput(data.title);
+                                  setSummaryInput(data.summary);
+                                  setShowInShortModal(true);
+                                } catch (error) {
+                                  console.error('Error generating title and summary:', error);
+                                  setTitleInput('');
+                                  setSummaryInput(summaryInput);
+                                  setShowInShortModal(true);
+                                } finally {
+                                  setIsGenerating(false);
+                                }
+                              }
+                            }}
+                            disabled={(!urlInput && !summaryInput) || isGenerating}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
+                              (!urlInput && !summaryInput) || isGenerating
+                                ? 'bg-gray-300 cursor-not-allowed' 
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            {isGenerating ? (
+                              <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              </div>
+                            ) : (
+                              'Continue'
+                            )}
+                          </button>
+                          </div>
+                      </>
+                    )}
+
+                    {/* In-Short Modal Content */}
+                    {showInShortModal && (
+                      <div className="mt-6">
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Title</h3>
+                          <input
+                            type="text"
+                            value={titleInput}
+                            onChange={(e) => setTitleInput(e.target.value)}
+                            placeholder="Enter title"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
+                              </div>
+
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Summary</h3>
+                            <textarea
+                              value={summaryInput}
+                              onChange={(e) => setSummaryInput(e.target.value)}
+                            placeholder="Enter summary"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              rows={4}
+                            />
+                          </div>
+
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Image Preview</h3>
+                          <div className="w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
+                            {selectedImage ? (
+                              <div className="relative w-full h-full">
+                                <img 
+                                  src={selectedImage} 
+                                  alt="Preview" 
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                <img 
+                                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
+                                  alt="Note Preview"
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                    padding: "2rem",
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-2">
+                            
                             <input
                               type="file"
                               ref={fileInputRef}
@@ -1781,275 +2265,172 @@ export default function BookmarksPage() {
                               accept="image/*"
                               className="hidden"
                             />
-                            <button 
-                              onClick={() => fileInputRef.current?.click()}
-                              className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
-                            >
-                              Browse the image file to upload
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 md:mt-2">
-                        Supported formats: JPG, PNG, GIF, SVG
-                      </p>
-                    </div>
-                    {/* --- FORM AREA: This is the only part that changes! --- */}
-                    {showInShortModal ? (
-                      <>
-                        {/* InShort Modal Form Fields */}
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              value={urlInput}
-                              onChange={(e) => setUrlInput(e.target.value)}
-                              placeholder="https://in.pinterest.com/pin/..."
-                              className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              disabled={isGenerating}
-                            />
-                            {isGenerating && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                              </div>
-                            )}
                           </div>
                         </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Title</h3>
-                          <input
-                            type="text"
-                            value={titleInput}
-                            onChange={(e) => setTitleInput(e.target.value)}
-                            placeholder={isGenerating ? "Generating title..." : "Title"}
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4"
-                            disabled={isGenerating}
-                          />
-                          {titleInput && (
-                            <div className="mt-2 p-4 bg-gray-50 rounded-xl">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
-                              <div className="prose prose-sm max-w-none">
-                                <ReactMarkdown>{titleInput}</ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Summary</h3>
-                          <div className="relative">
-                            <textarea
-                              value={summaryInput}
-                              onChange={(e) => setSummaryInput(e.target.value)}
-                              placeholder={isGenerating ? "Generating summary..." : "Summary"}
-                              className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4 pr-10"
-                              rows={4}
-                              disabled={isGenerating}
-                            />
-                          </div>
-                          {summaryInput && (
-                            <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
-                              <div className="prose prose-sm max-w-none">
-                                <ReactMarkdown>{summaryInput}</ReactMarkdown>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* Loft Modal Form Fields */}
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">URL</h3>
-                          <input
-                            type="text"
-                            value={urlInput}
-                            onChange={(e) => setUrlInput(e.target.value)}
-                            placeholder="https://in.pinterest.com/pin/..."
-                            className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Tags <span className="text-red-500">*</span></h3>
+
+                        {/* Tags Section */}
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 rounded-xl">Tags <span className="text-red-500">*</span></h3>
+                          {/* Tags Dropdown */}
                           <div className="relative">
                             <div className="flex flex-wrap gap-2 mb-2">
                               {selectedTags.map((tag) => (
-                                <span
+                                <div
                                   key={tag}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm"
                                 >
-                                  {tag}
+                                  <span>{tag}</span>
                                   <button
                                     onClick={() => removeTag(tag)}
-                                    className="ml-1 text-blue-500 hover:text-blue-700"
+                                    className="text-gray-500 hover:text-gray-700"
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X className="w-3 h-3" />
                                   </button>
-                                </span>
+                                </div>
                               ))}
                             </div>
-                          <div className="flex items-center border border-gray-300 rounded-full p-2">
-                            <input
-                              type="text"
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                                onFocus={handleTagInputFocus}
-                                onBlur={handleTagInputBlur}
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onFocus={() => setShowTagDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
                                 onKeyDown={handleTagInputKeyDown}
-                                placeholder="Type and press Enter to add a tag"
-                              className="flex-1 focus:outline-none rounded-full"
-                            />
-                              <button 
-                                onClick={() => {
-                                  setShowTagDropdown(!showTagDropdown)
-                                  setShowCollectionDropdown(false)
-                                }}
-                                className="text-blue-500"
-                              >
-                              <Plus className="h-5 w-5" />
-                            </button>
-                            </div>
-                            {showTagDropdown && (
-                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
-                                  <button
-                                    onClick={() => addTag(tagInput.trim())}
-                                    className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
-                                  >
-                                    Add "{tagInput.trim()}"
-                                  </button>
-                                )}
-                                {defaultTags
-                                  .filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase()))
-                                  .map((tag) => (
+                                placeholder="Add tags..."
+                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              {showTagDropdown && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
+                                  {tagInput && !availableTags.some(t => t.name.toLowerCase() === tagInput.toLowerCase()) && (
                                     <button
-                                      key={tag}
-                                      onClick={() => addTag(tag)}
-                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                                      onClick={handleCreateTag}
+                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 rounded-t-xl"
                                     >
-                                      {tag}
+                                      <Plus className="w-4 h-4" />
+                                      Create "{tagInput}"
                                     </button>
-                                  ))}
-                              </div>
-                            )}
+                                  )}
+                                  {availableTags
+                                    .filter(t => t.name.toLowerCase().includes(tagInput.toLowerCase()))
+                                    .map((tag, index, array) => (
+                                      <button
+                                        key={tag.id}
+                                        onClick={() => {
+                                          if (!selectedTags.includes(tag.name)) {
+                                            setSelectedTags([...selectedTags, tag.name]);
+                                          }
+                                          setTagInput('');
+                                          setShowTagDropdown(false);
+                                        }}
+                                        className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                          index === array.length - 1 ? 'rounded-b-xl' : ''
+                                        }`}
+                                      >
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
+                                        {tag.name}
+                                      </button>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </>
-                    )}
-                    {/* Add to Collection (shared) */}
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-1 md:mb-2">Add to Collection <span className="text-red-500">*</span></h3>
-                      <div className="relative">
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {selectedCollections.map((collectionId) => {
-                            const collection = availableCollections.find(c => c.id === collectionId)
-                            return collection ? (
-                              <span
-                                key={collection.id}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                              >
-                                <div className={`w-3 h-3 ${collection.color} rounded-sm mr-1`}></div>
-                                {collection.name}
-                        <button
-                                  onClick={() => setSelectedCollections(selectedCollections.filter(id => id !== collectionId))}
-                                  className="ml-1 text-blue-500 hover:text-blue-700"
+
+                        {/* Collections Section */}
+                        <div className="mb-6">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 rounded-xl">Add to Collection <span className="text-red-500">*</span></h3>
+                          {/* Collections Dropdown */}
+                          <div className="relative">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {selectedCollections.map((collection) => (
+                                <div
+                                  key={collection}
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full text-sm"
                                 >
-                                  <X className="h-3 w-3" />
-                        </button>
-                              </span>
-                            ) : null
-                          })}
-                        </div>
-                        <div className="flex items-center border border-gray-300 rounded-full p-2">
-                          <input
-                            type="text"
-                            value={collectionInput}
-                            onChange={(e) => setCollectionInput(e.target.value)}
-                            onFocus={handleCollectionInputFocus}
-                            onBlur={handleCollectionInputBlur}
-                            onKeyDown={handleCollectionInputKeyDown}
-                            placeholder="Type and press Enter to add a collection"
-                            className="flex-1 focus:outline-none rounded-full"
-                          />
-                        <button
-                            onClick={() => {
-                              setShowCollectionDropdown(!showCollectionDropdown)
-                              setShowTagDropdown(false)
-                            }}
-                            className="text-blue-500"
-                          >
-                            <Plus className="h-5 w-5" />
-                        </button>
-                        </div>
-                        {showCollectionDropdown && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-                            {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
-                              <button
-                                onClick={() => {
-                                  const newCollection = {
-                                    id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-') ,
-                                    name: collectionInput.trim(),
-                                    color: "bg-gray-500"
-                                  };
-                                  setAvailableCollections([...availableCollections, newCollection]);
-                                  if (!selectedCollections.includes(newCollection.id)) {
-                                    setSelectedCollections([...selectedCollections, newCollection.id]);
-                                  }
-                                  setCollectionInput("");
-                                }}
-                                className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
-                              >
-                                Add "{collectionInput.trim()}"
-                              </button>
-                            )}
-                            {availableCollections
-                              .filter(collection => collection.name.toLowerCase().includes(collectionInput.toLowerCase()))
-                              .map((collection) => (
-                                <button
-                                  key={collection.id}
-                                  onClick={() => {
-                                    if (!selectedCollections.includes(collection.id)) {
-                                      setSelectedCollections([...selectedCollections, collection.id]);
-                                    }
-                                  }}
-                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
-                                >
-                                  <div className={`w-4 h-4 ${collection.color} rounded-sm mr-2`}></div>
-                                  <span className="text-sm">{collection.name}</span>
-                                </button>
+                                  <span>{collection}</span>
+                                  <button
+                                    onClick={() => removeTag(collection)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
                               ))}
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                value={collectionInput}
+                                onChange={(e) => setCollectionInput(e.target.value)}
+                                onFocus={() => setShowCollectionDropdown(true)}
+                                onBlur={() => setTimeout(() => setShowCollectionDropdown(false), 200)}
+                                onKeyDown={handleCollectionInputKeyDown}
+                                placeholder="Add to collection..."
+                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              {showCollectionDropdown && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
+                                  {collectionInput && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.toLowerCase()) && (
+                                    <button
+                                      onClick={() => {
+                                        setNewCollectionName(collectionInput);
+                                        setShowNewCollectionModal(true);
+                                        setShowCollectionDropdown(false);
+                                      }}
+                                      className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 rounded-t-xl"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                      Create "{collectionInput}"
+                                    </button>
+                                  )}
+                                  {availableCollections
+                                    .filter(c => c.name.toLowerCase().includes(collectionInput.toLowerCase()))
+                                    .map((collection, index, array) => (
+                                      <button
+                                        key={collection.id}
+                                        onClick={() => {
+                                          if (!selectedCollections.includes(collection.name)) {
+                                            setSelectedCollections([...selectedCollections, collection.name]);
+                                          }
+                                          setCollectionInput('');
+                                          setShowCollectionDropdown(false);
+                                        }}
+                                        className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 ${
+                                          index === array.length - 1 ? 'rounded-b-xl' : ''
+                                        }`}
+                                      >
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: collection.color }} />
+                                        {collection.name}
+                                      </button>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-2 mt-4">
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-6">
                       <button
-                        onClick={closeSaveModal}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50"
-                        disabled={isGenerating || isSaving}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={showInShortModal ? handleInShortSave : handleSave}
-                        className={`px-4 py-2 rounded-full flex items-center justify-center min-w-[80px] ${
-                          (!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving)
+                            onClick={handleInShortSave}
+                            disabled={!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving}
+                            className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
+                              !titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving
                             ? 'bg-gray-300 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        }`}
-                        disabled={!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving}
-                      >
-                        {isGenerating || isSaving ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : showInShortModal ? (
-                          'Save'
-                        ) : (
-                          'Next'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            {isSaving ? (
+                              <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              </div>
+                            ) : (
+                              'Save'
                         )}
                       </button>
                     </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {/* Footer (shared) */}
@@ -2192,59 +2573,33 @@ export default function BookmarksPage() {
         ) : null}
         {/* New Collection Modal */}
         {showNewCollectionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Create New Collection</h2>
-                  <button 
-                    onClick={() => setShowNewCollectionModal(false)} 
-                    className="text-gray-500 hover:text-gray-700"
-                    disabled={isCreatingCollection}
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="collectionName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Collection Name
-                  </label>
-                  <input
-                    type="text"
-                    id="collectionName"
-                    value={newCollectionName}
-                    onChange={(e) => setNewCollectionName(e.target.value)}
-                    placeholder="Enter collection name"
-                    className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isCreatingCollection}
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setShowNewCollectionModal(false)}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50"
-                    disabled={isCreatingCollection}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCreateCollection}
-                    className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
-                      !newCollectionName.trim() || isCreatingCollection
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                    disabled={!newCollectionName.trim() || isCreatingCollection}
-                  >
-                    {isCreatingCollection ? (
-                      <div className="relative">
-                        <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                      </div>
-                    ) : (
-                      'Create'
-                    )}
-                  </button>
-                </div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-96">
+              <h3 className="text-lg font-semibold mb-4 rounded-xl">Create New Collection</h3>
+              <input
+                type="text"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                placeholder="Collection name"
+                className="w-full px-3 py-2 border rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowNewCollectionModal(false);
+                    setNewCollectionName('');
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCollection}
+                  disabled={isCreatingCollection}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isCreatingCollection ? 'Creating...' : 'Create'}
+                </button>
               </div>
             </div>
           </div>

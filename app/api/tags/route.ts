@@ -4,7 +4,9 @@ import { currentUser } from '@clerk/nextjs/server';
 
 // Initialize Neon database connection
 const sql = neon(process.env.DATABASE_URL || 'postgresql://loft-bookmark_owner:npg_U3kjcvQ1SVdy@ep-flat-bread-a5q8218o-pooler.us-east-2.aws.neon.tech/loft-bookmark?sslmode=require');
+
 export const maxDuration = 300;
+
 export async function GET() {
   try {
     const user = await currentUser();
@@ -12,9 +14,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const clerk_username = user.username || user.emailAddresses?.[0]?.emailAddress || user.id;
-    // Create collections table if it doesn't exist
+
+    // Create tags table if it doesn't exist
     await sql`
-      CREATE TABLE IF NOT EXISTS my_collections (
+      CREATE TABLE IF NOT EXISTS my_tags (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         color TEXT NOT NULL,
@@ -23,19 +26,19 @@ export async function GET() {
       )
     `;
 
-    // Fetch all collections for this user
-    const collections = await sql`
+    // Fetch all tags for this user
+    const tags = await sql`
       SELECT id, name, color, created_at
-      FROM my_collections
+      FROM my_tags
       WHERE clerk_username = ${clerk_username}
       ORDER BY created_at DESC
     `;
 
-    return NextResponse.json({ success: true, data: collections });
+    return NextResponse.json({ success: true, data: tags });
   } catch (error) {
-    console.error('Error fetching collections:', error);
+    console.error('Error fetching tags:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch collections' },
+      { error: 'Failed to fetch tags' },
       { status: 500 }
     );
   }
@@ -57,9 +60,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create collections table if it doesn't exist
+    // Create tags table if it doesn't exist
     await sql`
-      CREATE TABLE IF NOT EXISTS my_collections (
+      CREATE TABLE IF NOT EXISTS my_tags (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         color TEXT NOT NULL,
@@ -68,18 +71,18 @@ export async function POST(request: Request) {
       )
     `;
 
-    // Insert new collection for this user
+    // Insert new tag for this user
     const result = await sql`
-      INSERT INTO my_collections (name, color, clerk_username)
+      INSERT INTO my_tags (name, color, clerk_username)
       VALUES (${name}, ${color}, ${clerk_username})
       RETURNING id, name, color, created_at
     `;
 
     return NextResponse.json({ success: true, data: result[0] });
   } catch (error) {
-    console.error('Error creating collection:', error);
+    console.error('Error creating tag:', error);
     return NextResponse.json(
-      { error: 'Failed to create collection' },
+      { error: 'Failed to create tag' },
       { status: 500 }
     );
   }

@@ -10,11 +10,12 @@ import {
   SignedOut,
   UserButton,
 } from "@clerk/nextjs"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "InShort - Your bookmarks, remembered",
+  title: "Loft AI - Your bookmarks, remembered",
   description: "Save anything. Find it when it matters.",
 }
 
@@ -28,6 +29,7 @@ export default function RootLayout({
       <html lang="en">
         <body className={inter.className}>
           {children}
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>
