@@ -2020,64 +2020,45 @@ export default function BookmarksPage() {
                             className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
                             rows={4}
                           />
-                          <div className="mt-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="px-3 py-1 text-sm text-blue-500 border border-blue-200 rounded-full hover:bg-blue-50 flex items-center gap-1"
-                              >
-                                <Upload className="h-4 w-4" />
-                                Upload Image
-                              </button>
-                              <span className="text-xs text-gray-500">(Optional)</span>
-                              <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleImageUpload}
-                                accept="image/*"
-                                className="hidden"
-                              />
-                            </div>
-                            <div className="w-full h-48 border-2 border-dashed border-gray-200 rounded-lg p-4 flex items-center justify-center bg-gray-50">
-                        {selectedImage ? (
-                                <div className="relative w-full h-full">
-                            <img 
-                              src={selectedImage} 
-                              alt="Uploaded" 
-                                    className="w-full h-full object-cover rounded-lg"
-                            />
-                            <button
-                                    onClick={() => setSelectedImage("")}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                                <div className="text-center">
-                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                      className="h-5 w-5 text-white"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
+                          {summaryInput.trim() && (
+                            <div className="mt-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <button
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="px-3 py-1 text-sm text-blue-500 border border-blue-200 rounded-full hover:bg-blue-50 flex items-center gap-1"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
-                                  />
-                                </svg>
+                                  <Upload className="h-4 w-4" />
+                                  Upload Image
+                                </button>
+                                <span className="text-xs text-gray-500">(Optional)</span>
+                                <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  onChange={handleImageUpload}
+                                  accept="image/*"
+                                  className="hidden"
+                                />
                               </div>
-                                  <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
-                                  <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB</p>
+                              {selectedImage && (
+                                <div className="mt-4">
+                                  <div className="relative w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
+                                    <img 
+                                      src={selectedImage} 
+                                      alt="Preview" 
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      onClick={() => setSelectedImage("")}
+                                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                        )}
-                      </div>
-                    </div>
-                              </div>
+                          )}
+                        </div>
 
                         {/* Action Buttons */}
                         <div className="flex justify-end gap-3 mt-6">
