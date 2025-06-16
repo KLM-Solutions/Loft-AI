@@ -117,6 +117,8 @@ export default function BookmarksPage() {
   const [error, setError] = useState("")
   const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [isCreatingTag, setIsCreatingTag] = useState(false);
+  // Track where the New Collection modal was opened from
+  const [newCollectionFromModal, setNewCollectionFromModal] = useState(false);
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -540,6 +542,11 @@ export default function BookmarksPage() {
     setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove))
   }
 
+  // Add this function to remove a collection from selectedCollections
+  const removeCollection = (collectionToRemove: string) => {
+    setSelectedCollections(selectedCollections[0] === collectionToRemove ? [] : selectedCollections);
+  };
+
   const handleCollectionInputFocus = () => {
     setShowCollectionDropdown(true)
     setShowTagDropdown(false)
@@ -551,21 +558,24 @@ export default function BookmarksPage() {
     }, 200)
   }
 
+  // Update collection selection logic to allow only one selected collection at a time
+  const setSingleCollection = (collection: string) => {
+    setSelectedCollections([collection]);
+  };
+
   const handleCollectionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && collectionInput.trim()) {
       e.preventDefault();
       const newCollection = {
         id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
         name: collectionInput.trim(),
-        color: "bg-gray-500" // Default color for custom collections
+        color: "bg-gray-500"
       };
       setAvailableCollections([...availableCollections, newCollection]);
-      if (!selectedCollections.includes(newCollection.id)) {
-        setSelectedCollections([...selectedCollections, newCollection.id]);
-      }
+      setSelectedCollections([newCollection.id]);
       setCollectionInput("");
     }
-  }
+  };
 
   const handleViewInLibrary = () => {
     closeSuccessModal();
@@ -601,7 +611,7 @@ export default function BookmarksPage() {
   }, []);
 
   // Update handleCreateCollection function
-  const handleCreateCollection = async () => {
+  const handleCreateCollection = async (autoSelect: boolean = false) => {
     if (!newCollectionName.trim()) return;
 
     const color = getRandomColor();
@@ -627,8 +637,12 @@ export default function BookmarksPage() {
           name: data.data.name,
           color: data.data.color
         };
-        
         setAvailableCollections([newCollection, ...availableCollections]);
+        // Only auto-select if requested (from modal)
+        if (autoSelect) {
+          setSelectedCollections([newCollection.name]);
+          setCollectionInput("");
+        }
         setNewCollectionName("");
         setShowNewCollectionModal(false);
       }
@@ -1022,7 +1036,10 @@ export default function BookmarksPage() {
             </div>
 
             <button
-              onClick={() => setShowNewCollectionModal(true)}
+              onClick={() => {
+                setShowNewCollectionModal(true);
+                setNewCollectionFromModal(false);
+              }}
               className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 w-full mt-2"
             >
               <Plus className="h-5 w-5 mr-3 text-gray-500" />
@@ -2361,7 +2378,7 @@ export default function BookmarksPage() {
                                 >
                                   <span>{collection}</span>
                                   <button
-                                    onClick={() => removeTag(collection)}
+                                    onClick={() => removeCollection(collection)}
                                     className="text-gray-500 hover:text-gray-700"
                                   >
                                     <X className="w-3 h-3" />
@@ -2387,6 +2404,7 @@ export default function BookmarksPage() {
                                       onClick={() => {
                                         setNewCollectionName(collectionInput);
                                         setShowNewCollectionModal(true);
+                                        setNewCollectionFromModal(true);
                                         setShowCollectionDropdown(false);
                                       }}
                                       className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2 rounded-t-xl"
@@ -2401,9 +2419,7 @@ export default function BookmarksPage() {
                                       <button
                                         key={collection.id}
                                         onClick={() => {
-                                          if (!selectedCollections.includes(collection.name)) {
-                                            setSelectedCollections([...selectedCollections, collection.name]);
-                                          }
+                                          setSingleCollection(collection.name);
                                           setCollectionInput('');
                                           setShowCollectionDropdown(false);
                                         }}
@@ -2605,7 +2621,7 @@ export default function BookmarksPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleCreateCollection}
+                  onClick={() => handleCreateCollection(newCollectionFromModal)}
                   disabled={isCreatingCollection}
                   className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50"
                 >
