@@ -27,13 +27,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 
-// Helper to convert ****text**** to **text**
-function normalizeBold(str: string) {
-  return str.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '**$1**');
-}
-
 function removeQuotes(str: string) {
-  return str.replace(/^"|"$/g, '');
+  // Remove leading/trailing quotes and all double asterisks
+  return str.replace(/^["']|["']$/g, '').replace(/\*\*/g, '');
 }
 
 // 1. Add the SVG for the tag icon (from screenshot) as a React component at the top of the file:
@@ -1455,7 +1451,9 @@ export default function BookmarksPage() {
                                 )}
                                 <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
                                   <div className="flex items-center justify-between mb-1">
-                                    <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                                    <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>
+                                      <ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown>
+                                    </span>
                                     {bm.url && (
                                       <a 
                                         href={bm.url} 
@@ -1730,7 +1728,9 @@ export default function BookmarksPage() {
                                       </div>
                                       <div className="p-4">
                                         <div className="flex items-center justify-between mb-1">
-                                          <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden"><ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown></span>
+                                          <span className="font-semibold text-lg truncate whitespace-nowrap overflow-hidden">
+                                            <ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown>
+                                          </span>
                                           {bm.url && (
                                             <a 
                                               href={bm.url} 

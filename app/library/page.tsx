@@ -817,7 +817,9 @@ export default function LibraryPage() {
                         )}
                         <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}><ReactMarkdown>{bm.title}</ReactMarkdown></span>
+                            <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>
+                              <ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown>
+                            </span>
                             {bm.url && (
                               <a 
                                 href={bm.url} 
