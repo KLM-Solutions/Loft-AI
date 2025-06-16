@@ -484,13 +484,13 @@ export default function SavePage() {
                   'Continue'
                 )}
           </Button>
-        </div>
-      </div>
-        </>
-      ) : (
+        </div>  
+      </div>    
+        </>     
+      ) : (     
     <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "1.25rem" : "1.5rem" }}>
-      <div>
-        <h2
+      <div>     
+        <h2    
           style={{
             fontSize: isMobile ? "1rem" : "1.125rem",
             fontWeight: "600",

@@ -14,7 +14,7 @@ export async function GET() {
     const clerk_username = user.username || user.emailAddresses?.[0]?.emailAddress || user.id;
 
     // Fetch data from all three tables in parallel
-    const [bookmarks, notes, uploads] = await Promise.all([
+    const [bookmarks, notes] = await Promise.all([
       // Fetch bookmarks
       sql`
         SELECT 
@@ -44,28 +44,13 @@ export async function GET() {
           'note' as type
         FROM notes
         WHERE clerk_username = ${clerk_username}
-      `,
-      // Fetch uploads
-      sql`
-        SELECT 
-          id,
-          title,
-          summary,
-          tags,
-          collections,
-          created_at,
-          image,
-          'upload' as type
-        FROM uploads
-        WHERE clerk_username = ${clerk_username}
       `
     ]);
 
     // Combine all data
     const allData = [
       ...bookmarks,
-      ...notes,
-      ...uploads
+      ...notes
     ];
 
     // Sort by created_at in descending order

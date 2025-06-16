@@ -134,18 +134,31 @@ export default function BookmarksPage() {
   useEffect(() => {
     if (activeTab === "recent-saves") {
       setIsLoading(true)
-      fetch("/api/library")
-        .then(res => res.json())
-        .then(data => {
-          setBookmarks(data.data || [])
-          setIsLoading(false)
-        })
-        .catch(error => {
-          console.error('Error fetching bookmarks:', error)//
-          setIsLoading(false)
-        })
+      if (contentFilter === "all") {
+        fetch("/api/all")
+          .then(res => res.json())
+          .then(data => {
+            setBookmarks(data.data || [])
+            setIsLoading(false)
+          })
+          .catch(error => {
+            console.error('Error fetching all content:', error)
+            setIsLoading(false)
+          })
+      } else {
+        fetch("/api/library")
+          .then(res => res.json())
+          .then(data => {
+            setBookmarks(data.data || [])
+            setIsLoading(false)
+          })
+          .catch(error => {
+            console.error('Error fetching bookmarks:', error)
+            setIsLoading(false)
+          })
+      }
     }
-  }, [activeTab])
+  }, [activeTab, contentFilter])
 
   // Fetch saved searches when Search Saved tab is active
   useEffect(() => {
@@ -174,12 +187,11 @@ export default function BookmarksPage() {
       
       // Fetch data based on content filter
       if (contentFilter === "all") {
-        const [linksData, notesData, imagesData] = await Promise.all([
-          fetchLinks(),
-          fetchNotes(),
-          fetchImages()
-        ])
-        filteredBookmarks = [...linksData, ...notesData, ...imagesData]
+        const response = await fetch('/api/all')
+        const data = await response.json()
+        if (data.success) {
+          filteredBookmarks = data.data
+        }
       } else if (contentFilter === "links") {
         filteredBookmarks = await fetchLinks()
       } else if (contentFilter === "images") {
@@ -238,17 +250,18 @@ export default function BookmarksPage() {
     
     // Fetch data based on content filter
     if (contentFilter === "all") {
-      Promise.all([
-        fetchLinks(),
-        fetchNotes(),
-        fetchImages()
-      ]).then(([linksData, notesData, imagesData]) => {
-        const allData = [...linksData, ...notesData, ...imagesData]
-        setBookmarks(allData)
-        setIsLoading(false)
-      }).catch(() => {
-        setIsLoading(false)
-      })
+      fetch("/api/all")
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setBookmarks(data.data || [])
+          }
+          setIsLoading(false)
+        })
+        .catch(error => {
+          console.error('Error fetching all content:', error)
+          setIsLoading(false)
+        })
     } else if (contentFilter === "links") {
       fetchLinks().then((linksData) => {
         setBookmarks(linksData)
