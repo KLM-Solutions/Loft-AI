@@ -19,7 +19,7 @@ async function getRelatedTopics(query: string, clerk_username: string) {
     messages: [
       {
         role: "system",
-        content: "You are a helpful assistant that rewrites user queries to be more specific and search-friendly. Keep the core intent but make it more precise for semantic search."
+        content: "You are a helpful assistant fetch the related bookmarks, uploads, and notes."
       },
       {
         role: "user",
@@ -132,10 +132,12 @@ async function getLLMResponse(query: string, relatedTopics: any[]) {
     messages: [
       {
         role: "system",
-        content: `You are a helpful assistant that answers questions based on the user's saved content (bookmarks, uploads, and notes). 
-        Use the following context to answer the question. If the context doesn't contain relevant information, 
-        provide a helpful general response. Format your response in a clear, concise way. Remember just give the summary of the whole content, not point by point, don't give the whole content.
-        
+        content: `You are a helpful assistant that answers questions based only on the user's saved content (bookmarks, uploads, and notes).
+Use the provided context to form your answer.
+If the context does not contain relevant information, say so and optionally provide a helpful general answer.
+Do not fabricate details not present in the context.
+Format your response clearly, concisely, and without filler.
+When referencing a source, include a short inline label (e.g., "(from saved note on X)") where appropriate.
         Context:
         ${JSON.stringify(context, null, 2)}`
       },
