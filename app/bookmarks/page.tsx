@@ -25,6 +25,7 @@ import { UserButton, SignedIn } from "@clerk/nextjs"
 import SaveModal from "@/components/save-modal"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
 
 // Helper to convert ****text**** to **text**
 function normalizeBold(str: string) {
@@ -119,6 +120,7 @@ export default function BookmarksPage() {
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   // Track where the New Collection modal was opened from
   const [newCollectionFromModal, setNewCollectionFromModal] = useState(false);
+  const { toast } = useToast();
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -628,7 +630,7 @@ export default function BookmarksPage() {
           color: color
         }),
       });
-
+      
       const data = await response.json();
       
       if (data.success) {
@@ -903,7 +905,12 @@ export default function BookmarksPage() {
       }
     } catch (error) {
       console.error('Error processing URL:', error);
-      setError('Failed to process URL. Please try again.');
+      if (error instanceof Error && error.message === 'Failed to fetch metadata') {
+        setError('Auto content fetch restricted by provider. Please enter additional details to enrich context');
+        setShowInShortModal(true);
+      } else {
+        setError('Failed to process URL. Please try again.');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -1973,7 +1980,16 @@ export default function BookmarksPage() {
                   </button>
                 </div>
                 {/* Content */}
-                <div className="flex-grow overflow-y-auto">
+                <div className="flex-grow overflow-y-auto relative">
+                  {/* InShort Modal Error Notification */}
+                  {showInShortModal && error && (
+                    <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20 max-w-xs w-full px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded shadow text-sm flex items-center justify-between">
+                      <span className="pr-2">{error}</span>
+                      <button onClick={() => setError("")} className="ml-2 text-red-400 hover:text-red-700 focus:outline-none">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  )}
                   <div className="p-6">
                     {/* Initial Form Fields */}
                     {!showInShortModal && (
