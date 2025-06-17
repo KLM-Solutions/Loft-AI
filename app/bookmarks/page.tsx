@@ -1181,8 +1181,8 @@ export default function BookmarksPage() {
                   <span className="text-gray-500 text-xl">&times;</span>
                 </button>
               )}
-              <button type="submit" className="p-1 rounded-full hover:bg-gray-100">
-                <Mic className="h-5 w-5 text-gray-700" />
+              <button type="submit" className="p-1 rounded-full cursor-not-allowed" disabled>
+                <Mic className="h-5 w-5 text-gray-400" />
               </button>
             </div>
           </form>
@@ -1282,8 +1282,8 @@ export default function BookmarksPage() {
                     <span className="text-gray-500 text-xl">&times;</span>
                   </button>
                 )}
-                <button type="submit" className="p-1 rounded-full hover:bg-gray-100">
-                  <Mic className="h-5 w-5 text-gray-700" />
+                <button type="submit" className="p-1 rounded-full cursor-not-allowed" disabled>
+                  <Mic className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
             </form>
@@ -1549,7 +1549,11 @@ export default function BookmarksPage() {
                         {/* Fixed Recent Saves Header */}
                         <div className="bg-[#f5f8fa] pt-4 pb-6 z-10">
                           <div className="flex items-center justify-between">
-                            <h1 className="text-2xl font-bold">Recent Saves</h1>
+                            <h1 className="text-2xl font-bold">
+                              {contentFilter === "all" ? "All" : 
+                               contentFilter === "links" ? "Links" : 
+                               contentFilter === "notes" ? "Notes" : "Recent Saves"}
+                            </h1>
                             <div className="flex space-x-2">
                               <button
                                 className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
@@ -2683,17 +2687,20 @@ export default function BookmarksPage() {
             <div className="flex flex-col h-full">
               <div className="flex justify-between items-center p-4 border-b border-gray-200">
                 <h2 className="text-xl font-semibold">Notifications</h2>
-                <button onClick={closeNotifications} className="text-gray-500 hover:text-gray-700">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M18 6L6 18M6 6L18 18"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                  <button onClick={closeNotifications} className="text-gray-500 hover:text-gray-700">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M18 6L6 18M6 6L18 18"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 flex flex-col items-center justify-center p-6">
@@ -2714,14 +2721,6 @@ export default function BookmarksPage() {
                   Stay updated with the latest activity, mentions, and important alerts
                 </p>
               </div>
-
-              <div className="p-4 border-t border-gray-200 text-xs text-gray-500 flex justify-between">
-                <span>Powered by pxlbrain</span>
-                <div className="flex space-x-4">
-                  <span>Privacy</span>
-                  <span>Report</span>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -2729,19 +2728,22 @@ export default function BookmarksPage() {
         {showNotifications && (
           <div className="md:hidden fixed inset-0 bg-[#f5f8fa] z-50 flex flex-col">
             {/* Header */}
-            <header className="flex items-center p-4">
-              <button onClick={closeNotifications} className="mr-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M15 18L9 12L15 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              <h1 className="text-2xl font-bold">Notification</h1>
+            <header className="flex items-center justify-between p-4">
+              <div className="flex items-center">
+                <button onClick={closeNotifications} className="mr-2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M15 18L9 12L15 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <h1 className="text-2xl font-bold">Notification</h1>
+              </div>
+              <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
             </header>
 
             {/* Content */}
