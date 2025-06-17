@@ -877,9 +877,12 @@ export default function BookmarksPage() {
       const metadata = await metadataResponse.json();
       console.log('Received metadata:', metadata);
 
-      // Always update the image preview if metadata contains an ogImage
+      // Only update the image preview if metadata contains an ogImage
       if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
         setSelectedImage(metadata.metadata.ogImage[0].url);
+      } else {
+        // If no image in metadata, set selectedImage to empty string to show upload option
+        setSelectedImage("");
       }
 
       // Verify if the URL is from a social media platform
@@ -937,6 +940,7 @@ export default function BookmarksPage() {
       console.error('Error processing URL:', error);
       if (error instanceof Error && error.message === 'Failed to fetch metadata') {
         setError('Auto content fetch restricted by provider. Please enter additional details to enrich context');
+        setSelectedImage(""); // Reset image to show upload option
         setShowInShortModal(true);
       } else {
         setError('Failed to process URL. Please try again.');
@@ -1406,140 +1410,131 @@ export default function BookmarksPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto pb-32 md:pb-8">
-                      {isLoading ? (
-                        <div className="flex items-center justify-center min-h-[400px]">
-                          <div className="relative">
-                            <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                            <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
-                          </div>
+                    {notes.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                        <div className="w-40 h-40 mb-6">
+                          <img
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
+                            alt="No bookmarks"
+                            className="w-full h-full"
+                          />
                         </div>
-                      ) : notes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                          <div className="w-40 h-40 mb-6">
-                            <img
-                              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
-                              alt="No notes"
-                              className="w-full h-full"
-                            />
-                          </div>
-                          <h2 className="text-2xl font-bold text-gray-900 mb-2">No notes yet</h2>
-                          <p className="text-gray-600 mb-8 max-w-md">
-                            Start saving notes to fill your Loft
-                          </p>
-                        </div>
-                      ) : cardView === "list" ? (
-                        <div className="space-y-4 px-0">
-                          {notes.map((note: any) => {
-                            const isExpanded = expandedId === note.id;
-                            const totalTags = (note.tags || []).length;
-                            const totalCollections = (note.collections || []).length;
-                            const showTagCount = totalTags > 1;
-                            const showCollectionCount = totalCollections > 1;
-                            const firstTag = note.tags?.[0];
-                            const firstCollection = note.collections?.[0];
-                            return (
-                              <div
-                                key={note.id}
-                                className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
-                                onClick={() => setExpandedId(isExpanded ? null : note.id)}
-                              >
-                                {/* Image or blank */}
-                                {isExpanded ? (
-                                  <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
-                                    {note.image ? (
-                                      <img
-                                        src={note.image}
-                                        alt={note.title}
-                                        className="w-full h-full object-contain rounded-2xl"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gray-100" />
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                                    {note.image ? (
-                                      <img
-                                        src={note.image}
-                                        alt={note.title}
-                                        className="w-full h-full object-contain rounded-2xl"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gray-100" />
-                                    )}
-                                  </div>
-                                )}
-                                <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}> 
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>{note.title}</span>
-                                  </div>
-                                  <div className="text-xs text-gray-400 mb-1">Created: {new Date(note.created_at).toLocaleString()}</div>
-                                  <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}>{note.summary}</div>
-                                  {isExpanded ? (
-                                    <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                      {(note.tags || []).map((tag: string, i: number) => (
-                                        <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{tag}</span>
-                                      ))}
-                                      {(note.collections || []).map((col: string, i: number) => (
-                                        <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-2">
-                                      {firstTag && (
-                                        <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{firstTag}{showTagCount && <span className="ml-1">+{totalTags - 1}</span>}</span>
-                                      )}
-                                      {firstCollection && (
-                                        <span className="bg-green-200 text-xs rounded px-2 py-0.5">{firstCollection}{showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {notes.map((note: any) => (
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+                        <p className="text-gray-600 mb-8 max-w-md">
+                          Start saving to fill your Loft with links, social posts, images, and more
+                        </p>
+                      </div>
+                    ) : cardView === "list" ? (
+                      <div className="space-y-4 px-0">
+                        {notes.map((note: any) => {
+                          const isExpanded = expandedId === note.id;
+                          const totalTags = (note.tags || []).length;
+                          const totalCollections = (note.collections || []).length;
+                          const showTagCount = totalTags > 1;
+                          const showCollectionCount = totalCollections > 1;
+                          const firstTag = note.tags?.[0];
+                          const firstCollection = note.collections?.[0];
+                          return (
                             <div
                               key={note.id}
-                              className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                              onClick={() => {
-                                setSelectedBookmark(note);
-                                setShowModal(true);
-                              }}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                              onClick={() => setExpandedId(isExpanded ? null : note.id)}
                             >
-                              <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
-                                {note.image ? (
-                                  <img
-                                    src={note.image}
-                                    alt={note.title}
-                                    className="w-full h-full object-contain rounded-2xl"
-                                  />
+                              {/* Image or blank */}
+                              {isExpanded ? (
+                                <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                                  {note.image ? (
+                                    <img
+                                      src={note.image}
+                                      alt={note.title}
+                                      className="w-full h-full object-contain rounded-2xl"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100" />
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                  {note.image ? (
+                                    <img
+                                      src={note.image}
+                                      alt={note.title}
+                                      className="w-full h-full object-contain rounded-2xl"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100" />
+                                  )}
+                                </div>
+                              )}
+                              <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}> 
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>{note.title}</span>
+                                </div>
+                                <div className="text-xs text-gray-400 mb-1">Created: {new Date(note.created_at).toLocaleString()}</div>
+                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}>{note.summary}</div>
+                                {isExpanded ? (
+                                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                    {(note.tags || []).map((tag: string, i: number) => (
+                                      <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{tag}</span>
+                                    ))}
+                                    {(note.collections || []).map((col: string, i: number) => (
+                                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                    ))}
+                                  </div>
                                 ) : (
-                                  <div className="w-full h-full bg-gray-100" />
+                                  <div className="flex items-center gap-2">
+                                    {firstTag && (
+                                      <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{firstTag}{showTagCount && <span className="ml-1">+{totalTags - 1}</span>}</span>
+                                    )}
+                                    {firstCollection && (
+                                      <span className="bg-green-200 text-xs rounded px-2 py-0.5">{firstCollection}{showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}</span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-semibold text-lg truncate">{note.title || note.note || 'Untitled'}</span>
-                              </div>
-                              <div className="text-gray-500 text-sm truncate">{note.summary || note.note || ''}</div>
-                              <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                                {(note.tags || []).map((tag: string, i: number) => (
-                                  <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{tag}</span>
-                                ))}
-                                {(note.collections || []).map((col: string, i: number) => (
-                                  <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                                ))}
-                              </div>
-                              <div className="text-xs text-gray-400 mt-2">{new Date(note.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {notes.map((note: any) => (
+                          <div
+                            key={note.id}
+                            className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                            onClick={() => {
+                              setSelectedBookmark(note);
+                              setShowModal(true);
+                            }}
+                          >
+                            <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                              {note.image ? (
+                                <img
+                                  src={note.image}
+                                  alt={note.title}
+                                  className="w-full h-full object-contain rounded-2xl"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-lg truncate">{note.title || note.note || 'Untitled'}</span>
+                            </div>
+                            <div className="text-gray-500 text-sm truncate">{note.summary || note.note || ''}</div>
+                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                              {(note.tags || []).map((tag: string, i: number) => (
+                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{tag}</span>
+                              ))}
+                              {(note.collections || []).map((col: string, i: number) => (
+                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                              ))}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-2">{new Date(note.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -1595,9 +1590,7 @@ export default function BookmarksPage() {
                               <p className="text-gray-600 mb-8 max-w-md">
                                 Start saving to fill your Loft with links, social posts, images, and more
                               </p>
-                              <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
-                                Discover Content
-                              </button>
+                              {/* Removed Discover Content button */}
                             </div>
                           ) : cardView === "list" ? (
                             <div className="space-y-4 px-0">
@@ -1802,9 +1795,7 @@ export default function BookmarksPage() {
                             <p className="text-gray-600 mb-8 max-w-md">
                               Start saving to fill your Loft with links, social posts, images, and more
                             </p>
-                            <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
-                              Discover Content
-                            </button>
+                            {/* Removed Discover Content button */}
                           </div>
                         ) : (
                           <div className="px-4 md:px-8">
@@ -2168,7 +2159,7 @@ export default function BookmarksPage() {
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
                   <h2 className="text-xl font-semibold">
-                    {showInShortModal ? "Save to InShort" : "Save to Loft"}
+                    {showInShortModal ? "Save to LoftAI" : "Save to LoftAI"}
                   </h2>
                   <button onClick={closeSaveModal} className="text-gray-500 hover:text-gray-700">
                     <X className="h-5 w-5" />
@@ -2471,17 +2462,59 @@ export default function BookmarksPage() {
 
                         <div className="mb-6">
                           <h3 className="text-sm font-medium text-gray-700 mb-2">Image Preview</h3>
-                          <div className="w-full h-48 border border-gray-200 rounded-lg overflow-hidden">
+                          <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
                             {selectedImage ? (
-                              <div className="relative w-full h-full">
+                              <div className="relative w-full">
                                 <img 
                                   src={selectedImage} 
                                   alt="Preview" 
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-48 object-cover rounded-lg"
                                 />
+                                <button
+                                  onClick={() => setSelectedImage("")}
+                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
                               </div>
+                            ) : urlInput ? (
+                              // Show upload option only for links
+                              <>
+                                <div className="mb-2 md:mb-4">
+                                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5 md:h-6 md:w-6 text-white"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  onChange={handleImageUpload}
+                                  accept="image/*"
+                                  className="hidden"
+                                />
+                                <button 
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
+                                >
+                                  Browse the image file to upload
+                                </button>
+                              </>
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                              // Default image for notes
+                              <div className="w-full h-32 flex items-center justify-center">
                                 <img 
                                   src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4="
                                   alt="Note Preview"
@@ -2489,22 +2522,17 @@ export default function BookmarksPage() {
                                     width: "100%",
                                     height: "100%",
                                     objectFit: "contain",
-                                    padding: "2rem",
+                                    padding: "1rem",
                                   }}
                                 />
                               </div>
                             )}
                           </div>
-                          <div className="mt-2">
-                            
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              onChange={handleImageUpload}
-                              accept="image/*"
-                              className="hidden"
-                            />
-                          </div>
+                          {urlInput && (
+                            <p className="text-xs text-gray-500 mt-1 md:mt-2">
+                              Supported formats: JPG, PNG, GIF, SVG
+                            </p>
+                          )}
                         </div>
 
                         {/* Tags Section */}
@@ -2851,7 +2879,7 @@ export default function BookmarksPage() {
                   />
                 </div>
                 <h2 className="text-xl font-bold mb-2">Saved to Loft</h2>
-                <p className="text-gray-600 mb-6">Your content is safe and ready to rediscover anytime</p>
+                <p className="text-gray-600 mb-6">Your content is saved and ready to rediscover anytime</p>
                 <div className="flex gap-3">
                   <button
                     onClick={closeSuccessModal}
