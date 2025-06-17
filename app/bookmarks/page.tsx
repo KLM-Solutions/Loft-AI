@@ -140,8 +140,10 @@ export default function BookmarksPage() {
   useEffect(() => {
     setIsLoading(true);
     if (contentFilter === "all") {
-      Promise.all([fetchLinks(), fetchNotes()]).then(([linksData, notesData]) => {
+      Promise.allSettled([fetchLinks(), fetchNotes()]).then((results) => {
         if (latestFilter.current !== "all") return;
+        const linksData = results[0].status === "fulfilled" ? results[0].value : [];
+        const notesData = results[1].status === "fulfilled" ? results[1].value : [];
         setLinks(linksData);
         setNotes(notesData);
         const all = [...linksData, ...notesData];
