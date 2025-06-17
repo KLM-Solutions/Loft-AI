@@ -2834,6 +2834,45 @@ export default function BookmarksPage() {
             </div>
           </div>
         )}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black rounded-lg bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
+              <div className="flex justify-end p-4">
+                <button onClick={closeSuccessModal} className="text-gray-500 hover:text-gray-700">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
+                <div className="w-32 h-32 mb-4">
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                    alt="Success"
+                    className="w-full h-full"
+                  />
+                </div>
+                <h2 className="text-xl font-bold mb-2">Saved to Loft</h2>
+                <p className="text-gray-600 mb-6">Your content is safe and ready to rediscover anytime</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeSuccessModal}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeSuccessModal();
+                      router.push('/library');
+                    }}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full"
+                  >
+                    View Library
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

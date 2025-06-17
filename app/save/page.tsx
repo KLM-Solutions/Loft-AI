@@ -280,7 +280,11 @@ export default function SavePage() {
       // Remove **** from title if present
       const cleanTitle = titleInput.replace(/\*\*\*\*(.*?)\*\*\*\*/g, '$1');
       
-      const response = await fetch('/api/bookmark-save', {
+      // Determine if this is a note or a bookmark
+      const isNote = action === "create";
+      const endpoint = isNote ? "/api/notes-save" : "/api/bookmark-save";
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +292,7 @@ export default function SavePage() {
         body: JSON.stringify({
           title: cleanTitle,
           summary: summaryInput,
-          url: formData.url,
+          ...(isNote ? { note: summaryInput } : { url: formData.url }),
           image: selectedImage,
           tags: selectedTags,
           collections: collectionNames
@@ -296,13 +300,28 @@ export default function SavePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save bookmark');
+        throw new Error(isNote ? 'Failed to save note' : 'Failed to save bookmark');
       }
 
       const data = await response.json();
-      router.push('/bookmarks');
+      setSavedTitle(cleanTitle);
+      setShowInShortModal(false);
+      setShowSuccessModal(true);
+      
+      // Reset form
+      setFormData({
+        url: "",
+        title: "",
+        summary: "",
+        note: "",
+      });
+      setTitleInput("");
+      setSummaryInput("");
+      setSelectedTags([]);
+      setSelectedCollections([]);
+      setSelectedImage("");
     } catch (error) {
-      console.error('Error saving bookmark:', error);
+      console.error('Error saving:', error);
     } finally {
       setIsSaving(false);
     }
@@ -2184,7 +2203,22 @@ export default function SavePage() {
                   });
                   const data = await response.json();
                   if (data.success) {
-                    router.push("/bookmarks");
+                    setSavedTitle(titleInput);
+                    setShowInShortModal(false);
+                    setShowSuccessModal(true);
+                    
+                    // Reset form
+                    setFormData({
+                      url: "",
+                      title: "",
+                      summary: "",
+                      note: "",
+                    });
+                    setTitleInput("");
+                    setSummaryInput("");
+                    setSelectedTags([]);
+                    setSelectedCollections([]);
+                    setSelectedImage("");
                   }
                 } catch (error) {
                   console.error("Error saving note:", error);
@@ -2313,6 +2347,47 @@ export default function SavePage() {
           {action === "snap" && renderSnapForm()}
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black rounded-lg bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-end p-4">
+              <button onClick={() => setShowSuccessModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
+              <div className="w-32 h-32 mb-4">
+                <img
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                  alt="Success"
+                  className="w-full h-full"
+                />
+              </div>
+              <h2 className="text-xl font-bold mb-2">Saved to Loft</h2>
+              <p className="text-gray-600 mb-6">Your content is safe and ready to rediscover anytime</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-full hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    router.push('/library');
+                  }}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full"
+                >
+                  View Library
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
