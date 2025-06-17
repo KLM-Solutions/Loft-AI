@@ -2666,13 +2666,7 @@ export default function BookmarksPage() {
                   </div>
                 </div>
                 {/* Footer (shared) */}
-                <div className="px-6 py-3 bg-gray-50 text-xs text-gray-500 flex justify-between items-center rounded-b-2xl md:rounded-none">
-                  <span>Powered by pxlbrain</span>
-                  <div className="flex items-center space-x-3">
-                    <span>Privacy</span>
-                    <span>Report</span>
-                  </div>
-                </div>
+                {/* Footer removed as requested */}
               </div>
             </div>
           )
