@@ -49,19 +49,11 @@ export async function POST(request: Request) {
     const [titleResponse, summaryResponse] = await Promise.all([
       generateText({
         model: perplexity('sonar'),
-        prompt: `Generate a short, compelling title for the content at this URL: ${url}.
-Limit to 5 words or fewer.
-Avoid including the domain name unless there is no other useful information.
-Use natural language, not hashtags or code.
-Focus on the main topic or takeaway.`,
+        prompt: `Generate a concise, engaging title (max 5 words) for this URL: ${url}, response format should be like this : title(text-format not any other format, don't use this type of numbers or sources [1][5]), also don't use "" or '' or any other format, just text`,
       }),
       generateText({
         model: perplexity('sonar'),
-        prompt: `Summarize the main content of the following URL: ${url}.
-Keep it to 2–3 clear sentences.
-Focus on the key idea, argument, or takeaway.
-Do not include publication date or author unless essential.
-Avoid opinions unless present in the original content.`,
+        prompt: `Provide a brief summary (2-3 sentences) of the content at this URL: ${url}`,
       })
     ]);
 

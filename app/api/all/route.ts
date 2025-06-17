@@ -47,15 +47,23 @@ export async function GET() {
       `
     ]);
 
-    // Combine all data
+    // Combine all data with unique id and contentType
+    const processedBookmarks = bookmarks.map((bm: any) => ({
+      ...bm,
+      id: `link_${bm.id}`,
+      contentType: 'link',
+    }));
+    const processedNotes = notes.map((note: any) => ({
+      ...note,
+      id: `note_${note.id}`,
+      contentType: 'note',
+    }));
     const allData = [
-      ...bookmarks,
-      ...notes
+      ...processedBookmarks,
+      ...processedNotes
     ];
-
     // Sort by created_at in descending order
     allData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
     return NextResponse.json({ 
       success: true, 
       data: allData 

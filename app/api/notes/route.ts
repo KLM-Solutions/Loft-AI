@@ -23,17 +23,11 @@ export async function POST(request: Request) {
     const [titleResponse, summaryResponse] = await Promise.all([
       generateText({
         model: perplexity('sonar'),
-        prompt: `Generate a short and descriptive title for the following note: ${note}.
-Use 3 words or fewer.
-Avoid vague labels like "Note" or "Thought".
-Focus on the theme or topic of the note.`,
+        prompt: `Generate a concise, engaging title (max 3 words) for this note: ${note}, response format should be like this : title(text-format not any other format, don't use this type of numbers or sources [1][5]), also don't use "" or '' `,
       }),
       generateText({
         model: perplexity('sonar'),
-        prompt: `Write a brief summary (2–3 sentences) of the following note: ${note}.
-Highlight the core idea or insight.
-Be clear and neutral in tone.
-Avoid repeating the exact wording of the note.`,
+        prompt: `Provide a small summary (2-3 sentences) of this note: ${note}`,
       })
     ]);
 

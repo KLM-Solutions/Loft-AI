@@ -1545,31 +1545,7 @@ export default function SavePage() {
               Back
             </button>
             <button
-              onClick={async () => {
-                if (!titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0) return;
-                setIsSaving(true);
-                try {
-                  const response = await fetch("/api/upload", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      title: titleInput,
-                      summary: summaryInput,
-                      image: selectedImage,
-                      tags: selectedTags,
-                      collections: selectedCollections,
-                    }),
-                  });
-                  const data = await response.json();
-                  if (data.success) {
-                    router.push("/bookmarks");
-                  }
-                } catch (error) {
-                  console.error("Error saving upload:", error);
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
+              onClick={() => {}}
               disabled={!titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving}
               style={{
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
@@ -1580,19 +1556,9 @@ export default function SavePage() {
                 borderRadius: "0.375rem",
                 cursor: !titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "not-allowed" : "pointer",
                 fontWeight: "500",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
               }}
             >
-              {isSaving ? (
-                <>
-                  <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
-                  Saving...
-                </>
-              ) : (
-                "Add to Bookmarks"
-              )}
+              Save
             </button>
         </div>
       </div>

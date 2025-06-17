@@ -117,7 +117,13 @@ export async function GET() {
       WHERE clerk_username = ${clerk_username}
       ORDER BY created_at DESC
     `;
-    return NextResponse.json({ success: true, data: notes });
+    // Add contentType and unique id prefix
+    const processedNotes = notes.map((note: any) => ({
+      ...note,
+      id: `note_${note.id}`,
+      contentType: 'note',
+    }));
+    return NextResponse.json({ success: true, data: processedNotes });
   } catch (error) {
     console.error("Error processing notes request:", error)
     return NextResponse.json({ success: false, message: "Failed to fetch notes" }, { status: 500 })
