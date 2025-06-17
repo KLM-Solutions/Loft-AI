@@ -117,17 +117,18 @@ export default function LibraryPage() {
   const [tempSavedCollections, setTempSavedCollections] = useState<string[]>([]);
   const [hasSelectedInterests, setHasSelectedInterests] = useState(false);
   const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [collectionFilter, setCollectionFilter] = useState<string>('all');
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
     "code", "art", "photography", "minimalism", "modern"
   ]
 
-  // Fetch bookmarks when Recent Saves tab is active
+  // Fetch bookmarks (all content) when Recent Saves tab is active
   useEffect(() => {
     if (activeTab === "recent-saves") {
       setIsLoading(true)
-      fetch("/api/library")
+      fetch("/api/all")
         .then(res => res.json())
         .then(data => {
           setBookmarks(data.data || [])
@@ -161,15 +162,11 @@ export default function LibraryPage() {
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault()
     setIsSearching(true)
-    
-    // Always fetch fresh data when searching
     try {
-      const response = await fetch("/api/library")
+      const response = await fetch("/api/all")
       const data = await response.json()
       const allBookmarks = data.data || []
-
       if (searchQuery.trim()) {
-        // Save the search query
         try {
           await fetch("/api/bookmarks", {
             method: "POST",
@@ -181,13 +178,11 @@ export default function LibraryPage() {
         } catch (error) {
           console.error('Error saving search:', error)
         }
-
-        // Filter bookmarks based on search query
-        const filteredBookmarks = allBookmarks.filter((bm: { 
-          title?: string; 
-          summary?: string; 
-          tags?: string[]; 
-          collections?: string[] 
+        const filteredBookmarks = allBookmarks.filter((bm: {
+          title?: string;
+          summary?: string;
+          tags?: string[];
+          collections?: string[]
         }) => {
           const searchLower = searchQuery.toLowerCase()
           return (
@@ -197,18 +192,13 @@ export default function LibraryPage() {
             bm.collections?.some((col: string) => col.toLowerCase().includes(searchLower))
           )
         })
-
-        // Update the bookmarks state with filtered results
         setBookmarks(filteredBookmarks)
       } else {
-        // If search query is empty, show all bookmarks
         setBookmarks(allBookmarks)
       }
     } catch (error) {
       console.error('Error fetching bookmarks:', error)
     }
-
-    // Simulate search delay
     setTimeout(() => {
       setIsSearching(false)
     }, 500)
@@ -217,8 +207,7 @@ export default function LibraryPage() {
   // Clear search
   const clearSearch = () => {
     setSearchQuery("")
-    // Reset bookmarks to original state
-    fetch("/api/library")
+    fetch("/api/all")
       .then(res => res.json())
       .then(data => {
         setBookmarks(data.data || [])
@@ -746,6 +735,21 @@ export default function LibraryPage() {
                   </button>
                 </div>
               </div>
+              {/* Collection Filter UI as Dropdown */}
+              <div className="mt-4">
+                <label htmlFor="collectionFilter" className="mr-2 font-medium text-sm text-gray-700">Filter by Collection:</label>
+                <select
+                  id="collectionFilter"
+                  className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={collectionFilter}
+                  onChange={e => setCollectionFilter(e.target.value)}
+                >
+                  <option value="all">All</option>
+                  {availableCollections.map((col) => (
+                    <option key={col.id} value={col.name}>{col.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="space-y-4 pb-20 md:pb-4">
               {isLoading ? (
@@ -774,157 +778,161 @@ export default function LibraryPage() {
                 </div>
               ) : cardView === "list" ? (
                 <div className="space-y-4 px-0">
-                  {bookmarks.map((bm: any) => {
-                    const isExpanded = expandedId === bm.id;
-                    const totalTags = (bm.tags || []).length;
-                    const totalCollections = (bm.collections || []).length;
-                    const showTagCount = totalTags > 1;
-                    const showCollectionCount = totalCollections > 1;
-                    const firstTag = bm.tags?.[0];
-                    const firstCollection = bm.collections?.[0];
+                  {bookmarks
+                    .filter((bm: any) => collectionFilter === 'all' || (bm.collections && bm.collections.includes(collectionFilter)))
+                    .map((bm: any) => {
+                      const isExpanded = expandedId === bm.id;
+                      const totalTags = (bm.tags || []).length;
+                      const totalCollections = (bm.collections || []).length;
+                      const showTagCount = totalTags > 1;
+                      const showCollectionCount = totalCollections > 1;
+                      const firstTag = bm.tags?.[0];
+                      const firstCollection = bm.collections?.[0];
 
-                    return (
-                      <div
-                        key={bm.id}
-                        className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
-                        onClick={() => setExpandedId(isExpanded ? null : bm.id)}
-                      >
-                        {/* Image or blank */}
-                        {isExpanded ? (
-                          <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
-                            {bm.image ? (
-                              <img 
-                                src={bm.image} 
-                                alt={bm.title}
-                                className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100" />
-                            )}
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
-                            {bm.image ? (
-                              <img 
-                                src={bm.image} 
-                                alt={bm.title}
-                                className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100" />
-                            )}
-                          </div>
-                        )}
-                        <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>
-                              <ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown>
-                            </span>
-                            {bm.url && (
-                              <a 
-                                href={bm.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </a>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-400 mb-1">Created: {new Date(bm.created_at).toLocaleString()}</div>
-                          <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                      return (
+                        <div
+                          key={bm.id}
+                          className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                          onClick={() => setExpandedId(isExpanded ? null : bm.id)}
+                        >
+                          {/* Image or blank */}
                           {isExpanded ? (
-                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                              {(bm.tags || []).map((tag: string, i: number) => (
-                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
-                                  <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
-                                  {tag}
-                                </span>
-                              ))}
-                              {(bm.collections || []).map((col: string, i: number) => (
-                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                              ))}
+                            <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                              {bm.image ? (
+                                <img 
+                                  src={bm.image} 
+                                  alt={bm.title}
+                                  className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-100" />
+                              )}
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2">
-                              {firstTag && (
-                                <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}>
-                                  <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
-                                  {firstTag}
-                                  {showTagCount && <span className="ml-1">+{totalTags - 1}</span>}
-                                </span>
-                              )}
-                              {firstCollection && (
-                                <span className="bg-green-200 text-xs rounded px-2 py-0.5">
-                                  {firstCollection}
-                                  {showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}
-                                </span>
+                            <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                              {bm.image ? (
+                                <img 
+                                  src={bm.image} 
+                                  alt={bm.title}
+                                  className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-100" />
                               )}
                             </div>
                           )}
+                          <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>
+                                <ReactMarkdown>{removeQuotes(bm.title)}</ReactMarkdown>
+                              </span>
+                              {bm.url && (
+                                <a 
+                                  href={bm.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-400 mb-1">Created: {new Date(bm.created_at).toLocaleString()}</div>
+                            <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}><ReactMarkdown>{bm.summary}</ReactMarkdown></div>
+                            {isExpanded ? (
+                              <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                {(bm.tags || []).map((tag: string, i: number) => (
+                                  <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
+                                    <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                    {tag}
+                                  </span>
+                                ))}
+                                {(bm.collections || []).map((col: string, i: number) => (
+                                  <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                {firstTag && (
+                                  <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}>
+                                    <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                                    {firstTag}
+                                    {showTagCount && <span className="ml-1">+{totalTags - 1}</span>}
+                                  </span>
+                                )}
+                                {firstCollection && (
+                                  <span className="bg-green-200 text-xs rounded px-2 py-0.5">
+                                    {firstCollection}
+                                    {showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {bookmarks.map((bm: any) => (
-                    <div
-                      key={bm.id}
-                      className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
-                      onClick={() => {
-                        setSelectedBookmark(bm);
-                        setShowModal(true);
-                      }}
-                    >
-                      <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
-                        {bm.image ? (
-                          <img 
-                            src={bm.image} 
-                            alt={bm.title}
-                            className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100" />
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-lg truncate">
-                          {bm.title || bm.note || 'Untitled'}
-                        </span>
-                        {bm.url && (
-                          <a 
-                            href={bm.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                      <div className="text-gray-500 text-sm truncate">
-                        {bm.summary || bm.note || ''}
-                      </div>
-                      <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
-                        {(bm.tags || []).map((tag: string, i: number) => (
-                          <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
-                            <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
-                            {tag}
+                  {bookmarks
+                    .filter((bm: any) => collectionFilter === 'all' || (bm.collections && bm.collections.includes(collectionFilter)))
+                    .map((bm: any) => (
+                      <div
+                        key={bm.id}
+                        className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                        onClick={() => {
+                          setSelectedBookmark(bm);
+                          setShowModal(true);
+                        }}
+                      >
+                        <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                          {bm.image ? (
+                            <img 
+                              src={bm.image} 
+                              alt={bm.title}
+                              className={`w-full h-full ${bm.contentType === 'note' ? 'object-contain' : 'object-cover'} rounded-2xl`}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100" />
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-lg truncate">
+                            {bm.title || bm.note || 'Untitled'}
                           </span>
-                        ))}
-                        {(bm.collections || []).map((col: string, i: number) => (
-                          <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
-                        ))}
+                          {bm.url && (
+                            <a 
+                              href={bm.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="text-gray-500 text-sm truncate">
+                          {bm.summary || bm.note || ''}
+                        </div>
+                        <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                          {(bm.tags || []).map((tag: string, i: number) => (
+                            <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}>
+                              <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />
+                              {tag}
+                            </span>
+                          ))}
+                          {(bm.collections || []).map((col: string, i: number) => (
+                            <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                          ))}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-2">
+                          {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-400 mt-2">
-                        {new Date(bm.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
