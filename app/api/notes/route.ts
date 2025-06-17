@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       }),
       generateText({
         model: perplexity('sonar'),
-        prompt: `Provide a brief summary (2-3 sentences) of this note: ${note}`,
+        prompt: `Provide a small summary (2-3 sentences) of this note: ${note}`,
       })
     ]);
 

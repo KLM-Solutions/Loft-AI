@@ -473,7 +473,7 @@ export default function RunThroughPage() {
                 <div className="text-center mb-8 mt-8 md:mt-0">
                   <h2 className="text-2xl font-semibold mb-2">
                     Hi there, <span className="text-blue-500">
-                      {user?.username || 
+                      {user?.firstName || 
                        user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 
                        user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 
                        'there'}
@@ -727,7 +727,7 @@ export default function RunThroughPage() {
                   disabled={isLoading}
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                  <button type="button" className="p-2 text-gray-700 hover:bg-gray-100 rounded-full" disabled={isLoading}>
+                  <button type="button" className="p-2 text-gray-400 rounded-full cursor-not-allowed" disabled>
                     <Mic className="h-5 w-5" />
                   </button>
                   <button
@@ -796,17 +796,20 @@ export default function RunThroughPage() {
           <div className="flex flex-col h-full">
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold">Notifications</h2>
-              <button onClick={closeNotifications} className="text-gray-500 hover:text-gray-700">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M18 6L6 18M6 6L18 18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                <button onClick={closeNotifications} className="text-gray-500 hover:text-gray-700">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M18 6L6 18M6 6L18 18"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center p-6">
@@ -827,14 +830,6 @@ export default function RunThroughPage() {
                 Stay updated with the latest activity, mentions, and important alerts
               </p>
             </div>
-
-            <div className="p-4 border-t border-gray-200 text-xs text-gray-500 flex justify-between">
-              <span>Powered by Loft</span>
-              <div className="flex space-x-4">
-                <span>Privacy</span>
-                <span>Report</span>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -843,19 +838,22 @@ export default function RunThroughPage() {
       {showNotifications && (
         <div className="md:hidden fixed inset-0 bg-[#f5f8fa] z-50 flex flex-col">
           {/* Header */}
-          <header className="flex items-center p-4">
-            <button onClick={closeNotifications} className="mr-2">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M15 18L9 12L15 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <h1 className="text-2xl font-bold">Notification</h1>
+          <header className="flex items-center justify-between p-4">
+            <div className="flex items-center">
+              <button onClick={closeNotifications} className="mr-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M15 18L9 12L15 6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              <h1 className="text-2xl font-bold">Notification</h1>
+            </div>
+            <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
           </header>
 
           {/* Content */}

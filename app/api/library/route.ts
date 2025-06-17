@@ -17,7 +17,12 @@ export async function GET() {
       WHERE clerk_username = ${clerk_username}
       ORDER BY created_at DESC
     `;
-    return NextResponse.json({ success: true, data: bookmarks });
+    const processedBookmarks = bookmarks.map((bm: any) => ({
+      ...bm,
+      id: `link_${bm.id}`,
+      contentType: 'link',
+    }));
+    return NextResponse.json({ success: true, data: processedBookmarks });
   } catch (error) {
     console.error("Error processing library request:", error)
     return NextResponse.json({ success: false, message: "Failed to fetch bookmarks" }, { status: 500 })

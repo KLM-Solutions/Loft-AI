@@ -60,6 +60,17 @@ export async function GET(request: Request) {
     }
     const clerk_username = user.username || user.emailAddresses?.[0]?.emailAddress || user.id;
 
+    // Ensure the table exists
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_interests (
+        id SERIAL PRIMARY KEY,
+        clerk_username TEXT NOT NULL UNIQUE,
+        interests TEXT[] NOT NULL DEFAULT '{}',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
     // Get user's interests
     const result = await sql`
       SELECT interests
