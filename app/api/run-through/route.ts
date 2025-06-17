@@ -68,26 +68,6 @@ async function getRelatedTopics(query: string, clerk_username: string) {
           OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
         )
       UNION ALL
-      -- Uploads
-      SELECT 
-        'upload' as type,
-        title,
-        summary,
-        tags,
-        collections,
-        created_at,
-        NULL as url,
-        image,
-        1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) as title_similarity,
-        1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) as summary_similarity
-      FROM uploads
-      WHERE 
-        clerk_username = ${clerk_username}
-        AND (
-          1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
-          OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
-        )
-      UNION ALL
       -- Notes
       SELECT 
         'note' as type,
