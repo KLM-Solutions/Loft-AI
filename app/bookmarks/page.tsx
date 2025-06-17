@@ -138,7 +138,23 @@ export default function BookmarksPage() {
         fetch("/api/all")
           .then(res => res.json())
           .then(data => {
-            setBookmarks(data.data || [])
+            // Prefix IDs based on contentType or fallback
+            const processed = (data.data || []).map((item: any) => {
+              let prefix = item.contentType;
+              if (!prefix) {
+                // fallback: guess by fields
+                if (item.url) prefix = 'link';
+                else if (item.note) prefix = 'note';
+                else if (item.image) prefix = 'image';
+                else prefix = 'item';
+              }
+              return {
+                ...item,
+                id: `${prefix}_${item.id}`,
+                contentType: prefix,
+              };
+            });
+            setBookmarks(processed)
             setIsLoading(false)
           })
           .catch(error => {
@@ -149,7 +165,13 @@ export default function BookmarksPage() {
         fetch("/api/library")
           .then(res => res.json())
           .then(data => {
-            setBookmarks(data.data || [])
+            // Prefix IDs for links
+            const processed = (data.data || []).map((link: any) => ({
+              ...link,
+              id: `link_${link.id}`,
+              contentType: 'link',
+            }));
+            setBookmarks(processed)
             setIsLoading(false)
           })
           .catch(error => {
@@ -190,7 +212,20 @@ export default function BookmarksPage() {
         const response = await fetch('/api/all')
         const data = await response.json()
         if (data.success) {
-          filteredBookmarks = data.data
+          filteredBookmarks = (data.data || []).map((item: any) => {
+            let prefix = item.contentType;
+            if (!prefix) {
+              if (item.url) prefix = 'link';
+              else if (item.note) prefix = 'note';
+              else if (item.image) prefix = 'image';
+              else prefix = 'item';
+            }
+            return {
+              ...item,
+              id: `${prefix}_${item.id}`,
+              contentType: prefix,
+            };
+          });
         }
       } else if (contentFilter === "links") {
         filteredBookmarks = await fetchLinks()
@@ -254,7 +289,21 @@ export default function BookmarksPage() {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            setBookmarks(data.data || [])
+            const processed = (data.data || []).map((item: any) => {
+              let prefix = item.contentType;
+              if (!prefix) {
+                if (item.url) prefix = 'link';
+                else if (item.note) prefix = 'note';
+                else if (item.image) prefix = 'image';
+                else prefix = 'item';
+              }
+              return {
+                ...item,
+                id: `${prefix}_${item.id}`,
+                contentType: prefix,
+              };
+            });
+            setBookmarks(processed)
           }
           setIsLoading(false)
         })

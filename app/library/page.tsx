@@ -1363,14 +1363,6 @@ export default function LibraryPage() {
                     </button>
                   </div>
                 </div>
-                {/* Footer (shared) */}
-                <div className="px-6 py-3 bg-gray-50 text-xs text-gray-500 flex justify-between items-center rounded-b-2xl md:rounded-none">
-                  <span>Powered by pxlbrain</span>
-                  <div className="flex items-center space-x-3">
-                    <span>Privacy</span>
-                    <span>Report</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1492,14 +1484,6 @@ export default function LibraryPage() {
                 <p className="text-gray-400 text-center text-sm mt-4 max-w-xs">
                   Stay updated with the latest activity, mentions, and important alerts
                 </p>
-              </div>
-
-              <div className="p-4 border-t border-gray-200 text-xs text-gray-500 flex justify-between">
-                <span>Powered by pxlbrain</span>
-                <div className="flex space-x-4">
-                  <span>Privacy</span>
-                  <span>Report</span>
-                </div>
               </div>
             </div>
           </div>
