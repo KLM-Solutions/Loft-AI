@@ -780,8 +780,8 @@ export default function BookmarksPage() {
         if (data.success) {
           setHasSelectedInterests(data.hasInterests);
           setUserInterests(data.data);
-          // Only show interest modal if user has no interests and no username
-          if (data.hasInterests || data.username) {
+          // Only show interest modal if user has no interests
+          if (data.hasInterests) {
             setShowInterestModal(false);
           } else {
             setShowInterestModal(true);
