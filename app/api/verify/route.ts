@@ -13,12 +13,7 @@ export async function POST(request: Request) {
     }
 
     // Create a prompt for the LLM to verify if the URL is from a social media platform
-    const prompt = `Based on the following metadata, identify whether the content is from each of these platforms: Instagram, X (Twitter), Facebook, Snapchat, YouTube, TikTok, Reddit, WhatsApp, LinkedIn.
-For each platform, respond only with "yes" or "no" in lowercase letters.
-Example:
-instagram: yes
-x: no
-facebook: no
+    const prompt = `Using this metadata provided, identify which social media platform this belongs to. Social media platforms are platforms like Instagram, X, Facebook, Snapchat, Youtube, Tiktok, Reddit, WhatsApp, and more. Only respond with "yes" or "no" in lowercase letters.
 
 Metadata:
 ${JSON.stringify(metadata, null, 2)}`
