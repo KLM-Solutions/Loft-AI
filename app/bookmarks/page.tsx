@@ -63,7 +63,7 @@ export default function BookmarksPage() {
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showCreateOptionsModal, setShowCreateOptionsModal] = useState(false)
-  const [selectedCreateOption, setSelectedCreateOption] = useState<'link' | 'note' | null>(null)
+  const [selectedCreateOption, setSelectedCreateOption] = useState<'link' | 'note' | 'image' | null>(null)
   const [urlInput, setUrlInput] = useState("")
   const [tagInput, setTagInput] = useState("")
   const [showTagDropdown, setShowTagDropdown] = useState(false)
@@ -108,8 +108,10 @@ export default function BookmarksPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [notes, setNotes] = useState<any[]>([]);
   const [links, setLinks] = useState<any[]>([]);
+  const [images, setImages] = useState<any[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [isLoadingLinks, setIsLoadingLinks] = useState(false)
+  const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [tagColorMap] = useState(new Map<string, string>());
   const [error, setError] = useState("")
   const [availableTags, setAvailableTags] = useState<any[]>([]);
@@ -142,13 +144,15 @@ export default function BookmarksPage() {
   useEffect(() => {
     setIsLoading(true);
     if (contentFilter === "all") {
-      Promise.allSettled([fetchLinks(), fetchNotes()]).then((results) => {
+      Promise.allSettled([fetchLinks(), fetchNotes(), fetchImages()]).then((results) => {
         if (latestFilter.current !== "all") return;
         const linksData = results[0].status === "fulfilled" ? results[0].value : [];
         const notesData = results[1].status === "fulfilled" ? results[1].value : [];
+        const imagesData = results[2].status === "fulfilled" ? results[2].value : [];
         setLinks(linksData);
         setNotes(notesData);
-        const all = [...linksData, ...notesData];
+        setImages(imagesData);
+        const all = [...linksData, ...notesData, ...imagesData];
         setAllData(all);
         setBookmarks(all);
         setIsLoading(false);
@@ -175,6 +179,18 @@ export default function BookmarksPage() {
         }).catch(() => setIsLoading(false));
       } else {
         setBookmarks(notes);
+        setIsLoading(false);
+      }
+    } else if (contentFilter === "images") {
+      if (images.length === 0) {
+        fetchImages().then((imagesData) => {
+          if (latestFilter.current !== "images") return;
+          setImages(imagesData);
+          setBookmarks(imagesData);
+          setIsLoading(false);
+        }).catch(() => setIsLoading(false));
+      } else {
+        setBookmarks(images);
         setIsLoading(false);
       }
     }
@@ -281,6 +297,8 @@ export default function BookmarksPage() {
         filteredBookmarks = await fetchLinks()
       } else if (contentFilter === "notes") {
         filteredBookmarks = await fetchNotes()
+      } else if (contentFilter === "images") {
+        filteredBookmarks = await fetchImages()
       }
 
       if (searchQuery.trim()) {
@@ -373,6 +391,13 @@ export default function BookmarksPage() {
       }).catch(() => {
         setIsLoading(false)
       })
+    } else if (contentFilter === "images") {
+      fetchImages().then((imagesData) => {
+        setBookmarks(imagesData)
+        setIsLoading(false)
+      }).catch(() => {
+        setIsLoading(false)
+      })
     }
   }
 
@@ -426,11 +451,11 @@ export default function BookmarksPage() {
       setUrlInput("");
       setSummaryInput("");
     } else if (option === 'image') {
-      // Show coming soon message for image upload
-      toast({
-        title: "Coming Soon",
-        description: "Image upload feature will be available soon!",
-      });
+      // Show save modal with image upload focused
+      setSelectedCreateOption('image');
+      setShowSaveModal(true);
+      setUrlInput("");
+      setSummaryInput("");
     }
   }
 
@@ -600,22 +625,36 @@ export default function BookmarksPage() {
       // Use default note image if no image is selected
       const imageToUse = selectedImage || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2QjI4RjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0iZmVhdGhlciBmZWF0aGVyLWZpbGUtdGV4dCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiI+PC9wYXRoPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ij48L3BvbHlsaW5lPjxsaW5lIHgxPSIxNiIgeTE9IjEzIiB4Mj0iOCIgeTI9IjEzIj48L2xpbmU+PGxpbmUgeDE9IjE2IiB5MT0iMTciIHgyPSI4IiB5Mj0iMTciPjwvbGluZT48bGluZSB4MT0iMTAiIHkxPSI5IiB4Mj0iOCIgeTI9IjkiPjwvbGluZT48L3N2Zz4=";
 
-      // Determine if this is a link or a note based on the URL input
-      const isLink = urlInput && urlInput.trim().length > 0;
-      const endpoint = isLink ? "/api/bookmark-save" : "/api/notes-save";
+      // Determine the endpoint based on the selected create option
+      let endpoint;
+      let payload;
 
-      const payload = {
-        title: titleInput.trim(),
-        summary: summaryInput.trim(),
-        collections: selectedCollections,
-        tags: selectedTags,
-        image: imageToUse,
-        type: "inshort",
-        ...(isLink
-          ? { url: urlInput.trim() }
-          : { note: summaryInput.trim() } // Add note field for notes
-        )
-      };
+      if (selectedCreateOption === 'image') {
+        endpoint = "/api/image-save";
+        payload = {
+          title: titleInput.trim(),
+          summary: summaryInput.trim(),
+          image: selectedImage,
+          tags: selectedTags,
+          collections: selectedCollections
+        };
+      } else {
+        // Determine if this is a link or a note based on the URL input
+        const isLink = urlInput && urlInput.trim().length > 0;
+        endpoint = isLink ? "/api/bookmark-save" : "/api/notes-save";
+        payload = {
+          title: titleInput.trim(),
+          summary: summaryInput.trim(),
+          collections: selectedCollections,
+          tags: selectedTags,
+          image: imageToUse,
+          type: "inshort",
+          ...(isLink
+            ? { url: urlInput.trim() }
+            : { note: summaryInput.trim() } // Add note field for notes
+          )
+        };
+      }
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -626,7 +665,7 @@ export default function BookmarksPage() {
       });
 
       if (!response.ok) {
-        throw new Error(isLink ? "Failed to save bookmark" : "Failed to save note");
+        throw new Error(selectedCreateOption === 'image' ? "Failed to save image" : (urlInput ? "Failed to save bookmark" : "Failed to save note"));
       }
 
       const data = await response.json();
@@ -877,6 +916,24 @@ export default function BookmarksPage() {
       }));
     } catch (error) {
       console.error('Error fetching notes:', error);
+      throw error;
+    }
+  };
+
+  // Add function to fetch images
+  const fetchImages = async () => {
+    try {
+      const response = await fetch('/api/image-save');
+      if (!response.ok) throw new Error('Failed to fetch images');
+      const data = await response.json();
+      console.log('Fetched images:', data.data); // <-- Add this
+      return data.data.map((image: any) => ({
+        ...image,
+        id: `image_${image.id}`,
+        contentType: 'image'
+      }));
+    } catch (error) {
+      console.error('Error fetching images:', error);
       throw error;
     }
   };
@@ -1178,15 +1235,18 @@ export default function BookmarksPage() {
                     
                     // Fetch data based on content filter
                     if (contentFilter === "all") {
-                      const [linksData, notesData] = await Promise.all([
+                      const [linksData, notesData, imagesData] = await Promise.all([
                         fetchLinks(),
-                        fetchNotes()
+                        fetchNotes(),
+                        fetchImages()
                       ])
-                      filteredBookmarks = [...linksData, ...notesData]
+                      filteredBookmarks = [...linksData, ...notesData, ...imagesData]
                     } else if (contentFilter === "links") {
                       filteredBookmarks = await fetchLinks()
                     } else if (contentFilter === "notes") {
                       filteredBookmarks = await fetchNotes()
+                    } else if (contentFilter === "images") {
+                      filteredBookmarks = await fetchImages()
                     }
 
                     if (newQuery.trim()) {
@@ -1256,6 +1316,15 @@ export default function BookmarksPage() {
             >
               Notes
             </button>
+            
+            <button
+              onClick={() => setContentFilter("images")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "images" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Images
+            </button>
           </div>
         </header>
 
@@ -1279,15 +1348,18 @@ export default function BookmarksPage() {
                       
                       // Fetch data based on content filter
                       if (contentFilter === "all") {
-                        const [linksData, notesData] = await Promise.all([
+                        const [linksData, notesData, imagesData] = await Promise.all([
                           fetchLinks(),
-                          fetchNotes()
+                          fetchNotes(),
+                          fetchImages()
                         ])
-                        filteredBookmarks = [...linksData, ...notesData]
+                        filteredBookmarks = [...linksData, ...notesData, ...imagesData]
                       } else if (contentFilter === "links") {
                         filteredBookmarks = await fetchLinks()
                       } else if (contentFilter === "notes") {
                         filteredBookmarks = await fetchNotes()
+                      } else if (contentFilter === "images") {
+                        filteredBookmarks = await fetchImages()
                       }
 
                       if (newQuery.trim()) {
@@ -1365,6 +1437,15 @@ export default function BookmarksPage() {
             >
               Notes
             </button>
+            
+            <button
+              onClick={() => setContentFilter("images")}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                contentFilter === "images" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Images
+            </button>
           </div>
         </div>
 
@@ -1400,6 +1481,15 @@ export default function BookmarksPage() {
                       }`}
                     >
                       Notes
+                    </button>
+                    
+                    <button
+                      onClick={() => setContentFilter("images")}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                        contentFilter === "images" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      Images
                     </button>
                   </div>
 
@@ -1575,6 +1665,143 @@ export default function BookmarksPage() {
                       </div>
                     )}
                   </div>
+                ) : contentFilter === "images" ? (
+                  <div className="flex flex-col h-full">
+                    <div className="bg-[#f5f8fa] pt-4 pb-6 z-10">
+                      <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-bold">Images</h1>
+                        <div className="flex space-x-2">
+                          <button
+                            className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
+                            onClick={() => setCardView("list")}
+                            aria-label="List view"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
+                          </button>
+                          <button
+                              className={`p-2 rounded ${cardView === "grid" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
+                            onClick={() => setCardView("grid")}
+                            aria-label="Grid view"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="3" width="6" height="6" rx="1" fill="currentColor"/><rect x="3" y="11" width="6" height="6" rx="1" fill="currentColor"/><rect x="11" y="11" width="6" height="6" rx="1" fill="currentColor"/></svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    {images.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                        <div className="w-40 h-40 mb-6">
+                          <img
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Favorite%20illustration-l25o0Haqveq5uoh66hFNScJ6uLYb4m.png"
+                            alt="No images"
+                            className="w-full h-full"
+                          />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No images yet</h2>
+                        <p className="text-gray-600 mb-8 max-w-md">
+                          Start uploading images to fill your Loft with visual content
+                        </p>
+                      </div>
+                    ) : cardView === "list" ? (
+                      <div className="space-y-4 px-0">
+                        {images.map((image: any) => {
+                          const isExpanded = expandedId === image.id;
+                          const totalTags = (image.tags || []).length;
+                          const totalCollections = (image.collections || []).length;
+                          const showTagCount = totalTags > 1;
+                          const showCollectionCount = totalCollections > 1;
+                          const firstTag = image.tags?.[0];
+                          const firstCollection = image.collections?.[0];
+                          return (
+                            <div
+                              key={image.id}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                              onClick={() => setExpandedId(isExpanded ? null : image.id)}
+                            >
+                              {/* Image */}
+                              {isExpanded ? (
+                                <div className="w-full md:w-16 h-40 md:h-16 rounded-lg flex-shrink-0 mb-3 md:mb-0 md:mr-4 overflow-hidden">
+                                  <img
+                                    src={image.image}
+                                    alt={image.title}
+                                    className="w-full h-full object-cover rounded-2xl"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg flex-shrink-0 mr-4 overflow-hidden">
+                                  <img
+                                    src={image.image}
+                                    alt={image.title}
+                                    className="w-full h-full object-cover rounded-2xl"
+                                  />
+                                </div>
+                              )}
+                              <div className={`flex-1 min-w-0 ${isExpanded ? 'w-full' : ''}`}> 
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className={`font-semibold text-lg ${isExpanded ? "" : "truncate block w-full"}`}>{image.title}</span>
+                                </div>
+                                <div className="text-xs text-gray-400 mb-1">Created: {new Date(image.created_at).toLocaleString()}</div>
+                                <div className={`text-gray-500 text-sm ${isExpanded ? "" : "truncate block w-full"} mb-2`}>{image.summary}</div>
+                                {isExpanded ? (
+                                  <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                                    {(image.tags || []).map((tag: string, i: number) => (
+                                      <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{tag}</span>
+                                    ))}
+                                    {(image.collections || []).map((col: string, i: number) => (
+                                      <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    {firstTag && (
+                                      <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(firstTag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{firstTag}{showTagCount && <span className="ml-1">+{totalTags - 1}</span>}</span>
+                                    )}
+                                    {firstCollection && (
+                                      <span className="bg-green-200 text-xs rounded px-2 py-0.5">{firstCollection}{showCollectionCount && <span className="ml-1">+{totalCollections - 1}</span>}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {images.map((image: any) => (
+                          <div
+                            key={image.id}
+                            className="bg-white rounded-2xl shadow p-4 flex flex-col cursor-pointer transition-all duration-200 hover:shadow-lg"
+                            onClick={() => {
+                              setSelectedBookmark(image);
+                              setShowModal(true);
+                            }}
+                          >
+                            <div className="w-full h-48 rounded-lg mb-3 overflow-hidden">
+                              <img
+                                src={image.image}
+                                alt={image.title}
+                                className="w-full h-full object-cover rounded-2xl"
+                              />
+                            </div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-lg truncate">{image.title || 'Untitled'}</span>
+                            </div>
+                            <div className="text-gray-500 text-sm truncate">{image.summary || ''}</div>
+                            <div className="flex flex-wrap gap-x-2 gap-y-2 mt-2 w-full">
+                              {(image.tags || []).map((tag: string, i: number) => (
+                                <span key={i} className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 border ${getTagColor(tag)}`}> <img src="/tag-01.svg" alt="tag" className="w-4 h-4" />{tag}</span>
+                              ))}
+                              {(image.collections || []).map((col: string, i: number) => (
+                                <span key={i} className="bg-green-200 text-xs rounded px-2 py-0.5">{col}</span>
+                              ))}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-2">{new Date(image.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <>
                     {/* Content based on active tab */}
@@ -1586,7 +1813,8 @@ export default function BookmarksPage() {
                             <h1 className="text-2xl font-bold">
                               {contentFilter === "all" ? "All" : 
                                contentFilter === "links" ? "Links" : 
-                               contentFilter === "notes" ? "Notes" : "Recent Saves"}
+                               contentFilter === "notes" ? "Notes" : 
+                               contentFilter === "images" ? "Images" : "Recent Saves"}
                             </h1>
                             <div className="flex space-x-2">
                               <button
@@ -2309,6 +2537,65 @@ export default function BookmarksPage() {
                           )}
                         </div>
 
+                        {/* Image Upload Field - only show if image option is selected */}
+                        <div className={`mb-6 ${selectedCreateOption === 'image' ? 'block' : 'hidden'}`}>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">Upload Image</h3>
+                          <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center bg-gray-50">
+                            {selectedImage ? (
+                              <div className="relative w-full">
+                                <img 
+                                  src={selectedImage} 
+                                  alt="Uploaded" 
+                                  className="w-full h-48 object-cover rounded-lg"
+                                />
+                                <button
+                                  onClick={() => setSelectedImage("")}
+                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="mb-2 md:mb-4">
+                                  <div className="w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-full flex items-center justify-center">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5 md:h-6 md:w-6 text-white"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  onChange={handleImageUpload}
+                                  accept="image/*"
+                                  className="hidden"
+                                />
+                                <button 
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="text-sm text-red-500 border border-red-200 rounded-full px-4 py-1 hover:bg-red-50"
+                                >
+                                  Browse the image file to upload
+                                </button>
+                              </>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 md:mt-2">
+                            Supported formats: JPG, PNG, GIF, SVG
+                          </p>
+                        </div>
+
                         {/* Action Buttons */}
                         <div className="flex justify-end gap-3 mt-6">
                           <button
@@ -2444,16 +2731,50 @@ export default function BookmarksPage() {
                                 } finally {
                                   setIsGenerating(false);
                                 }
+                              } else if (selectedCreateOption === 'image' && selectedImage) {
+                                // Handle image upload
+                                try {
+                                  setIsGenerating(true);
+                                  setTitleInput("");
+                                  setSummaryInput("");
+
+                                  // Analyze the image using AI
+                                  const response = await fetch('/api/image', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ 
+                                      image: selectedImage 
+                                    }),
+                                  });
+
+                                  if (!response.ok) {
+                                    throw new Error('Failed to analyze image');
+                                  }
+
+                                  const data = await response.json();
+                                  setTitleInput(data.title);
+                                  setSummaryInput(data.summary);
+                                  setShowInShortModal(true);
+                                } catch (error) {
+                                  console.error('Error analyzing image:', error);
+                                  setError('Failed to analyze image. Please try again.');
+                                } finally {
+                                  setIsGenerating(false);
+                                }
                               }
                             }}
                             disabled={
                               (selectedCreateOption === 'link' && !urlInput) || 
                               (selectedCreateOption === 'note' && !summaryInput) || 
+                              (selectedCreateOption === 'image' && !selectedImage) ||
                               isGenerating
                             }
                             className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
                               ((selectedCreateOption === 'link' && !urlInput) || 
                                (selectedCreateOption === 'note' && !summaryInput) || 
+                               (selectedCreateOption === 'image' && !selectedImage) ||
                                isGenerating)
                                 ? 'bg-gray-300 cursor-not-allowed' 
                                   : 'bg-red-500 hover:bg-red-600'
@@ -2771,7 +3092,7 @@ export default function BookmarksPage() {
                   {/* Upload Image Option */}
                   <button
                     onClick={() => handleCreateOption('image')}
-                    className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors relative"
+                    className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
                   >
                     <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                       <Upload className="h-6 w-6 text-green-600" />
@@ -2779,9 +3100,6 @@ export default function BookmarksPage() {
                     <div className="flex-1 text-left">
                       <h3 className="font-medium text-gray-900">Upload Image</h3>
                       <p className="text-sm text-gray-500">Save an image to your library</p>
-                    </div>
-                    <div className="absolute top-2 right-2">
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-1">Coming Soon</span>
                     </div>
                   </button>
 

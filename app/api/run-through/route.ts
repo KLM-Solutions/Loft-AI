@@ -87,6 +87,26 @@ async function getRelatedTopics(query: string, clerk_username: string) {
           1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
           OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
         )
+      UNION ALL
+      -- Images
+      SELECT 
+        'image' as type,
+        title,
+        summary,
+        tags,
+        collections,
+        created_at,
+        NULL as url,
+        image,
+        1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) as title_similarity,
+        1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) as summary_similarity
+      FROM images
+      WHERE 
+        clerk_username = ${clerk_username}
+        AND (
+          1 - (embedding_title::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+          OR 1 - (embedding_summary::vector <=> (SELECT embedding FROM query_embedding)) > 0.7
+        )
     )
     SELECT * FROM similarity_scores
     ORDER BY GREATEST(title_similarity, summary_similarity) DESC
@@ -112,12 +132,12 @@ async function getLLMResponse(query: string, relatedTopics: any[]) {
     messages: [
       {
         role: "system",
-        content: `You are a helpful assistant that answers questions based only on the user's saved content (bookmarks, uploads, and notes).
+        content: `You are a helpful assistant that answers questions based only on the user's saved content (bookmarks, uploads, notes, and images).
 Use the provided context to form your answer.
 If the context does not contain relevant information, say so and optionally provide a helpful general answer.
 Do not fabricate details not present in the context.
 Format your response clearly, concisely, and without filler.
-When referencing a source, include a short inline label (e.g., "(from saved note on X)") where appropriate.
+When referencing a source, include a short inline label (e.g., "(from saved note on X)" or "(from saved image on X)") where appropriate.
         Context:
         ${JSON.stringify(context, null, 2)}`
       },

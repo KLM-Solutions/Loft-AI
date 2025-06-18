@@ -1030,10 +1030,10 @@ export default function SavePage() {
     <div style={{ padding: isMobile ? "1rem" : "1.5rem" }}>
       <div style={{ marginBottom: "1.5rem" }}>
         <h2 style={{ fontSize: isMobile ? "1.25rem" : "1.5rem", fontWeight: "600", color: "#111827", marginBottom: "0.5rem" }}>
-          Upload a File
+          Upload an Image
         </h2>
         <p style={{ fontSize: isMobile ? "0.875rem" : "1rem", color: "#6B7280" }}>
-          Upload an image and add details
+          Upload an image and we'll analyze it for you
         </p>
       </div>
 
@@ -1133,24 +1133,68 @@ export default function SavePage() {
               Cancel
             </button>
             <button
-              onClick={() => {
-                if (selectedImage) {
+              onClick={async () => {
+                if (!selectedImage) return;
+                
+                try {
+                  setIsGenerating(true);
+                  setTitleInput("");
+                  setSummaryInput("");
+
+                  // Analyze the image using AI
+                  const response = await fetch('/api/image', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                      image: selectedImage 
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Failed to analyze image');
+                  }
+
+                  const data = await response.json();
+                  setTitleInput(data.title);
+                  setSummaryInput(data.summary);
                   setShowInShortModal(true);
+                } catch (error) {
+                  console.error('Error analyzing image:', error);
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to analyze image. Please try again.",
+                    className: "bg-red-50 border-red-200"
+                  });
+                } finally {
+                  setIsGenerating(false);
                 }
               }}
-              disabled={!selectedImage}
+              disabled={!selectedImage || isGenerating}
               style={{
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
                 fontSize: isMobile ? "0.875rem" : "0.75rem",
                 color: "white",
-                  backgroundColor: !selectedImage ? "#9CA3AF" : "#ef4444",
+                backgroundColor: !selectedImage || isGenerating ? "#9CA3AF" : "#ef4444",
                 border: "none",
                 borderRadius: "0.375rem",
-                cursor: !selectedImage ? "not-allowed" : "pointer",
+                cursor: !selectedImage || isGenerating ? "not-allowed" : "pointer",
                 fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
               }}
             >
-              Continue
+              {isGenerating ? (
+                <>
+                  <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
+                  Analyzing...
+                </>
+              ) : (
+                'Continue'
+              )}
             </button>
           </div>
         </div>
@@ -1565,7 +1609,52 @@ export default function SavePage() {
               Back
             </button>
             <button
-              onClick={() => {}}
+              onClick={async () => {
+                if (!titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0) return;
+                setIsSaving(true);
+                try {
+                  // Convert collection IDs to names
+                  const collectionNames = selectedCollections.map(collectionId => {
+                    const collection = availableCollections.find(c => c.id === collectionId);
+                    return collection ? collection.name : collectionId;
+                  });
+
+                  const response = await fetch("/api/image-save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      title: titleInput,
+                      summary: summaryInput,
+                      image: selectedImage,
+                      tags: selectedTags,
+                      collections: collectionNames
+                    }),
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                    setSavedTitle(titleInput);
+                    setShowInShortModal(false);
+                    setShowSuccessModal(true);
+                    
+                    // Reset form
+                    setFormData({
+                      url: "",
+                      title: "",
+                      summary: "",
+                      note: "",
+                    });
+                    setTitleInput("");
+                    setSummaryInput("");
+                    setSelectedTags([]);
+                    setSelectedCollections([]);
+                    setSelectedImage("");
+                  }
+                } catch (error) {
+                  console.error("Error saving image:", error);
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
               disabled={!titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving}
               style={{
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
@@ -1576,9 +1665,19 @@ export default function SavePage() {
                 borderRadius: "0.375rem",
                 cursor: !titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "not-allowed" : "pointer",
                 fontWeight: "500",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
               }}
             >
-              Save
+              {isSaving ? (
+                <>
+                  <Loader2 className="animate-spin" style={{ height: "1rem", width: "1rem" }} />
+                  Saving...
+                </>
+              ) : (
+                "Add to Bookmarks"
+              )}
             </button>
         </div>
       </div>
@@ -1934,14 +2033,14 @@ export default function SavePage() {
                     setShowTagDropdown(!showTagDropdown)
                     setShowCollectionDropdown(false)
                   }}
-                  style={{ color: "#ef4444" }}
+                    style={{ color: "#ef4444" }}
                 >
                   <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                 </button>
               </div>
               {showTagDropdown && (
                 <div
-                  style={{
+                  style={{ 
                     position: "absolute",
                     zIndex: 10,
                     width: "100%",
