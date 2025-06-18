@@ -62,6 +62,8 @@ export default function BookmarksPage() {
   const [contentFilter, setContentFilter] = useState("all")
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showCreateOptionsModal, setShowCreateOptionsModal] = useState(false)
+  const [selectedCreateOption, setSelectedCreateOption] = useState<'link' | 'note' | null>(null)
   const [urlInput, setUrlInput] = useState("")
   const [tagInput, setTagInput] = useState("")
   const [showTagDropdown, setShowTagDropdown] = useState(false)
@@ -376,13 +378,14 @@ export default function BookmarksPage() {
 
   // Open save modal
   const openSaveModal = () => {
-    setShowSaveModal(true)
+    setShowCreateOptionsModal(true)
   }
 
   // Close save modal
   const closeSaveModal = () => {
     setShowSaveModal(false);
     setShowInShortModal(false);
+    setSelectedCreateOption(null);
     setUrlInput("");
     setSummaryInput("");
     setTitleInput("");
@@ -393,6 +396,36 @@ export default function BookmarksPage() {
     setCollectionInput("");
     setMetadata(null);
     setError("");
+  }
+
+  // Close create options modal
+  const closeCreateOptionsModal = () => {
+    setShowCreateOptionsModal(false);
+  }
+
+  // Handle create option selection
+  const handleCreateOption = (option: 'link' | 'image' | 'note') => {
+    setShowCreateOptionsModal(false);
+    
+    if (option === 'link') {
+      // Show save modal with URL input focused
+      setSelectedCreateOption('link');
+      setShowSaveModal(true);
+      setUrlInput("");
+      setSummaryInput("");
+    } else if (option === 'note') {
+      // Show save modal with note input focused
+      setSelectedCreateOption('note');
+      setShowSaveModal(true);
+      setUrlInput("");
+      setSummaryInput("");
+    } else if (option === 'image') {
+      // Show coming soon message for image upload
+      toast({
+        title: "Coming Soon",
+        description: "Image upload feature will be available soon!",
+      });
+    }
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2180,24 +2213,18 @@ export default function BookmarksPage() {
                     {/* Initial Form Fields */}
                     {!showInShortModal && (
                       <>
-                        {/* URL Field - only show if no note is being created */}
-                        <div className={`mb-6 ${summaryInput ? 'hidden' : 'block'}`}>
+                        {/* URL Field - only show if link option is selected */}
+                        <div className={`mb-6 ${selectedCreateOption === 'link' ? 'block' : 'hidden'}`}>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">Enter link</h3>
                           <input
                             type="url"
                             value={urlInput}
                             onChange={(e) => {
                               setUrlInput(e.target.value);
-                              if (e.target.value) {
-                                setSummaryInput('');
-                              }
                             }}
                             onPaste={(e) => {
                               const pastedText = e.clipboardData.getData('text');
                               setUrlInput(pastedText);
-                              if (pastedText) {
-                                setSummaryInput('');
-                              }
                               handleUrlPaste(e);
                             }}
                             placeholder="https://example.com"
@@ -2224,16 +2251,13 @@ export default function BookmarksPage() {
                           )}
                         </div>
 
-                        {/* Note Field - only show if no URL is being pasted/typed */}
-                        <div className={`mb-6 ${urlInput ? 'hidden' : 'block'}`}>
+                        {/* Note Field - only show if note option is selected */}
+                        <div className={`mb-6 ${selectedCreateOption === 'note' ? 'block' : 'hidden'}`}>
                           <h3 className="text-sm font-medium text-gray-700 mb-2">Create a note</h3>
                           <textarea
                             value={summaryInput}
                             onChange={(e) => {
                               setSummaryInput(e.target.value);
-                              if (e.target.value) {
-                                setUrlInput('');
-                              }
                             }}
                             placeholder="Add a note..."
                             className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500"
@@ -2289,7 +2313,7 @@ export default function BookmarksPage() {
                           </button>
                           <button
                             onClick={async () => {
-                              if (urlInput) {
+                              if (selectedCreateOption === 'link' && urlInput) {
                                 // Handle URL paste
                                 try {
                                   setIsGenerating(true);
@@ -2384,7 +2408,7 @@ export default function BookmarksPage() {
                                 } finally {
                                   setIsGenerating(false);
                                 }
-                              } else if (summaryInput) {
+                              } else if (selectedCreateOption === 'note' && summaryInput) {
                                 // Handle note creation
                                 try {
                                   setIsGenerating(true);
@@ -2416,9 +2440,15 @@ export default function BookmarksPage() {
                                 }
                               }
                             }}
-                            disabled={(!urlInput && !summaryInput) || isGenerating}
+                            disabled={
+                              (selectedCreateOption === 'link' && !urlInput) || 
+                              (selectedCreateOption === 'note' && !summaryInput) || 
+                              isGenerating
+                            }
                             className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
-                              (!urlInput && !summaryInput) || isGenerating
+                              ((selectedCreateOption === 'link' && !urlInput) || 
+                               (selectedCreateOption === 'note' && !summaryInput) || 
+                               isGenerating)
                                 ? 'bg-gray-300 cursor-not-allowed' 
                                   : 'bg-red-500 hover:bg-red-600'
                             }`}
@@ -2704,6 +2734,70 @@ export default function BookmarksPage() {
               </div>
             </div>
           )
+        )}
+
+        {/* Create Options Modal */}
+        {showCreateOptionsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold">Create new bookmark</h2>
+                <button onClick={closeCreateOptionsModal} className="text-gray-500 hover:text-gray-700">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  {/* Enter Link Option */}
+                  <button
+                    onClick={() => handleCreateOption('link')}
+                    className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <ExternalLink className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-medium text-gray-900">Enter Link</h3>
+                      <p className="text-sm text-gray-500">Save a webpage or article</p>
+                    </div>
+                  </button>
+
+                  {/* Upload Image Option */}
+                  <button
+                    onClick={() => handleCreateOption('image')}
+                    className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors relative"
+                  >
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <Upload className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-medium text-gray-900">Upload Image</h3>
+                      <p className="text-sm text-gray-500">Save an image to your library</p>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-1">Coming Soon</span>
+                    </div>
+                  </button>
+
+                  {/* Create Note Option */}
+                  <button
+                    onClick={() => handleCreateOption('note')}
+                    className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h3 className="font-medium text-gray-900">Create Note</h3>
+                      <p className="text-sm text-gray-500">Write and save a note</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
         {/* Overlay for desktop */}
         {showNotifications && (
