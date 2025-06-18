@@ -378,7 +378,13 @@ export default function BookmarksPage() {
 
   // Open save modal
   const openSaveModal = () => {
-    setShowCreateOptionsModal(true)
+    if (isMobile) {
+      // On mobile, show the SaveModal directly
+      setShowSaveModal(true)
+    } else {
+      // On desktop, show the create options modal
+      setShowCreateOptionsModal(true)
+    }
   }
 
   // Close save modal

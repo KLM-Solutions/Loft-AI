@@ -1,6 +1,7 @@
 "use client"
 import { useRouter } from "next/navigation"
 import { Link2, Upload, Camera, Plus, X } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 interface SaveModalProps {
   isOpen: boolean
@@ -9,8 +10,18 @@ interface SaveModalProps {
 
 export default function SaveModal({ isOpen, onClose }: SaveModalProps) {
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleOptionClick = (option: string) => {
+    if (option === "upload") {
+      // Show coming soon message for image upload
+      toast({
+        title: "Coming Soon",
+        description: "Image upload feature will be available soon!",
+      })
+      return
+    }
+    
     onClose()
     router.push(`/save?action=${option}`)
   }
@@ -20,13 +31,25 @@ export default function SaveModal({ isOpen, onClose }: SaveModalProps) {
       id: "paste",
       icon: Link2,
       title: "Paste a URL",
+      description: "Save a webpage or article",
       onClick: () => handleOptionClick("paste"),
+      comingSoon: false,
+    },
+    {
+      id: "upload",
+      icon: Upload,
+      title: "Upload Image",
+      description: "Save an image to your library",
+      onClick: () => handleOptionClick("upload"),
+      comingSoon: true,
     },
     {
       id: "create",
       icon: Plus,
       title: "Create a note",
+      description: "Write and save a note",
       onClick: () => handleOptionClick("create"),
+      comingSoon: false,
     },
   ]
 
@@ -121,6 +144,7 @@ export default function SaveModal({ isOpen, onClose }: SaveModalProps) {
                   borderRadius: "0.5rem",
                   transition: "background-color 0.2s",
                   marginBottom: index < options.length - 1 ? "0.5rem" : "0",
+                  position: "relative",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = "#f9fafb"
@@ -161,7 +185,34 @@ export default function SaveModal({ isOpen, onClose }: SaveModalProps) {
                   >
                     {option.title}
                   </div>
+                  <div
+                    style={{
+                      fontWeight: "400",
+                      color: "#6b7280",
+                      fontSize: "0.875rem",
+                      lineHeight: "1.25",
+                    }}
+                  >
+                    {option.description}
+                  </div>
                 </div>
+                {option.comingSoon && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "0.5rem",
+                      right: "0.5rem",
+                      backgroundColor: "#e5e7eb",
+                      color: "#6b7280",
+                      fontSize: "0.75rem",
+                      padding: "0.25rem 0.5rem",
+                      borderRadius: "9999px",
+                      fontWeight: "500",
+                    }}
+                  >
+                    Coming Soon
+                  </div>
+                )}
               </button>
             )
           })}
