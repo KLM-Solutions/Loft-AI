@@ -9,23 +9,23 @@ import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 
 export default function HomePage() {
-  const { isSignedIn } = useUser();
-  const router = useRouter();
+  const { isSignedIn } = useUser()
+  const router = useRouter()
   const handleStart = () => {
     if (isSignedIn) {
-      router.push("/bookmarks");
+      router.push("/bookmarks")
     } else {
-      const signInBtn = document.getElementById("clerk-signin-btn");
-      if (signInBtn) signInBtn.click();
+      const signInBtn = document.getElementById("clerk-signin-btn")
+      if (signInBtn) signInBtn.click()
     }
-  };
+  }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-rose-50">
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Image src="/logo.png" alt="Loft AI Logo" width={20} height={20} className="rounded-lg" />
+            <Image src="/logo.svg" alt="Loft AI Logo" width={20} height={20} className="rounded-lg" />
             <span className="text-xl font-semibold text-slate-800">Loft AI</span>
           </div>
         </div>
@@ -37,14 +37,14 @@ export default function HomePage() {
           {/* Left Column - Content */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+              <Badge variant="secondary" className="bg-rose-100 text-rose-700 hover:bg-rose-100">
                 <Sparkles className="w-3 h-3 mr-1" />
                 AI-Enhanced Bookmarking
               </Badge>
               <h1 className="text-4xl lg:text-6xl font-bold text-slate-900 leading-tight">
                 Save everything.
                 <br />
-                <span className="text-blue-600">Remember anything.</span>
+                <span style={{ color: "#FF5A5F" }}>Remember anything.</span>
               </h1>
               <p className="text-lg text-slate-600 leading-relaxed max-w-lg">
                 Loft uses AI to automatically summarize, tag, and resurface your saved links, social posts, and ideas
@@ -54,13 +54,18 @@ export default function HomePage() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleStart}>
+                <Button
+                  size="lg"
+                  className="text-white hover:opacity-90"
+                  style={{ backgroundColor: "#FF5A5F" }}
+                  onClick={handleStart}
+                >
                   Start Saving for Free
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 {/* Hidden SignInButton for modal trigger */}
                 <SignInButton mode="modal" forceRedirectUrl="/bookmarks">
-                  <button id="clerk-signin-btn" style={{ display: 'none' }} />
+                  <button id="clerk-signin-btn" style={{ display: "none" }} />
                 </SignInButton>
               </>
             </div>
@@ -68,22 +73,22 @@ export default function HomePage() {
             {/* Features */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
               <div className="text-center sm:text-left">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto sm:mx-0 mb-3">
-                  <Search className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center mx-auto sm:mx-0 mb-3">
+                  <Search className="w-5 h-5" style={{ color: "#FF5A5F" }} />
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-1">AI Search</h3>
                 <p className="text-sm text-slate-600">Ask questions in natural language</p>
               </div>
               <div className="text-center sm:text-left">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto sm:mx-0 mb-3">
-                  <Sparkles className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center mx-auto sm:mx-0 mb-3">
+                  <Sparkles className="w-5 h-5" style={{ color: "#FF5A5F" }} />
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-1">Smart Summaries</h3>
                 <p className="text-sm text-slate-600">Auto-generated insights and tags</p>
               </div>
               <div className="text-center sm:text-left">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto sm:mx-0 mb-3">
-                  <Bookmark className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center mx-auto sm:mx-0 mb-3">
+                  <Bookmark className="w-5 h-5" style={{ color: "#FF5A5F" }} />
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-1">Daily Cards</h3>
                 <p className="text-sm text-slate-600">Rediscover past saves intelligently</p>
@@ -94,7 +99,10 @@ export default function HomePage() {
           {/* Right Column - Demo Cards */}
           <div className="space-y-4 lg:space-y-6">
             {/* Instagram Card */}
-            <Card className="p-4 bg-white shadow-sm border-0 shadow-blue-100/50">
+            <Card
+              className="p-4 bg-white shadow-sm border-0"
+              style={{ boxShadow: "0 4px 6px -1px rgba(255, 90, 95, 0.1)" }}
+            >
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Instagram className="w-4 h-4 text-white" />
@@ -104,7 +112,7 @@ export default function HomePage() {
                     <p className="text-sm text-slate-500">Saved 2 hours ago</p>
                   </div>
                   <p className="text-slate-800 text-sm leading-relaxed">
-                    You paused that reel about <span className="font-medium">'healthy meal prep hacks'</span> want to
+                    You paused that reel about <span className="font-medium">{"healthy meal prep hacks"}</span> want to
                     finish it or get a quick summary of the tips?
                   </p>
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -120,7 +128,10 @@ export default function HomePage() {
             </Card>
 
             {/* YouTube Card */}
-            <Card className="p-4 bg-white shadow-sm border-0 shadow-blue-100/50">
+            <Card
+              className="p-4 bg-white shadow-sm border-0"
+              style={{ boxShadow: "0 4px 6px -1px rgba(255, 90, 95, 0.1)" }}
+            >
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Youtube className="w-4 h-4 text-white" />
@@ -130,8 +141,8 @@ export default function HomePage() {
                     <p className="text-sm text-slate-500">Saved 1 day ago</p>
                   </div>
                   <p className="text-slate-800 text-sm leading-relaxed">
-                    Hey! You watched half of <span className="font-medium">'How to Build a Morning Routine'</span> want
-                    to finish it today? Here's your quick summary so far.
+                    Hey! You watched half of <span className="font-medium">{"How to Build a Morning Routine"}</span>{" "}
+                    want to finish it today? Here's your quick summary so far.
                   </p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
@@ -146,9 +157,12 @@ export default function HomePage() {
             </Card>
 
             {/* AI Insight Card */}
-            <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <Card className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 border-rose-200">
               <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "#FF5A5F" }}
+                >
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1">

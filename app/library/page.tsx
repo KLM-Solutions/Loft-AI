@@ -371,9 +371,9 @@ export default function LibraryPage() {
     <button
       key={interest.id}
       onClick={() => toggleInterest(interest.id)}
-      className={`flex items-center rounded-full px-4 py-2 md:px-5 md:py-2.5 transition-colors shadow-sm border border-gray-200 font-medium text-sm md:text-base select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap gap-2 ${
+      className={`flex items-center rounded-full px-4 py-2 md:px-5 md:py-2.5 transition-colors shadow-sm border border-gray-200 font-medium text-sm md:text-base select-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 whitespace-nowrap gap-2 ${
         selectedInterests.includes(interest.id)
-          ? "bg-blue-100 text-blue-700"
+          ? "bg-red-100 text-red-700"
           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
       style={{ minWidth: '0', minHeight: '0' }}
@@ -510,7 +510,7 @@ export default function LibraryPage() {
     const colors = [
       "bg-red-500", "bg-pink-500", "bg-purple-500", "bg-indigo-500",
       "bg-blue-500", "bg-cyan-500", "bg-teal-500", "bg-green-500",
-      "bg-lime-500", "bg-yellow-500", "bg-orange-500"
+      "bg-lime-500", "bg-yellow-500", "bg-orange-500", "bg-red-500"   
     ]
     return colors[Math.floor(Math.random() * colors.length)]
   }
@@ -621,8 +621,8 @@ export default function LibraryPage() {
         <div className="flex flex-col h-full">
           {/* Logo - Removed InShort text */}
           <div className="px-6 py-6">
-            <Link href="/bookmarks" className="flex items-center text-blue-500">
-              <img src="/logo.png" alt="Loft AI Logo" className="h-5 w-5" />
+            <Link href="/bookmarks" className="flex items-center text-red-500">
+              <img src="/logo.svg" alt="Loft AI Logo" className="h-5 w-5" />
               <span className="ml-2 text-lg font-semibold text-slate-800">Loft AI</span>
             </Link>
           </div>
@@ -631,23 +631,23 @@ export default function LibraryPage() {
           <nav className="flex-1 px-4 space-y-1">
             <Link
               href="/bookmarks"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-blue-500" : "text-gray-500"}`} />
+              <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-red-500" : "text-gray-500"}`} />
               <span>Explore</span>
             </Link>
             <Link
               href="/library"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/library" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/library" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <BookmarkIcon className={`h-5 w-5 mr-3 ${pathname === "/library" ? "text-blue-500" : "text-gray-500"}`} />
+              <BookmarkIcon className={`h-5 w-5 mr-3 ${pathname === "/library" ? "text-red-500" : "text-gray-500"}`} />
               <span>Library</span>
             </Link>
             <Link
               href="/run-through"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/run-through" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/run-through" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <Star className={`h-5 w-5 mr-3 ${pathname === "/run-through" ? "text-blue-500" : "text-gray-500"}`} />
+              <Star className={`h-5 w-5 mr-3 ${pathname === "/run-through" ? "text-red-500" : "text-gray-500"}`} />
               <span>Run through</span>
             </Link>
 
@@ -722,14 +722,14 @@ export default function LibraryPage() {
                 <h1 className="text-2xl font-bold hidden md:block">Bookmarks</h1>
                 <div className="flex space-x-2">
                   <button
-                    className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
-                    onClick={() => setCardView("list")}
+                    className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
+                    onClick={() => setCardView("list")} 
                     aria-label="List view"
                   >
                     <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
                   </button>
                   <button
-                    className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                    className={`p-2 rounded ${cardView === "grid" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                     onClick={() => setCardView("grid")}
                     aria-label="Grid view"
                   >
@@ -744,7 +744,7 @@ export default function LibraryPage() {
                   onClick={() => setActiveFilterTab('all')}
                   className={`pb-4 px-1 text-sm font-medium border-b-2 ${
                     activeFilterTab === 'all'
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-red-500 text-red-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -754,7 +754,7 @@ export default function LibraryPage() {
                   onClick={() => setActiveFilterTab('collections')}
                   className={`pb-4 px-1 text-sm font-medium border-b-2 ${
                     activeFilterTab === 'collections'
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-red-500 text-red-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -764,7 +764,7 @@ export default function LibraryPage() {
                   onClick={() => setActiveFilterTab('recent')}
                   className={`pb-4 px-1 text-sm font-medium border-b-2 ${
                     activeFilterTab === 'recent'
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-red-500 text-red-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -781,7 +781,7 @@ export default function LibraryPage() {
                     <div className="flex items-center justify-center min-h-[400px]">
                       <div className="relative">
                         <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+                        <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0"></div>
                       </div>
                     </div>
                   ) : bookmarks.length === 0 ? (
@@ -813,7 +813,7 @@ export default function LibraryPage() {
                           return (
                             <div
                               key={bm.id}
-                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                               onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                             >
                               {/* Image or blank */}
@@ -853,7 +853,7 @@ export default function LibraryPage() {
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
-                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
+                                      className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
                                     >
                                       <ExternalLink className="h-4 w-4" />
                                     </a>
@@ -936,7 +936,7 @@ export default function LibraryPage() {
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                    className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                                   >
                                     <ExternalLink className="h-4 w-4" />
                                   </a>
@@ -974,7 +974,7 @@ export default function LibraryPage() {
                     <div className="flex items-center justify-center min-h-[400px]">
                       <div className="relative">
                         <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+                        <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0"></div>
                       </div>
                     </div>
                   ) : availableCollections.length === 0 ? (
@@ -1023,7 +1023,7 @@ export default function LibraryPage() {
                                     return (
                                       <div
                                         key={bm.id}
-                                        className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                                        className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                                         onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                                       >
                                         {/* Image or blank */}
@@ -1063,7 +1063,7 @@ export default function LibraryPage() {
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
+                                                className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
                                               >
                                                 <ExternalLink className="h-4 w-4" />
                                               </a>
@@ -1139,7 +1139,7 @@ export default function LibraryPage() {
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                            className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </a>
@@ -1179,7 +1179,7 @@ export default function LibraryPage() {
                     <div className="flex items-center justify-center min-h-[400px]">
                       <div className="relative">
                         <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+                        <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0"></div>
                       </div>
                     </div>
                   ) : bookmarks.length === 0 ? (
@@ -1214,7 +1214,7 @@ export default function LibraryPage() {
                             return (
                               <div
                                 key={bm.id}
-                                className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                                className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                                 onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                               >
                                 {/* Image or blank */}
@@ -1254,7 +1254,7 @@ export default function LibraryPage() {
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
+                                        className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
                                       >
                                         <ExternalLink className="h-4 w-4" />
                                       </a>
@@ -1331,7 +1331,7 @@ export default function LibraryPage() {
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                    className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                                   >
                                     <ExternalLink className="h-4 w-4" />
                                   </a>
@@ -1376,7 +1376,7 @@ export default function LibraryPage() {
             <Search className="h-6 w-6" />
             <span className="text-xs mt-1">Explore</span>
           </Link>
-          <Link href="/library" className="flex flex-col items-center text-blue-500">
+          <Link href="/library" className="flex flex-col items-center text-red-500">
             <BookmarkIcon className="h-6 w-6" />
             <span className="text-xs mt-1">Library</span>
           </Link>
@@ -1416,7 +1416,7 @@ export default function LibraryPage() {
                         href={selectedBookmark.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                        className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                       >
                         <ExternalLink className="h-5 w-5" />
                       </a>
@@ -1503,7 +1503,7 @@ export default function LibraryPage() {
                       ) : (
                         <>
                           <div className="mb-2 md:mb-4">
-                            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-full flex items-center justify-center">
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-5 w-5 md:h-6 md:w-6 text-white"
@@ -1529,7 +1529,7 @@ export default function LibraryPage() {
                           />
                           <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
+                            className="text-sm text-red-500 border border-red-200 rounded-full px-4 py-1 hover:bg-red-50"
                           >
                             Browse the image file to upload
                           </button>
@@ -1552,12 +1552,12 @@ export default function LibraryPage() {
                             value={urlInput}
                             onChange={(e) => setUrlInput(e.target.value)}
                             placeholder="https://in.pinterest.com/pin/..."
-                            className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-red-500"
                             disabled={isGenerating}
                           />
                           {isGenerating && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                              <Loader2 className="h-5 w-5 text-red-500 animate-spin" />
                             </div>
                           )}
                         </div>
@@ -1569,7 +1569,7 @@ export default function LibraryPage() {
                           value={titleInput}
                           onChange={(e) => setTitleInput(e.target.value)}
                           placeholder={isGenerating ? "Generating title..." : "Title"}
-                          className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4"
+                          className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500 mb-4"
                           disabled={isGenerating}
                         />
                         {titleInput && (
@@ -1588,7 +1588,7 @@ export default function LibraryPage() {
                             value={summaryInput}
                             onChange={(e) => setSummaryInput(e.target.value)}
                             placeholder={isGenerating ? "Generating summary..." : "Summary"}
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 mb-4 pr-10"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500 mb-4 pr-10"
                             rows={4}
                             disabled={isGenerating}
                           />
@@ -1613,7 +1613,7 @@ export default function LibraryPage() {
                           value={urlInput}
                           onChange={(e) => setUrlInput(e.target.value)}
                           placeholder="https://in.pinterest.com/pin/..."
-                          className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full p-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-red-500"
                         />
                       </div>
                       <div>
@@ -1623,12 +1623,12 @@ export default function LibraryPage() {
                             {selectedTags.map((tag) => (
                               <span
                                 key={tag}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                                className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-red-100 text-red-700"
                               >
                                 {tag}
-                                <button
+                                <button 
                                   onClick={() => removeTag(tag)}
-                                  className="ml-1 text-blue-500 hover:text-blue-700"
+                                  className="ml-1 text-red-500 hover:text-red-700"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -1651,7 +1651,7 @@ export default function LibraryPage() {
                                 setShowTagDropdown(!showTagDropdown)
                                 setShowCollectionDropdown(false)
                               }}
-                              className="text-blue-500"
+                              className="text-red-500"
                             >
                             <Plus className="h-5 w-5" />
                           </button>
@@ -1661,7 +1661,7 @@ export default function LibraryPage() {
                               {tagInput.trim() && !defaultTags.includes(tagInput.trim()) && (
                                 <button
                                   onClick={() => addTag(tagInput.trim())}
-                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
+                                  className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-red-500"
                                 >
                                   Add "{tagInput.trim()}"
                                 </button>
@@ -1693,13 +1693,13 @@ export default function LibraryPage() {
                           return collection ? (
                             <span
                               key={collection.id}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
+                              className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-red-100 text-red-700"
                             >
                               <div className={`w-3 h-3 ${collection.color} rounded-sm mr-1`}></div>
                               {collection.name}
                       <button
                                 onClick={() => setSelectedCollections(selectedCollections.filter(id => id !== collectionId))}
-                                className="ml-1 text-blue-500 hover:text-blue-700"
+                                className="ml-1 text-red-500 hover:text-red-700"
                               >
                                 <X className="h-3 w-3" />
                       </button>
@@ -1723,7 +1723,7 @@ export default function LibraryPage() {
                             setShowCollectionDropdown(!showCollectionDropdown)
                             setShowTagDropdown(false)
                           }}
-                          className="text-blue-500"
+                          className="text-red-500"
                         >
                           <Plus className="h-5 w-5" />
                       </button>
@@ -1744,7 +1744,7 @@ export default function LibraryPage() {
                                 }
                                 setCollectionInput("");
                               }}
-                              className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-blue-500"
+                              className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm text-red-500"
                             >
                               Add "{collectionInput.trim()}"
                             </button>
@@ -1783,7 +1783,7 @@ export default function LibraryPage() {
                       className={`px-4 py-2 rounded-full flex items-center justify-center min-w-[80px] ${
                         (!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving)
                           ? 'bg-gray-300 cursor-not-allowed'
-                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                          : 'bg-red-500 hover:bg-red-600 text-white'
                       }`}
                       disabled={!urlInput || selectedTags.length === 0 || selectedCollections.length === 0 || isGenerating || isSaving}
                     >
@@ -1814,7 +1814,7 @@ export default function LibraryPage() {
               <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
                 <div className="w-32 h-32 mb-4">
                   <img
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-2d5DYX8mw9Ikry6x6D2il3jhJuXlzR.png"
                     alt="Success"
                     className="w-full h-full"
                   />
@@ -1843,7 +1843,7 @@ export default function LibraryPage() {
                          
                           <div className="flex items-center text-xs text-gray-500">
                           
-                            <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>
+                            <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-1"></span>
                             <span>{new Date().toLocaleDateString()}</span>
                           </div>
                         </div>
@@ -1857,7 +1857,7 @@ export default function LibraryPage() {
                           {tempSavedCollections.map((collectionId) => {
                             const collection = availableCollections.find(c => c.id === collectionId);
                             return collection ? (
-                              <span key={collection.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              <span key={collection.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                                 <div className={`w-2 h-2 ${collection.color} rounded-sm mr-1`}></div>
                                 {collection.name}
                               </span>
@@ -1870,7 +1870,7 @@ export default function LibraryPage() {
                 </div>
                 <button
                   onClick={handleViewInLibrary}
-                  className="w-full py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+                  className="w-full py-3 bg-red-500 text-white rounded-full hover:bg-red-600"
                 >
                   View in Library
                 </button>
@@ -1993,7 +1993,7 @@ export default function LibraryPage() {
                     value={newCollectionName}
                     onChange={(e) => setNewCollectionName(e.target.value)}
                     placeholder="Enter collection name"
-                    className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     disabled={isCreatingCollection}
                   />
                 </div>
@@ -2010,7 +2010,7 @@ export default function LibraryPage() {
                     className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
                       !newCollectionName.trim() || isCreatingCollection
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-red-500 text-white hover:bg-red-600"
                     }`}
                     disabled={!newCollectionName.trim() || isCreatingCollection}
                   >

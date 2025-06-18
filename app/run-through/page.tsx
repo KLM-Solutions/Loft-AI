@@ -367,8 +367,8 @@ export default function RunThroughPage() {
         <div className="flex flex-col h-full">
           {/* Logo - Removed InShort text */}
           <div className="px-6 py-6">
-            <Link href="/bookmarks" className="flex items-center text-blue-500">
-              <img src="/logo.png" alt="Loft AI Logo" className="h-5 w-5" />
+            <Link href="/bookmarks" className="flex items-center text-red-500">
+              <img src="/logo.svg" alt="Loft AI Logo" className="h-5 w-5" />
               <span className="ml-2 text-lg font-semibold text-slate-800">Loft AI</span>
             </Link>
           </div>
@@ -377,23 +377,23 @@ export default function RunThroughPage() {
           <nav className="flex-1 px-4 space-y-1">
             <Link
               href="/bookmarks"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-blue-500" : "text-gray-500"}`} />
+              <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-red-500" : "text-gray-500"}`} />
               <span>Explore</span>
             </Link>
             <Link
               href="/library"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/library" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/library" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <BookmarkIcon className={`h-5 w-5 mr-3 ${pathname === "/library" ? "text-blue-500" : "text-gray-500"}`} />
+              <BookmarkIcon className={`h-5 w-5 mr-3 ${pathname === "/library" ? "text-red-500" : "text-gray-500"}`} />
               <span>Library</span>
             </Link>
             <Link
               href="/run-through"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/run-through" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/run-through" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <Star className={`h-5 w-5 mr-3 ${pathname === "/run-through" ? "text-blue-500" : "text-gray-500"}`} />
+              <Star className={`h-5 w-5 mr-3 ${pathname === "/run-through" ? "text-red-500" : "text-gray-500"}`} />
               <span>Run through</span>
             </Link>
 
@@ -472,7 +472,7 @@ export default function RunThroughPage() {
                 {/* AI Greeting */}
                 <div className="text-center mb-8 mt-8 md:mt-0">
                   <h2 className="text-2xl font-semibold mb-2">
-                    Hi there, <span className="text-blue-500">
+                    Hi there, <span className="text-red-500">
                       {user?.firstName || 
                        user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 
                        user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 
@@ -509,14 +509,14 @@ export default function RunThroughPage() {
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                           message.role === 'user'
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-red-500 text-white'
                             : 'bg-white text-gray-800'
                         }`}
                       >
                         {message.role === 'user' ? (
                           <p className="whitespace-pre-wrap">{message.content}</p>
                         ) : (
-                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-code:bg-gray-100 prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-pre:bg-gray-100 prose-pre:rounded-md prose-pre:p-2 prose-pre:my-2 prose-a:text-blue-500 prose-a:underline hover:prose-a:text-blue-600">
+                          <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-code:bg-gray-100 prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-pre:bg-gray-100 prose-pre:rounded-md prose-pre:p-2 prose-pre:my-2 prose-a:text-red-500 prose-a:underline hover:prose-a:text-red-600">
                             <ReactMarkdown>
                               {message.content}
                             </ReactMarkdown>
@@ -533,14 +533,14 @@ export default function RunThroughPage() {
                             <h3 className="text-xl font-semibold">Related Topics</h3>
                             <div className="flex space-x-2">
                               <button
-                                className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                                 onClick={() => setCardView("list")}
                                 aria-label="List view"
                               >
                                 <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
                               </button>
                               <button
-                                className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                className={`p-2 rounded ${cardView === "grid" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                                 onClick={() => setCardView("grid")}
                                 aria-label="Grid view"
                               >
@@ -577,7 +577,7 @@ export default function RunThroughPage() {
                                 return (
                                   <div
                                     key={idx}
-                                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                                     onClick={() => setExpandedId(isExpanded ? null : `${index}-${idx}`)}
                                   >
                                     {/* Image or blank */}
@@ -615,7 +615,7 @@ export default function RunThroughPage() {
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="md:hidden text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                            className="md:hidden text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </a>
@@ -638,7 +638,7 @@ export default function RunThroughPage() {
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
+                                        className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-4 mt-2"
                                       >
                                         <ExternalLink className="h-3 w-3" />
                                       </a>
@@ -677,7 +677,7 @@ export default function RunThroughPage() {
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                        className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                                       >
                                         <ExternalLink className="h-4 w-4" />
                                       </a>
@@ -723,7 +723,7 @@ export default function RunThroughPage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask me anything?"
-                  className="w-full py-3 px-4 pr-24 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full py-3 px-4 pr-24 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500"
                   disabled={isLoading}
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
@@ -733,7 +733,7 @@ export default function RunThroughPage() {
                   <button
                     type="submit"
                     className={`p-2 rounded-full ${
-                      inputValue && !isLoading ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-400"
+                      inputValue && !isLoading ? "bg-red-500 text-white" : "bg-gray-200 text-gray-400"
                     }`}
                     disabled={!inputValue || isLoading}
                   >
@@ -763,7 +763,7 @@ export default function RunThroughPage() {
             <BookmarkIcon className="h-6 w-6" />
             <span className="text-xs mt-1">Library</span>
           </Link>
-          <Link href="/run-through" className="flex flex-col items-center text-blue-500">
+          <Link href="/run-through" className="flex flex-col items-center text-red-500">
             <Star className="h-6 w-6" />
             <span className="text-xs mt-1">Run through</span>
           </Link>
@@ -903,7 +903,7 @@ export default function RunThroughPage() {
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value)}
                   placeholder="Enter collection name"
-                  className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                   disabled={isCreatingCollection}
                 />
               </div>
@@ -920,7 +920,7 @@ export default function RunThroughPage() {
                   className={`px-4 py-2 rounded-xl flex items-center justify-center min-w-[80px] ${
                     !newCollectionName.trim() || isCreatingCollection
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-red-500 text-white hover:bg-red-600"
                   }`}
                   disabled={!newCollectionName.trim() || isCreatingCollection}
                 >
@@ -951,7 +951,7 @@ export default function RunThroughPage() {
                       href={selectedBookmark.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                      className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                     >
                       <ExternalLink className="h-5 w-5" />
                     </a>

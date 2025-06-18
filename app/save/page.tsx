@@ -54,13 +54,14 @@ export default function SavePage() {
     "bg-pink-100 text-pink-700 border-pink-200",
     "bg-purple-100 text-purple-700 border-purple-200",
     "bg-indigo-100 text-indigo-700 border-indigo-200",
-    "bg-blue-100 text-blue-700 border-blue-200",
+    "bg-red-100 text-red-700 border-red-200",
     "bg-cyan-100 text-cyan-700 border-cyan-200",
     "bg-teal-100 text-teal-700 border-teal-200",
     "bg-green-100 text-green-700 border-green-200",
     "bg-lime-100 text-lime-700 border-lime-200",
     "bg-yellow-100 text-yellow-700 border-yellow-200",
-    "bg-orange-100 text-orange-700 border-orange-200"
+    "bg-orange-100 text-orange-700 border-orange-200",
+    "bg-red-100 text-red-700 border-red-200"
   ];
 
   const getTagColor = (tag: string) => {
@@ -473,7 +474,7 @@ export default function SavePage() {
                 disabled={!formData.url || isGenerating}
             style={{
               width: "100%",
-                  backgroundColor: formData.url && !isGenerating ? "#3b82f6" : "#9ca3af",
+                  backgroundColor: formData.url && !isGenerating ? "#ef4444" : "#9ca3af",
               color: "white",
               borderRadius: "0.75rem",
               padding: isMobile ? "0.875rem" : "0.75rem",
@@ -486,12 +487,12 @@ export default function SavePage() {
             }}
             onMouseEnter={(e) => {
                   if (formData.url && !isGenerating) {
-                e.currentTarget.style.backgroundColor = "#2563eb"
+                e.currentTarget.style.backgroundColor = "#ef4444"
               }
             }}
             onMouseLeave={(e) => {
                   if (formData.url && !isGenerating) {
-                e.currentTarget.style.backgroundColor = "#3b82f6"
+                e.currentTarget.style.backgroundColor = "#ef4444"
               }
             }}
           >
@@ -580,7 +581,7 @@ export default function SavePage() {
                   ) : (
                     <>
                       <div className="mb-2 md:mb-4">
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-full flex items-center justify-center">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5 md:h-6 md:w-6 text-white"
@@ -606,7 +607,7 @@ export default function SavePage() {
                       />
                       <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
+                        className="text-sm text-red-500 border border-red-200 rounded-full px-4 py-1 hover:bg-red-50"
                       >
                         Browse the image file to upload
                       </button>
@@ -714,7 +715,7 @@ export default function SavePage() {
                           onClick={() => removeTag(tag)}
                           style={{
                             marginLeft: "0.25rem",
-                            color: "#3b82f6",
+                            color: "#ef4444",
                           }}
                         >
                           <X style={{ height: "0.75rem", width: "0.75rem" }} />
@@ -745,7 +746,7 @@ export default function SavePage() {
                         setShowTagDropdown(!showTagDropdown)
                         setShowCollectionDropdown(false)
                       }}
-                      style={{ color: "#3b82f6" }}
+                      style={{ color: "#ef4444" }}
                     >
                       <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                     </button>
@@ -840,7 +841,7 @@ export default function SavePage() {
                         <span key={collection.id} style={{ display: "inline-flex", alignItems: "center", padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.875rem", backgroundColor: "#dbeafe", color: "#1d4ed8" }}>
                           <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem", marginRight: "0.25rem" }}></div>
                           {collection.name}
-                          <button onClick={() => setSelectedCollections([])} style={{ marginLeft: "0.25rem", color: "#3b82f6" }}>
+                          <button onClick={() => setSelectedCollections([])} style={{ marginLeft: "0.25rem", color: "#ef4444" }}>
                             <X style={{ height: "0.75rem", width: "0.75rem" }} />
                           </button>
                         </span>
@@ -870,7 +871,7 @@ export default function SavePage() {
                         setShowCollectionDropdown(!showCollectionDropdown)
                         setShowTagDropdown(false)
                       }}
-                      style={{ color: "#3b82f6" }}
+                        style={{ color: "#ef4444" }}
                     >
                       <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                     </button>
@@ -892,7 +893,7 @@ export default function SavePage() {
                     >
                       {isLoadingCollections ? (
                         <div className="flex items-center justify-center p-4">
-                          <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                          <Loader2 className="animate-spin h-5 w-5 text-red-500" />
                         </div>
                       ) : collectionsError ? (
                         <div className="text-red-500 text-sm p-2">{collectionsError}</div>
@@ -1002,7 +1003,7 @@ export default function SavePage() {
                     padding: "0.5rem 1rem",
                     color: "white",
                     borderRadius: "9999px",
-                    backgroundColor: (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving) ? "#9ca3af" : "#3b82f6",
+                      backgroundColor: (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving) ? "#9ca3af" : "#ef4444",
                     fontSize: isMobile ? "1rem" : "0.875rem",
                     cursor: (!titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving) ? "not-allowed" : "pointer",
                     minWidth: "5rem",
@@ -1142,7 +1143,7 @@ export default function SavePage() {
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
                 fontSize: isMobile ? "0.875rem" : "0.75rem",
                 color: "white",
-                backgroundColor: !selectedImage ? "#9CA3AF" : "#3B82F6",
+                  backgroundColor: !selectedImage ? "#9CA3AF" : "#ef4444",
                 border: "none",
                 borderRadius: "0.375rem",
                 cursor: !selectedImage ? "not-allowed" : "pointer",
@@ -1287,7 +1288,7 @@ export default function SavePage() {
                       onClick={() => removeTag(tag)}
                       style={{
                         marginLeft: "0.25rem",
-                        color: "#3b82f6",
+                        color: "#ef4444",
                       }}
                     >
                       <X style={{ height: "0.75rem", width: "0.75rem" }} />
@@ -1318,7 +1319,7 @@ export default function SavePage() {
                     setShowTagDropdown(!showTagDropdown)
                     setShowCollectionDropdown(false)
                   }}
-                  style={{ color: "#3b82f6" }}
+                    style={{ color: "#ef4444" }}
                 >
                   <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                 </button>
@@ -1413,7 +1414,7 @@ export default function SavePage() {
                     <span key={collection.id} style={{ display: "inline-flex", alignItems: "center", padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.875rem", backgroundColor: "#dbeafe", color: "#1d4ed8" }}>
                       <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem", marginRight: "0.25rem" }}></div>
                       {collection.name}
-                      <button onClick={() => setSelectedCollections([])} style={{ marginLeft: "0.25rem", color: "#3b82f6" }}>
+                      <button onClick={() => setSelectedCollections([])} style={{ marginLeft: "0.25rem", color: "#ef4444" }}>
                         <X style={{ height: "0.75rem", width: "0.75rem" }} />
                       </button>
                     </span>
@@ -1443,7 +1444,7 @@ export default function SavePage() {
                     setShowCollectionDropdown(!showCollectionDropdown)
                     setShowTagDropdown(false)
                   }}
-                  style={{ color: "#3b82f6" }}
+                  style={{ color: "#ef4444" }}
                 >
                   <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                 </button>
@@ -1465,7 +1466,7 @@ export default function SavePage() {
                 >
                   {isLoadingCollections ? (
                     <div className="flex items-center justify-center p-4">
-                      <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                      <Loader2 className="animate-spin h-5 w-5 text-red-500" />
                     </div>
                   ) : collectionsError ? (
                     <div className="text-red-500 text-sm p-2">{collectionsError}</div>
@@ -1570,7 +1571,7 @@ export default function SavePage() {
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
                 fontSize: isMobile ? "0.875rem" : "0.75rem",
                 color: "white",
-                backgroundColor: !titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "#9CA3AF" : "#3B82F6",
+                backgroundColor: !titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "#9CA3AF" : "#ef4444",
                 border: "none",
                 borderRadius: "0.375rem",
                 cursor: !titleInput || !summaryInput || !selectedImage || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "not-allowed" : "pointer",
@@ -1635,7 +1636,7 @@ export default function SavePage() {
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   padding: "0.375rem 0.75rem",
-                  backgroundColor: "#3b82f6",
+                  backgroundColor: "#ef4444",
                   color: "white",
                   border: "none",
                   borderRadius: "0.375rem",
@@ -1713,7 +1714,7 @@ export default function SavePage() {
                   padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
                   fontSize: isMobile ? "0.875rem" : "0.75rem",
                   color: "white",
-                  backgroundColor: !formData.note || isGenerating ? "#9CA3AF" : "#3B82F6",
+                  backgroundColor: !formData.note || isGenerating ? "#9CA3AF" : "#ef4444",
                   border: "none",
                   borderRadius: "0.375rem",
                   cursor: !formData.note || isGenerating ? "not-allowed" : "pointer",
@@ -1902,7 +1903,7 @@ export default function SavePage() {
                       onClick={() => removeTag(tag)}
                       style={{
                     marginLeft: "0.25rem",
-                        color: "#3b82f6",
+                        color: "#ef4444",
                       }}
                     >
                       <X style={{ height: "0.75rem", width: "0.75rem" }} />
@@ -1933,7 +1934,7 @@ export default function SavePage() {
                     setShowTagDropdown(!showTagDropdown)
                     setShowCollectionDropdown(false)
                   }}
-                  style={{ color: "#3b82f6" }}
+                  style={{ color: "#ef4444" }}
                 >
                   <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                 </button>
@@ -2028,7 +2029,7 @@ export default function SavePage() {
                     <span key={collection.id} style={{ display: "inline-flex", alignItems: "center", padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.875rem", backgroundColor: "#dbeafe", color: "#1d4ed8" }}>
                       <div style={{ width: "0.5rem", height: "0.5rem", backgroundColor: collection.color, borderRadius: "0.125rem", marginRight: "0.25rem" }}></div>
                       {collection.name}
-                      <button onClick={() => setSelectedCollections([])} style={{ marginLeft: "0.25rem", color: "#3b82f6" }}>
+                      <button onClick={() => setSelectedCollections([])} style={{ marginLeft: "0.25rem", color: "#ef4444" }}>
                         <X style={{ height: "0.75rem", width: "0.75rem" }} />
                       </button>
                     </span>
@@ -2058,7 +2059,7 @@ export default function SavePage() {
                     setShowCollectionDropdown(!showCollectionDropdown)
                     setShowTagDropdown(false)
                   }}
-                  style={{ color: "#3b82f6" }}
+                  style={{ color: "#ef4444" }}
                 >
                   <Plus style={{ height: "1.25rem", width: "1.25rem" }} />
                 </button>
@@ -2080,7 +2081,7 @@ export default function SavePage() {
                 >
                   {isLoadingCollections ? (
                     <div className="flex items-center justify-center p-4">
-                      <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                      <Loader2 className="animate-spin h-5 w-5 text-red-500" />
                     </div>
                   ) : collectionsError ? (
                     <div className="text-red-500 text-sm p-2">{collectionsError}</div>
@@ -2231,7 +2232,7 @@ export default function SavePage() {
                 padding: isMobile ? "0.625rem 1rem" : "0.5rem 1rem",
                 fontSize: isMobile ? "0.875rem" : "0.75rem",
                 color: "white",
-                backgroundColor: !titleInput || !summaryInput || !formData.note || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "#9CA3AF" : "#3B82F6",
+                backgroundColor: !titleInput || !summaryInput || !formData.note || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "#9CA3AF" : "#ef4444",
                 border: "none",
                 borderRadius: "0.375rem",
                 cursor: !titleInput || !summaryInput || !formData.note || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving ? "not-allowed" : "pointer",
@@ -2360,7 +2361,7 @@ export default function SavePage() {
             <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
               <div className="w-32 h-32 mb-4">
                 <img
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-2d5DYX8mw9Ikry6x6D2il3jhJuXlzR.png"
                   alt="Success"
                   className="w-full h-full"
                 />
@@ -2379,7 +2380,7 @@ export default function SavePage() {
                     setShowSuccessModal(false);
                     router.push('/library');
                   }}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full"
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full"
                 >
                   View Library
                 </button>

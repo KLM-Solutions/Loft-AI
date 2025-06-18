@@ -538,9 +538,9 @@ export default function BookmarksPage() {
     <button
       key={interest.id}
       onClick={() => toggleInterest(interest.id)}
-      className={`flex items-center rounded-full px-4 py-2 md:px-5 md:py-2.5 transition-colors shadow-sm border border-gray-200 font-medium text-sm md:text-base select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap gap-2 ${
+      className={`flex items-center rounded-full px-4 py-2 md:px-5 md:py-2.5 transition-colors shadow-sm border border-gray-200 font-medium text-sm md:text-base select-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 whitespace-nowrap gap-2 ${
         selectedInterests.includes(interest.id)
-          ? "bg-blue-100 text-blue-700"
+          ? "bg-red-100 text-red-700"
           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
       style={{ minWidth: '0', minHeight: '0' }}
@@ -685,7 +685,7 @@ export default function BookmarksPage() {
   const getRandomColor = () => {
     const colors = [
       "bg-red-500", "bg-pink-500", "bg-purple-500", "bg-indigo-500",
-      "bg-blue-500", "bg-cyan-500", "bg-teal-500", "bg-green-500",
+      "bg-rose-500", "bg-cyan-500", "bg-teal-500", "bg-green-500",
       "bg-lime-500", "bg-yellow-500", "bg-orange-500"
     ]
     return colors[Math.floor(Math.random() * colors.length)]
@@ -846,7 +846,7 @@ export default function BookmarksPage() {
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="relative">
         <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-        <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+        <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0"></div>
       </div>
     </div>
   );
@@ -1026,8 +1026,8 @@ export default function BookmarksPage() {
         <div className="flex flex-col h-full">
           {/* Logo - Removed InShort text */}
           <div className="px-6 py-6">
-            <Link href="/bookmarks" className="flex items-center text-blue-500">
-              <img src="/logo.png" alt="Loft AI Logo" className="h-5 w-5" />
+            <Link href="/bookmarks" className="flex items-center text-red-500">
+              <img src="/logo.svg" alt="Loft AI Logo" className="h-5 w-5" />
               <span className="ml-2 text-lg font-semibold text-slate-800">Loft AI</span>
             </Link>
           </div>
@@ -1036,23 +1036,23 @@ export default function BookmarksPage() {
           <nav className="flex-1 px-4 space-y-1">
             <Link
               href="/bookmarks"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-blue-500 bg-gray-100" : "text-gray-900"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/bookmarks" ? "text-red-500 bg-gray-100" : "text-gray-900"}`}
             >
-              <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-blue-500" : "text-gray-500"}`} />
+              <Search className={`h-5 w-5 mr-3 ${pathname === "/bookmarks" ? "text-red-500" : "text-gray-500"}`} />
               <span>Explore</span>
             </Link>
             <Link
               href="/library"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/library" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/library" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <BookmarkIcon className={`h-5 w-5 mr-3 ${pathname === "/library" ? "text-blue-500" : "text-gray-500"}`} />
+              <BookmarkIcon className={`h-5 w-5 mr-3 ${pathname === "/library" ? "text-red-500" : "text-gray-500"}`} />
               <span>Library</span>
             </Link>
             <Link
               href="/run-through"
-              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/run-through" ? "text-blue-500 bg-gray-100" : "text-gray-600"}`}
+              className={`flex items-center px-2 py-3 rounded-full hover:bg-gray-100 transition-colors ${pathname === "/run-through" ? "text-red-500 bg-gray-100" : "text-gray-600"}`}
             >
-              <Star className={`h-5 w-5 mr-3 ${pathname === "/run-through" ? "text-blue-500" : "text-gray-500"}`} />
+              <Star className={`h-5 w-5 mr-3 ${pathname === "/run-through" ? "text-red-500" : "text-gray-500"}`} />
               <span>Run through</span>
             </Link>
 
@@ -1195,7 +1195,7 @@ export default function BookmarksPage() {
             <button
               onClick={() => setContentFilter("all")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                  contentFilter === "all" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
               All
@@ -1203,7 +1203,7 @@ export default function BookmarksPage() {
             <button
               onClick={() => setContentFilter("links")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                contentFilter === "links" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
               Links
@@ -1212,7 +1212,7 @@ export default function BookmarksPage() {
             <button
               onClick={() => setContentFilter("notes")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                contentFilter === "notes" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
               Notes
@@ -1293,7 +1293,7 @@ export default function BookmarksPage() {
             </form>
             <button 
               onClick={openSaveModal}
-              className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full ml-4"
+              className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full ml-4"
             >
               <Plus className="h-5 w-5" />
               <span>Create</span>
@@ -1304,7 +1304,7 @@ export default function BookmarksPage() {
             <button
               onClick={() => setContentFilter("all")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                contentFilter === "all" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
               All
@@ -1312,7 +1312,7 @@ export default function BookmarksPage() {
             <button
               onClick={() => setContentFilter("links")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                contentFilter === "links" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
               Links
@@ -1321,7 +1321,7 @@ export default function BookmarksPage() {
             <button
               onClick={() => setContentFilter("notes")}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                contentFilter === "notes" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
               Notes
@@ -1340,7 +1340,7 @@ export default function BookmarksPage() {
                     <button
                       onClick={() => setContentFilter("all")}
                       className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "all" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                          contentFilter === "all" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       All
@@ -1348,7 +1348,7 @@ export default function BookmarksPage() {
                     <button
                       onClick={() => setContentFilter("links")}
                       className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "links" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                        contentFilter === "links" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       Links
@@ -1357,7 +1357,7 @@ export default function BookmarksPage() {
                     <button
                       onClick={() => setContentFilter("notes")}
                       className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                        contentFilter === "notes" ? "bg-blue-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
+                        contentFilter === "notes" ? "bg-red-500 text-white" : "bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       Notes
@@ -1394,14 +1394,14 @@ export default function BookmarksPage() {
                         <h1 className="text-2xl font-bold">Notes</h1>
                         <div className="flex space-x-2">
                           <button
-                            className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                            className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                             onClick={() => setCardView("list")}
                             aria-label="List view"
                           >
                             <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
                           </button>
                           <button
-                            className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                              className={`p-2 rounded ${cardView === "grid" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                             onClick={() => setCardView("grid")}
                             aria-label="Grid view"
                           >
@@ -1437,7 +1437,7 @@ export default function BookmarksPage() {
                           return (
                             <div
                               key={note.id}
-                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                              className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                               onClick={() => setExpandedId(isExpanded ? null : note.id)}
                             >
                               {/* Image or blank */}
@@ -1551,14 +1551,14 @@ export default function BookmarksPage() {
                             </h1>
                             <div className="flex space-x-2">
                               <button
-                                className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                                 onClick={() => setCardView("list")}
                                 aria-label="List view"
                               >
                                 <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
                               </button>
                               <button
-                                className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                                className={`p-2 rounded ${cardView === "grid" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                                 onClick={() => setCardView("grid")}
                                 aria-label="Grid view"
                               >
@@ -1574,7 +1574,7 @@ export default function BookmarksPage() {
                             <div className="flex items-center justify-center min-h-[400px]">
                               <div className="relative">
                                 <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
-                                <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0"></div>
+                                <div className="w-12 h-12 rounded-full border-4 border-red-500 border-t-transparent animate-spin absolute top-0"></div>
                               </div>
                             </div>
                           ) : bookmarks.length === 0 ? (
@@ -1605,8 +1605,8 @@ export default function BookmarksPage() {
 
                                 return (
                                   <div
-                                    key={bm.id}
-                                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
+                                    key={bm.id} 
+                                    className={`bg-white rounded-2xl shadow p-4 flex items-start cursor-pointer transition-all duration-200 w-full max-w-full overflow-x-hidden ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""} ${isExpanded ? 'flex-col md:flex-row' : ''}`}
                                     onClick={() => setExpandedId(isExpanded ? null : bm.id)}
                                   >
                                     {/* Image or blank */}
@@ -1646,7 +1646,7 @@ export default function BookmarksPage() {
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
+                                            className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2 flex-shrink-0"
                                           >
                                             <ExternalLink className="h-4 w-4" />
                                           </a>
@@ -1720,7 +1720,7 @@ export default function BookmarksPage() {
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                                          className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                                       >
                                         <ExternalLink className="h-4 w-4" />
                                       </a>
@@ -1757,14 +1757,14 @@ export default function BookmarksPage() {
                             <h1 className="text-2xl font-bold">Suggested Tags</h1>
                             <div className="flex space-x-2">
                   <button
-                              className={`p-2 rounded ${cardView === "list" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                              className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                               onClick={() => setCardView("list")}
                               aria-label="List view"
                             >
                                 <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="5" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="9" width="14" height="2" rx="1" fill="currentColor"/><rect x="3" y="13" width="14" height="2" rx="1" fill="currentColor"/></svg>
                   </button>
                   <button
-                              className={`p-2 rounded ${cardView === "grid" ? "bg-blue-100 text-blue-600" : "bg-white text-gray-400"}`}
+                              className={`p-2 rounded ${cardView === "grid" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
                               onClick={() => setCardView("grid")}
                               aria-label="Grid view"
                             >
@@ -1824,7 +1824,7 @@ export default function BookmarksPage() {
                                         return (
                                           <div
                                             key={bm.id}
-                                            className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-blue-400" : ""}`}
+                                            className={`bg-white rounded-2xl shadow p-4 mx-auto flex items-start cursor-pointer transition-all duration-200 ${isExpanded ? "ring-2 ring-inset ring-red-400" : ""}`}
                                             onClick={() => setExpandedId(isExpanded ? null : cardKey)}
                                           >
                                             {/* Image or blank */}
@@ -1848,7 +1848,7 @@ export default function BookmarksPage() {
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                                      className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300"
                                                   >
                                                     Site
                                                   </a>
@@ -1872,7 +1872,7 @@ export default function BookmarksPage() {
                                                       target="_blank"
                                                       rel="noopener noreferrer"
                                                       onClick={e => e.stopPropagation()}
-                                                      className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                      className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 ml-1"
                                                       style={{ marginTop: '2px' }} // optional, for vertical alignment
                                                     >
                                                       Site
@@ -1921,7 +1921,7 @@ export default function BookmarksPage() {
                                                   target="_blank" 
                                                   rel="noopener noreferrer"
                                                   onClick={(e) => e.stopPropagation()}
-                                                  className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300"
+                                                  className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300"
                                                 >
                                                   Site
                                                 </a>
@@ -1945,7 +1945,7 @@ export default function BookmarksPage() {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     onClick={e => e.stopPropagation()}
-                                                    className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 ml-1"
+                                                    className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 ml-1"
                                                     style={{ marginTop: '2px' }} // optional, for vertical alignment
                                                   >
                                                     Site
@@ -1959,7 +1959,7 @@ export default function BookmarksPage() {
                                       ))}
                                     </div>
                                   </div>
-                                )}
+                                )}  
                               </div>
                             ))}
                           </div>
@@ -2029,7 +2029,7 @@ export default function BookmarksPage() {
                 <p className="text-gray-600 mb-8 max-w-md">
                   Start saving to fill your Loft with links, social posts, images, and more
                 </p>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
+                <button className="bg-red-500 hover:bg-red-600 text-white py-3 px-6 rounded-full text-base font-medium transition-colors">
                   Discover Content
                 </button>
               </div>
@@ -2048,7 +2048,7 @@ export default function BookmarksPage() {
 
         {/* Mobile Bottom Navigation - Hidden on Desktop */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 z-50">
-          <Link href="/bookmarks" className="flex flex-col items-center text-blue-500">
+          <Link href="/bookmarks" className="flex flex-col items-center text-red-500">
             <Search className="h-6 w-6" />
             <span className="text-xs mt-1">Explore</span>
           </Link>
@@ -2082,7 +2082,7 @@ export default function BookmarksPage() {
         {/* Mobile Save Button - Fixed at bottom right */}
         <button
           onClick={openSaveModal}
-          className="md:hidden fixed right-4 bottom-20 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg z-50"
+              className="md:hidden fixed right-4 bottom-20 bg-red-500 hover:bg-red-600 text-white p-3 rounded-full shadow-lg z-50"
         >
           <Plus className="h-6 w-6" />
         </button>
@@ -2100,7 +2100,7 @@ export default function BookmarksPage() {
                         href={selectedBookmark.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:text-blue-600 px-2 py-1 rounded-full border border-blue-200 hover:border-blue-300 flex items-center gap-1 bg-transparent ml-2"
+                          className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded-full border border-red-200 hover:border-red-300 flex items-center gap-1 bg-transparent ml-2"
                       >
                         <ExternalLink className="h-5 w-5" />
                       </a>
@@ -2201,8 +2201,8 @@ export default function BookmarksPage() {
                               handleUrlPaste(e);
                             }}
                             placeholder="https://example.com"
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            disabled={isGenerating}
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500"
+                            disabled={isGenerating} 
                           />
                           {selectedImage && (
                             <div className="mt-4">
@@ -2236,7 +2236,7 @@ export default function BookmarksPage() {
                               }
                             }}
                             placeholder="Add a note..."
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500"
                             rows={4}
                           />
                           {summaryInput.trim() && (
@@ -2244,7 +2244,7 @@ export default function BookmarksPage() {
                               <div className="flex items-center gap-2 mb-2">
                                 <button
                                   onClick={() => fileInputRef.current?.click()}
-                                  className="px-3 py-1 text-sm text-blue-500 border border-blue-200 rounded-full hover:bg-blue-50 flex items-center gap-1"
+                                      className="px-3 py-1 text-sm text-red-500 border border-red-200 rounded-full hover:bg-red-50 flex items-center gap-1"
                                 >
                                   <Upload className="h-4 w-4" />
                                   Upload Image
@@ -2420,7 +2420,7 @@ export default function BookmarksPage() {
                             className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
                               (!urlInput && !summaryInput) || isGenerating
                                 ? 'bg-gray-300 cursor-not-allowed' 
-                                : 'bg-blue-500 hover:bg-blue-600'
+                                  : 'bg-red-500 hover:bg-red-600'
                             }`}
                           >
                             {isGenerating ? (
@@ -2445,7 +2445,7 @@ export default function BookmarksPage() {
                             value={titleInput}
                             onChange={(e) => setTitleInput(e.target.value)}
                             placeholder="Enter title"
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500"
                           />
                               </div>
 
@@ -2455,7 +2455,7 @@ export default function BookmarksPage() {
                               value={summaryInput}
                               onChange={(e) => setSummaryInput(e.target.value)}
                             placeholder="Enter summary"
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500"
                               rows={4}
                             />
                           </div>
@@ -2481,7 +2481,7 @@ export default function BookmarksPage() {
                               // Show upload option only for links
                               <>
                                 <div className="mb-2 md:mb-4">
-                                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <div className="w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-full flex items-center justify-center">
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
                                       className="h-5 w-5 md:h-6 md:w-6 text-white"
@@ -2507,7 +2507,7 @@ export default function BookmarksPage() {
                                 />
                                 <button 
                                   onClick={() => fileInputRef.current?.click()}
-                                  className="text-sm text-blue-500 border border-blue-200 rounded-full px-4 py-1 hover:bg-blue-50"
+                                  className="text-sm text-red-500 border border-red-200 rounded-full px-4 py-1 hover:bg-red-50"
                                 >
                                   Browse the image file to upload
                                 </button>
@@ -2565,7 +2565,7 @@ export default function BookmarksPage() {
                                 onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
                                 onKeyDown={handleTagInputKeyDown}
                                 placeholder="Add tags..."
-                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                               />
                               {showTagDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
@@ -2634,7 +2634,7 @@ export default function BookmarksPage() {
                                 onBlur={() => setTimeout(() => setShowCollectionDropdown(false), 200)}
                                 onKeyDown={handleCollectionInputKeyDown}
                                 placeholder="Add to collection..."
-                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                               />
                               {showCollectionDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
@@ -2683,7 +2683,7 @@ export default function BookmarksPage() {
                             className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
                               !titleInput || !summaryInput || selectedTags.length === 0 || selectedCollections.length === 0 || isSaving
                             ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-blue-500 hover:bg-blue-600'
+                                : 'bg-red-500 hover:bg-red-600'
                             }`}
                           >
                             {isSaving ? (
@@ -2798,8 +2798,8 @@ export default function BookmarksPage() {
         {/* Interest Modal with Loading State */}
         {isCheckingInterests ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl p-8 flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+            <div className="bg-white rounded-2xl p-8 flex flex-col items-center"> 
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mb-4"></div>
               <p className="text-gray-600">Loading your preferences...</p>
             </div>
           </div>
@@ -2822,7 +2822,7 @@ export default function BookmarksPage() {
               </div>
               <button
                 onClick={handleInterestSubmit}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-full text-base font-medium transition-colors"
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-full text-base font-medium transition-colors"
               >
                 Get Started
               </button>
@@ -2839,7 +2839,7 @@ export default function BookmarksPage() {
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
                 placeholder="Collection name"
-                className="w-full px-3 py-2 border rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -2854,7 +2854,7 @@ export default function BookmarksPage() {
                 <button
                   onClick={() => handleCreateCollection(newCollectionFromModal)}
                   disabled={isCreatingCollection}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50"
+                  className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50"
                 >
                   {isCreatingCollection ? 'Creating...' : 'Create'}
                 </button>
@@ -2873,7 +2873,7 @@ export default function BookmarksPage() {
               <div className="px-6 pb-6 pt-2 flex flex-col items-center text-center">
                 <div className="w-32 h-32 mb-4">
                   <img
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/No%20Message%20illustration%402x-dMMxFHoaICtPNkD5zgwrnBZHRHCnnZ.png"
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-2d5DYX8mw9Ikry6x6D2il3jhJuXlzR.png"
                     alt="Success"
                     className="w-full h-full"
                   />
@@ -2892,7 +2892,7 @@ export default function BookmarksPage() {
                       closeSuccessModal();
                       router.push('/library');
                     }}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full"
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full"
                   >
                     View Library
                   </button>
