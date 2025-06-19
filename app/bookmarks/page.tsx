@@ -716,6 +716,17 @@ export default function BookmarksPage() {
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
+      
+      // Check character limit
+      if (tagInput.trim().length > 20) {
+        showModalToast(
+          "Tag too long",
+          "Tag names must be 20 characters or less",
+          'error'
+        );
+        return;
+      }
+      
       addTag(tagInput.trim());
     }
   }
@@ -755,6 +766,17 @@ export default function BookmarksPage() {
   const handleCollectionInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && collectionInput.trim()) {
       e.preventDefault();
+      
+      // Check character limit
+      if (collectionInput.trim().length > 20) {
+        showModalToast(
+          "Collection name too long",
+          "Collection names must be 20 characters or less",
+          'error'
+        );
+        return;
+      }
+      
       const newCollection = {
         id: collectionInput.trim().toLowerCase().replace(/\s+/g, '-'),
         name: collectionInput.trim(),
@@ -802,6 +824,16 @@ export default function BookmarksPage() {
   // Update handleCreateCollection function
   const handleCreateCollection = async (autoSelect: boolean = false) => {
     if (!newCollectionName.trim()) return;
+
+    // Check character limit
+    if (newCollectionName.trim().length > 20) {
+      showModalToast(
+        "Collection name too long",
+        "Collection names must be 20 characters or less",
+        'error'
+      );
+      return;
+    }
 
     const color = getRandomColor();
     setIsCreatingCollection(true);
@@ -1113,6 +1145,16 @@ export default function BookmarksPage() {
   // Add this function to handle tag creation
   const handleCreateTag = async () => {
     if (!tagInput.trim()) return;
+    
+    // Check character limit
+    if (tagInput.trim().length > 20) {
+      showModalToast(
+        "Tag too long",
+        "Tag names must be 20 characters or less",
+        'error'
+      );
+      return;
+    }
     
     setIsCreatingTag(true);
     try {
@@ -3086,13 +3128,22 @@ export default function BookmarksPage() {
                               <input
                                 type="text"
                                 value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value.length <= 20) {
+                                    setTagInput(value);
+                                  }
+                                }}
                                 onFocus={() => setShowTagDropdown(true)}
                                 onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
                                 onKeyDown={handleTagInputKeyDown}
                                 placeholder="Add tags..."
+                                maxLength={20}
                                 className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                               />
+                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
+                                {tagInput.length}/20
+                              </div>
                               {showTagDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
                                   {tagInput && !availableTags.some(t => t.name.toLowerCase() === tagInput.toLowerCase()) && (
@@ -3155,13 +3206,22 @@ export default function BookmarksPage() {
                               <input
                                 type="text"
                                 value={collectionInput}
-                                onChange={(e) => setCollectionInput(e.target.value)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value.length <= 20) {
+                                    setCollectionInput(value);
+                                  }
+                                }}
                                 onFocus={() => setShowCollectionDropdown(true)}
                                 onBlur={() => setTimeout(() => setShowCollectionDropdown(false), 200)}
                                 onKeyDown={handleCollectionInputKeyDown}
                                 placeholder="Add to collection..."
+                                maxLength={20}
                                 className="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                               />
+                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
+                                {collectionInput.length}/20
+                              </div>
                               {showCollectionDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-xl shadow-lg">
                                   {collectionInput && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.toLowerCase()) && (
@@ -3424,10 +3484,19 @@ export default function BookmarksPage() {
               <input
                 type="text"
                 value={newCollectionName}
-                onChange={(e) => setNewCollectionName(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 20) {
+                    setNewCollectionName(value);
+                  }
+                }}
                 placeholder="Collection name"
+                maxLength={20}
                 className="w-full px-3 py-2 border rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
+              <div className="text-xs text-gray-400 mb-4 text-right">
+                {newCollectionName.length}/20
+              </div>
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => {

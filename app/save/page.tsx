@@ -125,6 +125,16 @@ export default function SavePage() {
   const handleCreateTag = async () => {
     if (!tagInput.trim()) return;
     
+    // Check character limit
+    if (tagInput.trim().length > 20) {
+      showModalToast(
+        "Tag too long",
+        "Tag names must be 20 characters or less",
+        'error'
+      );
+      return;
+    }
+    
     setIsCreatingTag(true);
     try {
       const response = await fetch('/api/tags', {
@@ -386,6 +396,17 @@ export default function SavePage() {
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
+      
+      // Check character limit
+      if (tagInput.trim().length > 20) {
+        showModalToast(
+          "Tag too long",
+          "Tag names must be 20 characters or less",
+          'error'
+        );
+        return;
+      }
+      
       handleCreateTag();
     }
   }
@@ -420,6 +441,17 @@ export default function SavePage() {
   const handleCollectionInputKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && collectionInput.trim()) {
       e.preventDefault();
+      
+      // Check character limit
+      if (collectionInput.trim().length > 20) {
+        showModalToast(
+          "Collection name too long",
+          "Collection names must be 20 characters or less",
+          'error'
+        );
+        return;
+      }
+      
       try {
         const response = await fetch('/api/collections', {
           method: 'POST',
@@ -903,11 +935,17 @@ export default function SavePage() {
                     <input
                       type="text"
                       value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value.length <= 20) {
+                          setTagInput(value);
+                        }
+                      }}
                       onFocus={handleTagInputFocus}
                       onBlur={handleTagInputBlur}
                       onKeyDown={handleTagInputKeyDown}
-                      placeholder="Type and press Enter to add a tag"
+                      placeholder="Add a tag"
+                      maxLength={20}
                       style={{
                         flex: 1,
                         border: "none",
@@ -917,6 +955,9 @@ export default function SavePage() {
                         boxShadow: "none",
                       }}
                     />
+                    <div style={{ fontSize: "0.75rem", color: "#9CA3AF", marginRight: "0.5rem" }}>
+                      {tagInput.length}/20
+                    </div>
                     <button
                       onClick={() => {
                         setShowTagDropdown(!showTagDropdown)
@@ -1028,11 +1069,17 @@ export default function SavePage() {
                     <input
                       type="text"
                       value={collectionInput}
-                      onChange={(e) => setCollectionInput(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value.length <= 20) {
+                          setCollectionInput(value);
+                        }
+                      }}
                       onFocus={handleCollectionInputFocus}
                       onBlur={handleCollectionInputBlur}
                       onKeyDown={handleCollectionInputKeyDown}
                       placeholder="Type and press Enter to add a collection"
+                      maxLength={20}
                       style={{
                         flex: 1,
                         border: "none",
@@ -1042,6 +1089,9 @@ export default function SavePage() {
                         boxShadow: "none",
                       }}
                     />
+                    <div style={{ fontSize: "0.75rem", color: "#9CA3AF", marginRight: "0.5rem" }}>
+                      {collectionInput.length}/20
+                    </div>
                     <button
                       onClick={() => {
                         setShowCollectionDropdown(!showCollectionDropdown)
@@ -1078,6 +1128,16 @@ export default function SavePage() {
                           {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                             <button
                               onClick={async () => {
+                                // Check character limit
+                                if (collectionInput.trim().length > 20) {
+                                  showModalToast(
+                                    "Collection name too long",
+                                    "Collection names must be 20 characters or less",
+                                    'error'
+                                  );
+                                  return;
+                                }
+                                
                                 try {
                                   const response = await fetch('/api/collections', {
                                     method: 'POST',
@@ -1520,11 +1580,17 @@ export default function SavePage() {
                 <input
                   type="text"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 20) {
+                      setTagInput(value);
+                    }
+                  }}
                   onFocus={handleTagInputFocus}
                   onBlur={handleTagInputBlur}
                   onKeyDown={handleTagInputKeyDown}
                   placeholder="Type and press Enter to add a tag"
+                  maxLength={20}
                   style={{
                     flex: 1,
               border: "none",
@@ -1534,6 +1600,9 @@ export default function SavePage() {
                     boxShadow: "none",
                   }}
                 />
+                <div style={{ fontSize: "0.75rem", color: "#9CA3AF", marginRight: "0.5rem" }}>
+                  {tagInput.length}/20
+                </div>
                 <button
                   onClick={() => {
                     setShowTagDropdown(!showTagDropdown)
@@ -1645,11 +1714,17 @@ export default function SavePage() {
                 <input
                   type="text"
                   value={collectionInput}
-                  onChange={(e) => setCollectionInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 20) {
+                      setCollectionInput(value);
+                    }
+                  }}
                   onFocus={handleCollectionInputFocus}
                   onBlur={handleCollectionInputBlur}
                   onKeyDown={handleCollectionInputKeyDown}
                   placeholder="Type and press Enter to add a collection"
+                  maxLength={20}
                   style={{
                     flex: 1,
                     border: "none",
@@ -1659,6 +1734,9 @@ export default function SavePage() {
                     boxShadow: "none",
                   }}
                 />
+                <div style={{ fontSize: "0.75rem", color: "#9CA3AF", marginRight: "0.5rem" }}>
+                  {collectionInput.length}/20
+                </div>
                 <button
                   onClick={() => {
                     setShowCollectionDropdown(!showCollectionDropdown)
@@ -1695,6 +1773,16 @@ export default function SavePage() {
                       {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
                           onClick={async () => {
+                            // Check character limit
+                            if (collectionInput.trim().length > 20) {
+                              showModalToast(
+                                "Collection name too long",
+                                "Collection names must be 20 characters or less",
+                                'error'
+                              );
+                              return;
+                            }
+                            
                             try {
                               const response = await fetch('/api/collections', {
                                 method: 'POST',
@@ -2190,11 +2278,17 @@ export default function SavePage() {
                 <input
                   type="text"
                   value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 20) {
+                      setTagInput(value);
+                    }
+                  }}
                   onFocus={handleTagInputFocus}
                   onBlur={handleTagInputBlur}
                   onKeyDown={handleTagInputKeyDown}
                   placeholder="Type and press Enter to add a tag"
+                  maxLength={20}
                   style={{
                     flex: 1,
               border: "none",
@@ -2204,6 +2298,9 @@ export default function SavePage() {
                     boxShadow: "none",
                   }}
                 />
+                <div style={{ fontSize: "0.75rem", color: "#9CA3AF", marginRight: "0.5rem" }}>
+                  {tagInput.length}/20
+                </div>
                 <button
                   onClick={() => {
                     setShowTagDropdown(!showTagDropdown)
@@ -2315,11 +2412,17 @@ export default function SavePage() {
                 <input
                   type="text"
                   value={collectionInput}
-                  onChange={(e) => setCollectionInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 20) {
+                      setCollectionInput(value);
+                    }
+                  }}
                   onFocus={handleCollectionInputFocus}
                   onBlur={handleCollectionInputBlur}
                   onKeyDown={handleCollectionInputKeyDown}
-                  placeholder="Type and press Enter to add a collection"
+                  placeholder="Add a collection"
+                  maxLength={20}
                   style={{
                     flex: 1,
                     border: "none",
@@ -2329,6 +2432,9 @@ export default function SavePage() {
                     boxShadow: "none",
                   }}
                 />
+                <div style={{ fontSize: "0.75rem", color: "#9CA3AF", marginRight: "0.5rem" }}>
+                  {collectionInput.length}/20
+                </div>
                 <button
                   onClick={() => {
                     setShowCollectionDropdown(!showCollectionDropdown)
@@ -2365,6 +2471,16 @@ export default function SavePage() {
                       {collectionInput.trim() && !availableCollections.some(c => c.name.toLowerCase() === collectionInput.trim().toLowerCase()) && (
                         <button
                           onClick={async () => {
+                            // Check character limit
+                            if (collectionInput.trim().length > 20) {
+                              showModalToast(
+                                "Collection name too long",
+                                "Collection names must be 20 characters or less",
+                                'error'
+                              );
+                              return;
+                            }
+                            
                             try {
                               const response = await fetch('/api/collections', {
                                 method: 'POST',
