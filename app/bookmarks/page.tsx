@@ -19,9 +19,10 @@ import {
   Loader2,
   ExternalLink,
   Upload,
+  User,
 } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
-import { UserButton, SignedIn } from "@clerk/nextjs"
+import { SignedIn, useUser } from "@clerk/nextjs"
 import SaveModal from "@/components/save-modal"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -55,6 +56,7 @@ const tagColors = [
 export default function BookmarksPage() {
   const router = useRouter()
   const pathname = usePathname()
+  const { user } = useUser()
   const [activeTab, setActiveTab] = useState("recent-saves")
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
@@ -132,6 +134,15 @@ export default function BookmarksPage() {
     description: '',
     type: 'error'
   });
+
+  // Add user modal state
+  const [showUserModal, setShowUserModal] = useState(false)
+  const [statistics, setStatistics] = useState<{bookmarks: number, tags: number, collections: number}>({
+    bookmarks: 0,
+    tags: 0,
+    collections: 0
+  })
+  const [isLoadingStats, setIsLoadingStats] = useState(false)
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -1231,6 +1242,28 @@ export default function BookmarksPage() {
     setModalToast(prev => ({ ...prev, show: false }));
   };
 
+  // Add function to fetch statistics
+  const fetchStatistics = async () => {
+    setIsLoadingStats(true);
+    try {
+      const response = await fetch('/api/statistics');
+      if (!response.ok) throw new Error('Failed to fetch statistics');
+      const data = await response.json();
+      if (data.success) {
+        setStatistics(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Add function to redirect to profile page
+  const redirectToProfile = () => {
+    router.push('/profile');
+  };
+
   return (
     <div className="flex h-screen bg-[#f5f8fa] overflow-hidden">
       {/* Desktop Sidebar - Hidden on Mobile */}
@@ -1326,11 +1359,20 @@ export default function BookmarksPage() {
                 className="h-6 w-6 object-contain"
               />
             </button>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden">
-              <SignedIn>
-                <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-8 h-8' } }} />
-              </SignedIn>
-            </div>
+            <button 
+              onClick={redirectToProfile}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden hover:bg-gray-300 transition-colors"
+            >
+              {user?.imageUrl ? (
+                <img 
+                  src={user.imageUrl} 
+                  alt={user.firstName || 'User'} 
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <User className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
           </div>
         </header>
 
@@ -2446,20 +2488,20 @@ export default function BookmarksPage() {
             <span className="text-xs mt-1">Run through</span>
           </Link>
           <div className="flex flex-col items-center text-gray-500">
-            <SignedIn>
-              <UserButton 
-                afterSignOutUrl="/" 
-                appearance={{ 
-                  elements: { 
-                    avatarBox: 'w-6 h-6',
-                    card: 'w-48',
-                    userPreview: 'p-2',
-                    userButtonPopoverCard: 'w-48',
-                    userButtonPopoverActionButton: 'p-2 text-sm'
-                  } 
-                }} 
-              />
-            </SignedIn>
+            <button 
+              onClick={redirectToProfile}
+              className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden hover:bg-gray-300 transition-colors"
+            >
+              {user?.imageUrl ? (
+                <img 
+                  src={user.imageUrl} 
+                  alt={user.firstName || 'User'} 
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <User className="h-4 w-4 text-gray-600" />
+              )}
+            </button>
             <span className="text-xs mt-1">Settings</span>
           </div>
         </nav>
@@ -3565,6 +3607,8 @@ export default function BookmarksPage() {
             </div>
           </div>
         )}
+
+        
       </div>
     </div>
   )

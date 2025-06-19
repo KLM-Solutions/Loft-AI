@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, type FormEvent, useRef, useEffect } from "react"
-import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Mic, ArrowUp, Settings, Grid, List, ArrowUpDown, X, Loader2, Tag, ExternalLink } from "lucide-react"
+import { Search, BookmarkIcon, BarChart2, LogOut, Plus, Star, Mic, ArrowUp, Settings, Grid, List, ArrowUpDown, X, Loader2, Tag, ExternalLink, User } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 import ReactMarkdown from 'react-markdown'
 import { UserButton, SignedIn, useUser } from "@clerk/nextjs"
@@ -111,6 +111,11 @@ export default function RunThroughPage() {
   const closeNotifications = () => {
     setShowNotifications(false)
   }
+
+  // Add function to redirect to profile page
+  const redirectToProfile = () => {
+    router.push('/profile');
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -452,7 +457,20 @@ export default function RunThroughPage() {
             </button>
             <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden">
               <SignedIn>
-                <UserButton afterSignOutUrl="/" appearance={{ elements: { avatarBox: 'w-8 h-8' } }} />
+                <button 
+                  onClick={redirectToProfile}
+                  className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden hover:bg-gray-300 transition-colors"
+                >
+                  {user?.imageUrl ? (
+                    <img 
+                      src={user.imageUrl} 
+                      alt={user.firstName || 'User'} 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-600" />
+                  )}
+                </button>
               </SignedIn>
             </div>
           </div>
@@ -769,18 +787,20 @@ export default function RunThroughPage() {
           </Link>
           <div className="flex flex-col items-center text-gray-500">
             <SignedIn>
-              <UserButton 
-                afterSignOutUrl="/" 
-                appearance={{ 
-                  elements: { 
-                    avatarBox: 'w-6 h-6',
-                    card: 'w-48',
-                    userPreview: 'p-2',
-                    userButtonPopoverCard: 'w-48',
-                    userButtonPopoverActionButton: 'p-2 text-sm'
-                  } 
-                }} 
-              />
+              <button 
+                onClick={redirectToProfile}
+                className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden hover:bg-gray-300 transition-colors"
+              >
+                {user?.imageUrl ? (
+                  <img 
+                    src={user.imageUrl} 
+                    alt={user.firstName || 'User'} 
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="h-4 w-4 text-gray-600" />
+                )}
+              </button>
             </SignedIn>
             <span className="text-xs mt-1">Settings</span>
           </div>
