@@ -49,6 +49,16 @@ export default function SavePage() {
   const [collectionsError, setCollectionsError] = useState("");
   const { toast } = useToast()
 
+  // Add URL validation error state
+  const [urlValidationError, setUrlValidationError] = useState("")
+  // Add modal toast state
+  const [modalToast, setModalToast] = useState<{show: boolean, title: string, description: string, type: 'error' | 'warning' | 'success'}>({
+    show: false,
+    title: '',
+    description: '',
+    type: 'error'
+  });
+
   const tagColors = [
     "bg-red-100 text-red-700 border-red-200",
     "bg-pink-100 text-pink-700 border-pink-200",
@@ -157,8 +167,44 @@ export default function SavePage() {
     router.back()
   }
 
+  // Add URL validation function
+  const validateUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Add function to show modal toast
+  const showModalToast = (title: string, description: string, type: 'error' | 'warning' | 'success' = 'error') => {
+    setModalToast({
+      show: true,
+      title,
+      description,
+      type
+    });
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      setModalToast(prev => ({ ...prev, show: false }));
+    }, 5000);
+  };
+
+  // Add function to hide modal toast
+  const hideModalToast = () => {
+    setModalToast(prev => ({ ...prev, show: false }));
+  };
+
   const handleAddToBookmark = async () => {
     if (!formData.url) return;
+
+    // Validate URL before proceeding
+    if (!validateUrl(formData.url)) {
+      setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+      return;
+    }
 
     try {
       setIsGenerating(true);
@@ -241,23 +287,21 @@ export default function SavePage() {
     } catch (error) {
       console.error('Error processing URL:', error);
       if (error instanceof Error && error.message === 'Failed to fetch metadata') {
-        setError('Auto content fetch restricted by provider. Please enter additional details to enrich context');
-        toast({
-          variant: "destructive",
-          title: "URL Processing Error",
-          description: "Auto content fetch restricted by provider. Please enter additional details to enrich context",
-          className: "bg-red-50 border-red-200"
-        });
+        // Show modal toast for metadata fetching errors
+        showModalToast(
+          "Auto content fetch restricted",
+          "Please enter additional details to enrich context",
+          'warning'
+        );
         // Allow user to proceed to next page after showing error
         setShowInShortModal(true);
       } else {
-        setError('Failed to process URL. Please try again.');
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to process URL. Please try again.",
-          className: "bg-red-50 border-red-200"
-        });
+        // Show modal toast for other processing errors
+        showModalToast(
+          "Error processing URL",
+          "Failed to process URL. Please try again.",
+          'error'
+        );
       }
     } finally {
       setIsGenerating(false);
@@ -457,41 +501,93 @@ export default function SavePage() {
               id="url"
               type="url"
               value={formData.url}
-              onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData((prev) => ({ ...prev, url: value }));
+                
+                // Clear validation error when user starts typing
+                if (urlValidationError) {
+                  setUrlValidationError("");
+                }
+                
+                // Validate URL if it's not empty
+                if (value.trim() && !validateUrl(value)) {
+                  setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+                } else {
+                  setUrlValidationError("");
+                }
+              }}
+              onPaste={(e) => {
+                const pastedText = e.clipboardData.getData('text');
+                setFormData((prev) => ({ ...prev, url: pastedText }));
+                
+                // Validate the pasted URL
+                if (pastedText.trim() && !validateUrl(pastedText)) {
+                  setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+                } else {
+                  setUrlValidationError("");
+                }
+              }}
                   placeholder="https://example.com"
               style={{
                 width: "100%",
                 padding: isMobile ? "0.75rem" : "0.5rem 0.75rem",
-                border: "1px solid #d1d5db",
+                border: urlValidationError ? "1px solid #ef4444" : "1px solid #d1d5db",
                 borderRadius: "0.5rem",
                 fontSize: isMobile ? "1rem" : "0.875rem",
                 minHeight: isMobile ? "44px" : "auto",
               }}
             />
+            {urlValidationError && (
+              <div style={{
+                marginTop: "0.5rem",
+                padding: "0.75rem",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "0.5rem",
+                borderLeft: "4px solid #ef4444"
+              }}>
+                <div style={{ display: "flex", alignItems: "flex-start" }}>
+                  <div style={{ flexShrink: 0 }}>
+                    <svg style={{ height: "1.25rem", width: "1.25rem", color: "#ef4444" }} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div style={{ marginLeft: "0.75rem" }}>
+                    <h3 style={{ fontSize: "0.875rem", fontWeight: "500", color: "#991b1b", margin: 0 }}>
+                      Invalid URL
+                    </h3>
+                    <div style={{ marginTop: "0.25rem", fontSize: "0.875rem", color: "#dc2626" }}>
+                      {urlValidationError}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <Button
             onClick={handleAddToBookmark}
-                disabled={!formData.url || isGenerating}
+                disabled={!formData.url || !validateUrl(formData.url) || isGenerating}
             style={{
               width: "100%",
-                  backgroundColor: formData.url && !isGenerating ? "#ef4444" : "#9ca3af",
+                  backgroundColor: formData.url && validateUrl(formData.url) && !isGenerating ? "#ef4444" : "#9ca3af",
               color: "white",
               borderRadius: "0.75rem",
               padding: isMobile ? "0.875rem" : "0.75rem",
               border: "none",
-                  cursor: formData.url && !isGenerating ? "pointer" : "not-allowed",
+                  cursor: formData.url && validateUrl(formData.url) && !isGenerating ? "pointer" : "not-allowed",
               fontSize: isMobile ? "1rem" : "0.875rem",
               fontWeight: "500",
               transition: "background-color 0.2s",
               minHeight: isMobile ? "48px" : "auto",
             }}
             onMouseEnter={(e) => {
-                  if (formData.url && !isGenerating) {
+                  if (formData.url && validateUrl(formData.url) && !isGenerating) {
                 e.currentTarget.style.backgroundColor = "#ef4444"
               }
             }}
             onMouseLeave={(e) => {
-                  if (formData.url && !isGenerating) {
+                  if (formData.url && validateUrl(formData.url) && !isGenerating) {
                 e.currentTarget.style.backgroundColor = "#ef4444"
               }
             }}
@@ -519,6 +615,86 @@ export default function SavePage() {
         >
               Save to Loft
         </h2>
+        
+        {/* Modal Toast Notification */}
+        {modalToast.show && (
+          <div style={{
+            margin: "0 0 1rem 0",
+            padding: "1rem",
+            borderRadius: "0.5rem",
+            borderLeft: "4px solid",
+            ...(modalToast.type === 'error' 
+              ? { backgroundColor: "#fef2f2", borderLeftColor: "#ef4444", color: "#991b1b" }
+              : modalToast.type === 'warning'
+              ? { backgroundColor: "#fffbeb", borderLeftColor: "#f59e0b", color: "#92400e" }
+              : { backgroundColor: "#f0fdf4", borderLeftColor: "#22c55e", color: "#166534" }
+            )
+          }}>
+            <div style={{ display: "flex", alignItems: "flex-start" }}>
+              <div style={{ flexShrink: 0 }}>
+                {modalToast.type === 'error' ? (
+                  <svg style={{ height: "1.25rem", width: "1.25rem", color: "#ef4444" }} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                ) : modalToast.type === 'warning' ? (
+                  <svg style={{ height: "1.25rem", width: "1.25rem", color: "#f59e0b" }} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg style={{ height: "1.25rem", width: "1.25rem", color: "#22c55e" }} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div style={{ marginLeft: "0.75rem", flex: 1 }}>
+                <h3 style={{ 
+                  fontSize: "0.875rem", 
+                  fontWeight: "500", 
+                  margin: 0,
+                  ...(modalToast.type === 'error' 
+                    ? { color: "#991b1b" }
+                    : modalToast.type === 'warning' 
+                    ? { color: "#92400e" }
+                    : { color: "#166534" }
+                  )
+                }}>
+                  {modalToast.title}
+                </h3>
+                <div style={{ 
+                  marginTop: "0.25rem", 
+                  fontSize: "0.875rem",
+                  ...(modalToast.type === 'error' 
+                    ? { color: "#dc2626" }
+                    : modalToast.type === 'warning' 
+                    ? { color: "#d97706" }
+                    : { color: "#16a34a" }
+                  )
+                }}>
+                  {modalToast.description}
+                </div>
+              </div>
+              <div style={{ marginLeft: "auto", paddingLeft: "0.75rem" }}>
+                <button
+                  onClick={hideModalToast}
+                  style={{
+                    display: "inline-flex",
+                    borderRadius: "0.375rem",
+                    padding: "0.375rem",
+                    ...(modalToast.type === 'error' 
+                      ? { color: "#ef4444" }
+                      : modalToast.type === 'warning' 
+                      ? { color: "#f59e0b" }
+                      : { color: "#22c55e" }
+                    )
+                  }}
+                >
+                  <X style={{ height: "1rem", width: "1rem" }} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0.875rem" : "1rem" }}>
           <div>
             <Label

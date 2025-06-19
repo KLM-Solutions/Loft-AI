@@ -123,6 +123,16 @@ export default function BookmarksPage() {
   // Add a new state for allData
   const [allData, setAllData] = useState<any[]>([]);
 
+  // Add URL validation error state
+  const [urlValidationError, setUrlValidationError] = useState("")
+  // Add modal toast state
+  const [modalToast, setModalToast] = useState<{show: boolean, title: string, description: string, type: 'error' | 'warning' | 'success'}>({
+    show: false,
+    title: '',
+    description: '',
+    type: 'error'
+  });
+
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
     "code", "art", "photography", "minimalism", "modern"
@@ -427,6 +437,8 @@ export default function BookmarksPage() {
     setCollectionInput("");
     setMetadata(null);
     setError("");
+    setUrlValidationError(""); // Clear URL validation error
+    setModalToast({ show: false, title: '', description: '', type: 'error' }); // Clear modal toast
   }
 
   // Close create options modal
@@ -951,6 +963,12 @@ export default function BookmarksPage() {
     const url = e.clipboardData.getData('text');
     if (!url) return;
 
+    // Validate the pasted URL first
+    if (!validateUrl(url)) {
+      setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+      return;
+    }
+
     try {
       setIsGenerating(true);
       setTitleInput("");
@@ -1035,11 +1053,21 @@ export default function BookmarksPage() {
     } catch (error) {
       console.error('Error processing URL:', error);
       if (error instanceof Error && error.message === 'Failed to fetch metadata') {
-        setError('Auto content fetch restricted by provider. Please enter additional details to enrich context');
+        // Show modal toast for metadata fetching errors
+        showModalToast(
+          "Auto content fetch restricted",
+          "Please enter additional details to enrich context",
+          'warning'
+        );
         setSelectedImage(""); // Reset image to show upload option
         setShowInShortModal(true);
       } else {
-        setError('Failed to process URL. Please try again.');
+        // Show modal toast for other processing errors
+        showModalToast(
+          "Error processing URL",
+          "Failed to process URL. Please try again.",
+          'error'
+        );
       }
     } finally {
       setIsGenerating(false);
@@ -1111,6 +1139,54 @@ export default function BookmarksPage() {
     } finally {
       setIsCreatingTag(false);
     }
+  };
+
+  // Add URL validation function
+  const validateUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Update URL input change handler
+  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUrlInput(value);
+    
+    // Clear validation error when user starts typing
+    if (urlValidationError) {
+      setUrlValidationError("");
+    }
+    
+    // Validate URL if it's not empty
+    if (value.trim() && !validateUrl(value)) {
+      setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+    } else {
+      setUrlValidationError("");
+    }
+  };
+
+  // Add function to show modal toast
+  const showModalToast = (title: string, description: string, type: 'error' | 'warning' | 'success' = 'error') => {
+    setModalToast({
+      show: true,
+      title,
+      description,
+      type
+    });
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      setModalToast(prev => ({ ...prev, show: false }));
+    }, 5000);
+  };
+
+  // Add function to hide modal toast
+  const hideModalToast = () => {
+    setModalToast(prev => ({ ...prev, show: false }));
   };
 
   return (
@@ -2432,17 +2508,75 @@ export default function BookmarksPage() {
                     <X className="h-5 w-5" />
                   </button>
                 </div>
+                
+                {/* Modal Toast Notification */}
+                {modalToast.show && (
+                  <div className={`mx-6 mt-4 p-4 rounded-lg border-l-4 ${
+                    modalToast.type === 'error' 
+                      ? 'bg-red-50 border-red-400 text-red-800' 
+                      : modalToast.type === 'warning'
+                      ? 'bg-yellow-50 border-yellow-400 text-yellow-800'
+                      : 'bg-green-50 border-green-400 text-green-800'
+                  }`}>
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        {modalToast.type === 'error' ? (
+                          <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        ) : modalToast.type === 'warning' ? (
+                          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="ml-3 flex-1">
+                        <h3 className={`text-sm font-medium ${
+                          modalToast.type === 'error' ? 'text-red-800' 
+                          : modalToast.type === 'warning' ? 'text-yellow-800'
+                          : 'text-green-800'
+                        }`}>
+                          {modalToast.title}
+                        </h3>
+                        <div className={`mt-1 text-sm ${
+                          modalToast.type === 'error' ? 'text-red-700' 
+                          : modalToast.type === 'warning' ? 'text-yellow-700'
+                          : 'text-green-700'
+                        }`}>
+                          {modalToast.description}
+                        </div>
+                      </div>
+                      <div className="ml-auto pl-3">
+                        <button
+                          onClick={hideModalToast}
+                          className={`inline-flex rounded-md p-1.5 ${
+                            modalToast.type === 'error' ? 'text-red-400 hover:text-red-500' 
+                            : modalToast.type === 'warning' ? 'text-yellow-400 hover:text-yellow-500'
+                            : 'text-green-400 hover:text-green-500'
+                          }`}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Content */}
                 <div className="flex-grow overflow-y-auto relative">
-                  {/* InShort Modal Error Notification */}
-                  {showInShortModal && error && (
+                  {/* InShort Modal Error Notification - Remove this since we now have modal toast */}
+                  {/* {showInShortModal && error && (
                     <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20 max-w-xs w-full px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded shadow text-sm flex items-center justify-between">
                       <span className="pr-2">{error}</span>
                       <button onClick={() => setError("")} className="ml-2 text-red-400 hover:text-red-700 focus:outline-none">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
-                  )}
+                  )} */}
                   <div className="p-6">
                     {/* Initial Form Fields */}
                     {!showInShortModal && (
@@ -2453,18 +2587,47 @@ export default function BookmarksPage() {
                           <input
                             type="url"
                             value={urlInput}
-                            onChange={(e) => {
-                              setUrlInput(e.target.value);
-                            }}
+                            onChange={handleUrlInputChange}
                             onPaste={(e) => {
                               const pastedText = e.clipboardData.getData('text');
                               setUrlInput(pastedText);
-                              handleUrlPaste(e);
+                              
+                              // Validate the pasted URL
+                              if (pastedText.trim() && !validateUrl(pastedText)) {
+                                setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+                              } else {
+                                setUrlValidationError("");
+                                // Only call handleUrlPaste if URL is valid
+                                handleUrlPaste(e);
+                              }
                             }}
                             placeholder="https://example.com"
-                            className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-red-500"
+                            className={`w-full p-2 border rounded-xl focus:outline-none focus:ring-1 ${
+                              urlValidationError 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-300 focus:ring-red-500'
+                            }`}
                             disabled={isGenerating} 
                           />
+                          {urlValidationError && (
+                            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0">
+                                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                                <div className="ml-3">
+                                  <h3 className="text-sm font-medium text-red-800">
+                                    Invalid URL
+                                  </h3>
+                                  <div className="mt-1 text-sm text-red-700">
+                                    {urlValidationError}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           {selectedImage && (
                             <div className="mt-4">
                               <h3 className="text-sm font-medium text-gray-700 mb-2">Image Preview</h3>
@@ -2607,6 +2770,12 @@ export default function BookmarksPage() {
                           <button
                             onClick={async () => {
                               if (selectedCreateOption === 'link' && urlInput) {
+                                // Validate URL before proceeding
+                                if (!validateUrl(urlInput)) {
+                                  setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+                                  return;
+                                }
+                                
                                 // Handle URL paste
                                 try {
                                   setIsGenerating(true);
@@ -2766,13 +2935,13 @@ export default function BookmarksPage() {
                               }
                             }}
                             disabled={
-                              (selectedCreateOption === 'link' && !urlInput) || 
+                              (selectedCreateOption === 'link' && (!urlInput || !validateUrl(urlInput))) || 
                               (selectedCreateOption === 'note' && !summaryInput) || 
                               (selectedCreateOption === 'image' && !selectedImage) ||
                               isGenerating
                             }
                             className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
-                              ((selectedCreateOption === 'link' && !urlInput) || 
+                              ((selectedCreateOption === 'link' && (!urlInput || !validateUrl(urlInput))) || 
                                (selectedCreateOption === 'note' && !summaryInput) || 
                                (selectedCreateOption === 'image' && !selectedImage) ||
                                isGenerating)
