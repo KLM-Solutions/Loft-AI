@@ -695,7 +695,7 @@ export default function LibraryPage() {
       <div className="flex-1 md:ml-60 flex flex-col h-screen overflow-hidden">
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-between p-4 bg-white border-b border-gray-200 flex-shrink-0">
-          <h1 className="text-xl font-semibold">Library</h1>
+          <h1 className="text-2xl font-semibold">Library</h1>
           <div className="flex items-center space-x-4">
             <button className="p-2 rounded-full hover:bg-gray-100" onClick={toggleNotifications}>
               <img
@@ -718,8 +718,8 @@ export default function LibraryPage() {
             {/* Filter Tabs */}
             <div className="sticky top-0 bg-[#f5f8fa] pt-4 pb-6 z-10">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold md:hidden">Library</h1>
-                <h1 className="text-2xl font-bold hidden md:block">Bookmarks</h1>
+                <h1 className="text-2xl font-semibold md:hidden">Library</h1>
+                <h1 className="text-2xl font-semibold hidden md:block">Bookmarks</h1>
                 <div className="flex space-x-2">
                   <button
                     className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}

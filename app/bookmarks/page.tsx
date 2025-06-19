@@ -1275,7 +1275,7 @@ export default function BookmarksPage() {
       <div className="flex-1 md:ml-60 flex flex-col h-screen overflow-hidden">
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-between p-4 bg-white border-b border-gray-200 flex-shrink-0">
-          <h1 className="text-xl font-semibold">Explore</h1>
+          <h1 className="text-2xl font-semibold">Explore</h1>
           <div className="flex items-center space-x-4">
             <button className="p-2 rounded-full hover:bg-gray-100" onClick={toggleNotifications}>
               <img
@@ -2500,7 +2500,7 @@ export default function BookmarksPage() {
               {/* Modal */}
               <div className="relative bg-white w-[90%] max-w-md md:w-[480px] md:h-full md:max-w-none md:border-l border-gray-200 shadow-lg flex flex-col z-10 m-auto md:m-0 rounded-2xl md:rounded-none">
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center p-5 pt-6 border-b border-gray-200">
                   <h2 className="text-xl font-semibold">
                     {showInShortModal ? "Save to LoftAI" : "Save to LoftAI"}
                   </h2>

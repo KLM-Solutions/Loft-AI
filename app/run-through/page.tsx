@@ -63,7 +63,7 @@ export default function RunThroughPage() {
       text: "Give the latest bookmark that I stored",
     },
     {
-      text: "Give all the bookmarks",
+      text: "Give me the detailed summary of the latest bookmark that I stored",
     },
     {
       text: "Is there any bookmarks that I stored?",
@@ -465,31 +465,31 @@ export default function RunThroughPage() {
 
         {/* Main Content Area */}
         <main className="flex-1 min-h-0 flex flex-col px-4 md:px-8 bg-[#f5f8fa] overflow-y-auto [overflow-y:scroll] [-webkit-overflow-scrolling:touch] pb-20 md:pb-4">
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-4 pt-4 md:pt-6">
             {messages.length === 0 ? (
               // Default Content
               <div className="flex flex-col h-full md:justify-center">
                 {/* AI Greeting */}
                 <div className="text-center mb-8 mt-8 md:mt-0">
-                  <h2 className="text-2xl font-semibold mb-2">
+                  <h1 className="text-2xl font-semibold mb-2">
                     Hi there, <span className="text-red-500">
                       {user?.firstName || 
                        user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 
                        user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 
                        'there'}
                     </span>
-                  </h2>
+                  </h1>
                   <p className="text-xl text-gray-700 mb-4">What would you like to know?</p>
                   <p className="text-gray-500">Use one of the most common prompts below or use your own to begin</p>
                 </div>
                 {/* Example Prompts */}
                 <div className="mt-8">
                   <p className="text-gray-500 text-center mb-6">Try something like:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                  <div className="flex flex-col md:flex-row gap-4 max-w-4xl mx-auto justify-center">
                     {examplePrompts.map((prompt, index) => (
                       <button
                         key={index}
-                        className="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md transition-shadow text-left"
+                        className="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md transition-shadow text-left flex-1 md:flex-none md:min-w-0"
                         onClick={() => setInputValue(prompt.text)}
                       >
                         <p className="text-gray-700">"{prompt.text}"</p>
