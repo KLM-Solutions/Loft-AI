@@ -573,108 +573,16 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* TEMPORARILY HIDDEN - WILL BE ADDED BACK LATER */}
-                {/* 
-                General Section
-                <div className="mb-6">
-                  <h3 className="text-lg text-gray-500 font-medium mb-2">General</h3>
-                  <div className="bg-white rounded-lg overflow-hidden">
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <User className="w-6 h-6 mr-4 text-gray-400" />
-                        <span className="text-base font-medium text-gray-400">Edit Profile</span>
-                      </div>
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <Settings className="w-6 h-6 mr-4 text-gray-400" />
-                        <span className="text-base font-medium text-gray-400">Settings</span>
-                      </div>
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4">
-                      <div className="flex items-center">
-                        <HelpCircle className="w-6 h-6 mr-4 text-gray-400" />
-                        <span className="text-base font-medium text-gray-400">Help & Support</span>
-                      </div>
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                    </div>
-                  </div>
-                </div>
-
-                App Info Section
-                <div className="mb-6">
-                  <h3 className="text-lg text-gray-500 font-medium mb-2">App Info</h3>
-                  <div className="bg-white rounded-lg overflow-hidden">
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <Smartphone className="w-6 h-6 mr-4 text-gray-400" />
-                        <span className="text-base font-medium text-gray-400">App Version</span>
-                      </div>
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <Lock className="w-6 h-6 mr-4 text-gray-400" />
-                        <span className="text-base font-medium text-gray-400">Privacy Policy</span>
-                      </div>
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4">
-                      <div className="flex items-center">
-                        <FileText className="w-6 h-6 mr-4 text-gray-400" />
-                        <span className="text-base font-medium text-gray-400">Terms of services</span>
-                      </div>
-                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                    </div>
-                  </div>
-                </div>
-                */}
-
-                {/* Personal Info Section - Similar to System View */}
-                <div className="mb-6">
-                  <h3 className="text-lg text-gray-500 font-medium mb-2">Personal Information</h3>
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <User className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Username</span>
-                      </div>
-                      <span className="text-gray-500">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Not set'}</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <User className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">First Name</span>
-                      </div>
-                      <span className="text-gray-500">{user?.firstName || 'Not set'}</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
-                      <div className="flex items-center">
-                        <User className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Last Name</span>
-                      </div>
-                      <span className="text-gray-500">{user?.lastName || 'Not set'}</span>
-                    </div>
-                    <div className="w-full flex items-center justify-between p-4">
-                      <div className="flex items-center">
-                        <Mail className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Email</span>
-                      </div>
-                      <span className="text-gray-500">{user?.primaryEmailAddress?.emailAddress || 'Not set'}</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Sign Out Button */}
-                <button 
-                  onClick={handleSignOut}
-                  className="w-full flex items-center p-4 text-red-500 font-medium mb-20"
-                >
-                  <LogOut className="w-6 h-6 mr-4" />
-                  <span className="text-base">Sign Out</span>
-                </button>
+                <div className="mt-8">
+                  <button 
+                    onClick={handleSignOut}
+                    className="w-full flex items-center justify-center p-4 text-red-500 font-medium bg-white rounded-2xl shadow-sm hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5 mr-3" />
+                    <span className="text-base">Sign Out</span>
+                  </button>
+                </div>
               </div>
 
               {/* Mobile Bottom Navigation */}
@@ -925,6 +833,17 @@ export default function ProfilePage() {
                       <p className="text-sm text-gray-500">Collections</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Sign Out Button */}
+                <div className="mt-8">
+                  <button 
+                    onClick={handleSignOut}
+                    className="w-full flex items-center justify-center p-4 text-red-500 font-medium bg-white rounded-2xl shadow-sm hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-5 h-5 mr-3" />
+                    <span className="text-base">Sign Out</span>
+                  </button>
                 </div>
               </div>
             )}
