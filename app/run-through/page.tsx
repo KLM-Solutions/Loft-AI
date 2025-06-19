@@ -548,7 +548,7 @@ export default function RunThroughPage() {
                       <div className="mt-4 px-4">
                         {message.content && !message.isLoadingTopics && message.relatedTopics && message.relatedTopics.length > 0 && (
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-semibold">Related Topics</h3>
+                            <h3 className="text-xl font-semibold">Saved Bookmarks</h3>
                             <div className="flex space-x-2">
                               <button
                                 className={`p-2 rounded ${cardView === "list" ? "bg-red-100 text-red-600" : "bg-white text-gray-400"}`}
