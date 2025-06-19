@@ -2802,204 +2802,212 @@ export default function BookmarksPage() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex justify-end gap-3 mt-6">
-                          <button
-                            onClick={closeSaveModal}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (selectedCreateOption === 'link' && urlInput) {
-                                // Validate URL before proceeding
-                                if (!validateUrl(urlInput)) {
-                                  setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
-                                  return;
-                                }
-                                
-                                // Handle URL paste
-                                try {
-                                  setIsGenerating(true);
-                                  setTitleInput("");
-                                  setSummaryInput("");
-
-                                  // First fetch metadata
-                                  const metadataResponse = await fetch('/api/metadata', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({ url: urlInput }),
-                                  });
-
-                                  if (!metadataResponse.ok) {
-                                    throw new Error('Failed to fetch metadata');
+                        <div className="flex justify-between items-center gap-3 mt-6">
+                          {isGenerating && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500 mr-2"></div>
+                              <span>Title and summary are generating by our intelligence...</span>
+                            </div>
+                          )}
+                          <div className="flex gap-3 ml-auto">
+                            <button
+                              onClick={closeSaveModal}
+                              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (selectedCreateOption === 'link' && urlInput) {
+                                  // Validate URL before proceeding
+                                  if (!validateUrl(urlInput)) {
+                                    setUrlValidationError("Please enter a valid URL (e.g., https://example.com)");
+                                    return;
                                   }
+                                  
+                                  // Handle URL paste
+                                  try {
+                                    setIsGenerating(true);
+                                    setTitleInput("");
+                                    setSummaryInput("");
 
-                                  const metadata = await metadataResponse.json();
-                                  setMetadata(metadata); // Store metadata in state
+                                    // First fetch metadata
+                                    const metadataResponse = await fetch('/api/metadata', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ url: urlInput }),
+                                    });
 
-                                  // Update the image preview if metadata contains an image
-                                  if (metadata.metadata.ogImage && metadata.metadata.ogImage[0]?.url) {
-                                    setSelectedImage(metadata.metadata.ogImage[0].url);
-                                  }
-
-                                  // Verify if the URL is from a social media platform
-                                  const verifyResponse = await fetch('/api/verify', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({ 
-                                      url: urlInput,
-                                      metadata: metadata.metadata
-                                    }),
-                                  });
-
-                                  if (!verifyResponse.ok) {
-                                    throw new Error('Failed to verify URL');
-                                  }
-
-                                  const verifyData = await verifyResponse.json();
-                                  const isSocialMedia = verifyData.isSocialMedia;
-
-                                  if (isSocialMedia) {
-                                    setTitleInput(metadata.metadata.title || '');
-                                    // Keep the image from metadata for social media URLs
-                                    if (metadata.metadata.image) {
-                                      let imageUrl = metadata.metadata.image;
-                                      if (imageUrl.startsWith('/')) {
-                                        const urlObj = new URL(urlInput);
-                                        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
-                                      }
-                                      setSelectedImage(imageUrl);
+                                    if (!metadataResponse.ok) {
+                                      throw new Error('Failed to fetch metadata');
                                     }
-                                    setShowInShortModal(true);
-                                  } else {
-                                    const response = await fetch('/api/bookmarks', {
+
+                                    const metadata = await metadataResponse.json();
+                                    setMetadata(metadata); // Store metadata in state
+
+                                    // Update the image preview if metadata contains an image
+                                    if (metadata.metadata.ogImage && metadata.metadata.ogImage[0]?.url) {
+                                      setSelectedImage(metadata.metadata.ogImage[0].url);
+                                    }
+
+                                    // Verify if the URL is from a social media platform
+                                    const verifyResponse = await fetch('/api/verify', {
                                       method: 'POST',
                                       headers: {
                                         'Content-Type': 'application/json',
                                       },
                                       body: JSON.stringify({ 
                                         url: urlInput,
-                                        image: selectedImage 
+                                        metadata: metadata.metadata
+                                      }),
+                                    });
+
+                                    if (!verifyResponse.ok) {
+                                      throw new Error('Failed to verify URL');
+                                    }
+
+                                    const verifyData = await verifyResponse.json();
+                                    const isSocialMedia = verifyData.isSocialMedia;
+
+                                    if (isSocialMedia) {
+                                      setTitleInput(metadata.metadata.title || '');
+                                      // Keep the image from metadata for social media URLs
+                                      if (metadata.metadata.image) {
+                                        let imageUrl = metadata.metadata.image;
+                                        if (imageUrl.startsWith('/')) {
+                                          const urlObj = new URL(urlInput);
+                                          imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+                                        }
+                                        setSelectedImage(imageUrl);
+                                      }
+                                      setShowInShortModal(true);
+                                    } else {
+                                      const response = await fetch('/api/bookmarks', {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ 
+                                          url: urlInput,
+                                          image: selectedImage 
+                                        }),
+                                      });
+
+                                      if (!response.ok) {
+                                        throw new Error('Failed to process URL');
+                                      }
+
+                                      const data = await response.json();
+                                      setTitleInput(data.title);
+                                      setSummaryInput(data.summary);
+                                      // Keep the image from metadata for non-social media URLs
+                                      if (metadata.metadata.image) {
+                                        let imageUrl = metadata.metadata.image;
+                                        if (imageUrl.startsWith('/')) {
+                                          const urlObj = new URL(urlInput);
+                                          imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+                                        }
+                                        setSelectedImage(imageUrl);
+                                      }
+                                      setShowInShortModal(true);
+                                    }
+                                  } catch (error) {
+                                    console.error('Error processing URL:', error);
+                                    setError('Failed to process URL. Please try again.');
+                                  } finally {
+                                    setIsGenerating(false);
+                                  }
+                                } else if (selectedCreateOption === 'note' && summaryInput) {
+                                  // Handle note creation
+                                  try {
+                                    setIsGenerating(true);
+                                    const response = await fetch('/api/notes', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        note: summaryInput
                                       }),
                                     });
 
                                     if (!response.ok) {
-                                      throw new Error('Failed to process URL');
+                                      throw new Error('Failed to generate title and summary');
                                     }
 
                                     const data = await response.json();
                                     setTitleInput(data.title);
                                     setSummaryInput(data.summary);
-                                    // Keep the image from metadata for non-social media URLs
-                                    if (metadata.metadata.image) {
-                                      let imageUrl = metadata.metadata.image;
-                                      if (imageUrl.startsWith('/')) {
-                                        const urlObj = new URL(urlInput);
-                                        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
-                                      }
-                                      setSelectedImage(imageUrl);
-                                    }
                                     setShowInShortModal(true);
+                                  } catch (error) {
+                                    console.error('Error generating title and summary:', error);
+                                    setTitleInput('');
+                                    setSummaryInput(summaryInput);
+                                    setShowInShortModal(true);
+                                  } finally {
+                                    setIsGenerating(false);
                                   }
-                                } catch (error) {
-                                  console.error('Error processing URL:', error);
-                                  setError('Failed to process URL. Please try again.');
-                                } finally {
-                                  setIsGenerating(false);
-                                }
-                              } else if (selectedCreateOption === 'note' && summaryInput) {
-                                // Handle note creation
-                                try {
-                                  setIsGenerating(true);
-                                  const response = await fetch('/api/notes', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                      note: summaryInput
-                                    }),
-                                  });
+                                } else if (selectedCreateOption === 'image' && selectedImage) {
+                                  // Handle image upload
+                                  try {
+                                    setIsGenerating(true);
+                                    setTitleInput("");
+                                    setSummaryInput("");
 
-                                  if (!response.ok) {
-                                    throw new Error('Failed to generate title and summary');
+                                    // Analyze the image using AI
+                                    const response = await fetch('/api/image', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ 
+                                        image: selectedImage 
+                                      }),
+                                    });
+
+                                    if (!response.ok) {
+                                      throw new Error('Failed to analyze image');
+                                    }
+
+                                    const data = await response.json();
+                                    setTitleInput(data.title);
+                                    setSummaryInput(data.summary);
+                                    setShowInShortModal(true);
+                                  } catch (error) {
+                                    console.error('Error analyzing image:', error);
+                                    setError('Failed to analyze image. Please try again.');
+                                  } finally {
+                                    setIsGenerating(false);
                                   }
-
-                                  const data = await response.json();
-                                  setTitleInput(data.title);
-                                  setSummaryInput(data.summary);
-                                  setShowInShortModal(true);
-                                } catch (error) {
-                                  console.error('Error generating title and summary:', error);
-                                  setTitleInput('');
-                                  setSummaryInput(summaryInput);
-                                  setShowInShortModal(true);
-                                } finally {
-                                  setIsGenerating(false);
                                 }
-                              } else if (selectedCreateOption === 'image' && selectedImage) {
-                                // Handle image upload
-                                try {
-                                  setIsGenerating(true);
-                                  setTitleInput("");
-                                  setSummaryInput("");
-
-                                  // Analyze the image using AI
-                                  const response = await fetch('/api/image', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({ 
-                                      image: selectedImage 
-                                    }),
-                                  });
-
-                                  if (!response.ok) {
-                                    throw new Error('Failed to analyze image');
-                                  }
-
-                                  const data = await response.json();
-                                  setTitleInput(data.title);
-                                  setSummaryInput(data.summary);
-                                  setShowInShortModal(true);
-                                } catch (error) {
-                                  console.error('Error analyzing image:', error);
-                                  setError('Failed to analyze image. Please try again.');
-                                } finally {
-                                  setIsGenerating(false);
-                                }
+                              }}
+                              disabled={
+                                (selectedCreateOption === 'link' && (!urlInput || !validateUrl(urlInput))) || 
+                                (selectedCreateOption === 'note' && !summaryInput) || 
+                                (selectedCreateOption === 'image' && !selectedImage) ||
+                                isGenerating
                               }
-                            }}
-                            disabled={
-                              (selectedCreateOption === 'link' && (!urlInput || !validateUrl(urlInput))) || 
-                              (selectedCreateOption === 'note' && !summaryInput) || 
-                              (selectedCreateOption === 'image' && !selectedImage) ||
-                              isGenerating
-                            }
-                            className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
-                              ((selectedCreateOption === 'link' && (!urlInput || !validateUrl(urlInput))) || 
-                               (selectedCreateOption === 'note' && !summaryInput) || 
-                               (selectedCreateOption === 'image' && !selectedImage) ||
-                               isGenerating)
-                                ? 'bg-gray-300 cursor-not-allowed' 
-                                  : 'bg-red-500 hover:bg-red-600'
-                            }`}
-                          >
-                            {isGenerating ? (
-                              <div className="flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                              </div>
-                            ) : (
-                              'Continue'
-                            )}
-                          </button>
+                              className={`px-4 py-2 text-sm font-medium text-white rounded-full ${
+                                ((selectedCreateOption === 'link' && (!urlInput || !validateUrl(urlInput))) || 
+                                 (selectedCreateOption === 'note' && !summaryInput) || 
+                                 (selectedCreateOption === 'image' && !selectedImage) ||
+                                 isGenerating)
+                                  ? 'bg-gray-300 cursor-not-allowed' 
+                                    : 'bg-red-500 hover:bg-red-600'
+                              }`}
+                            >
+                              {isGenerating ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                </div>
+                              ) : (
+                                'Continue'
+                              )}
+                            </button>
                           </div>
+                        </div>
                       </>
                     )}
 

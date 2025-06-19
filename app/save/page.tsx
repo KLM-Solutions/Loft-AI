@@ -632,6 +632,37 @@ export default function SavePage() {
                   'Continue'
                 )}
           </Button>
+          
+          {/* Loading Message */}
+          {isGenerating && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: "1rem",
+              padding: "0.75rem",
+              backgroundColor: "#f9fafb",
+              borderRadius: "0.5rem",
+              border: "1px solid #e5e7eb"
+            }}>
+              <div style={{
+                width: "1rem",
+                height: "1rem",
+                border: "2px solid #ef4444",
+                borderTop: "2px solid transparent",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                marginRight: "0.5rem"
+              }}></div>
+              <span style={{
+                fontSize: "0.875rem",
+                color: "#6b7280",
+                fontWeight: "500"
+              }}>
+                Title and summary are generating by our intelligence...
+              </span>
+            </div>
+          )}
         </div>  
       </div>    
         </>     
@@ -1433,6 +1464,37 @@ export default function SavePage() {
               )}
             </button>
           </div>
+          
+          {/* Loading Message */}
+          {isGenerating && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: "1rem",
+              padding: "0.75rem",
+              backgroundColor: "#f9fafb",
+              borderRadius: "0.5rem",
+              border: "1px solid #e5e7eb"
+            }}>
+              <div style={{
+                width: "1rem",
+                height: "1rem",
+                border: "2px solid #ef4444",
+                borderTop: "2px solid transparent",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                marginRight: "0.5rem"
+              }}></div>
+              <span style={{
+                fontSize: "0.875rem",
+                color: "#6b7280",
+                fontWeight: "500"
+              }}>
+                Title and summary are generating by our intelligence...
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div>
@@ -2098,6 +2160,37 @@ export default function SavePage() {
               </button>
             </div>
           </div>
+          
+          {/* Loading Message */}
+          {isGenerating && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: "1rem",
+              padding: "0.75rem",
+              backgroundColor: "#f9fafb",
+              borderRadius: "0.5rem",
+              border: "1px solid #e5e7eb"
+            }}>
+              <div style={{
+                width: "1rem",
+                height: "1rem",
+                border: "2px solid #ef4444",
+                borderTop: "2px solid transparent",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                marginRight: "0.5rem"
+              }}></div>
+              <span style={{
+                fontSize: "0.875rem",
+                color: "#6b7280",
+                fontWeight: "500"
+              }}>
+                Title and summary are generating by our intelligence...
+              </span>
+            </div>
+          )}
         </div>
       ) : (
           <div>
