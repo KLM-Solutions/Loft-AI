@@ -29,6 +29,7 @@ import {
   Share2,
   ExternalLink,
   X,
+  Mail,
 } from "lucide-react"
 import { useUser, useClerk } from "@clerk/nextjs"
 
@@ -535,7 +536,7 @@ export default function ProfilePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="bg-white rounded-lg p-4 flex flex-col items-center justify-center">
+                  <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center">
                     <BookmarkIcon className="w-6 h-6 mb-2 text-gray-700" />
                     {isLoadingStats ? (
                       <div className="animate-pulse">
@@ -546,7 +547,7 @@ export default function ProfilePage() {
                     )}
                     <span className="text-gray-500 text-sm">Bookmarks</span>
                   </div>
-                  <div className="bg-white rounded-lg p-4 flex flex-col items-center justify-center">
+                  <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center">
                     <Tag className="w-6 h-6 mb-2 text-gray-700" />
                     {isLoadingStats ? (
                       <div className="animate-pulse">
@@ -557,7 +558,7 @@ export default function ProfilePage() {
                     )}
                     <span className="text-gray-500 text-sm">Tags</span>
                   </div>
-                  <div className="bg-white rounded-lg p-4 flex flex-col items-center justify-center">
+                  <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center">
                     <svg className="w-6 h-6 mb-2 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
@@ -572,7 +573,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* General Section */}
+                {/* TEMPORARILY HIDDEN - WILL BE ADDED BACK LATER */}
+                {/* 
+                General Section
                 <div className="mb-6">
                   <h3 className="text-lg text-gray-500 font-medium mb-2">General</h3>
                   <div className="bg-white rounded-lg overflow-hidden">
@@ -600,7 +603,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* App Info Section */}
+                App Info Section
                 <div className="mb-6">
                   <h3 className="text-lg text-gray-500 font-medium mb-2">App Info</h3>
                   <div className="bg-white rounded-lg overflow-hidden">
@@ -624,6 +627,42 @@ export default function ProfilePage() {
                         <span className="text-base font-medium text-gray-400">Terms of services</span>
                       </div>
                       <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
+                  </div>
+                </div>
+                */}
+
+                {/* Personal Info Section - Similar to System View */}
+                <div className="mb-6">
+                  <h3 className="text-lg text-gray-500 font-medium mb-2">Personal Information</h3>
+                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
+                      <div className="flex items-center">
+                        <User className="w-6 h-6 mr-4 text-gray-700" />
+                        <span className="text-base font-medium">Username</span>
+                      </div>
+                      <span className="text-gray-500">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Not set'}</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
+                      <div className="flex items-center">
+                        <User className="w-6 h-6 mr-4 text-gray-700" />
+                        <span className="text-base font-medium">First Name</span>
+                      </div>
+                      <span className="text-gray-500">{user?.firstName || 'Not set'}</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
+                      <div className="flex items-center">
+                        <User className="w-6 h-6 mr-4 text-gray-700" />
+                        <span className="text-base font-medium">Last Name</span>
+                      </div>
+                      <span className="text-gray-500">{user?.lastName || 'Not set'}</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4">
+                      <div className="flex items-center">
+                        <Mail className="w-6 h-6 mr-4 text-gray-700" />
+                        <span className="text-base font-medium">Email</span>
+                      </div>
+                      <span className="text-gray-500">{user?.primaryEmailAddress?.emailAddress || 'Not set'}</span>
                     </div>
                   </div>
                 </div>
@@ -745,6 +784,8 @@ export default function ProfilePage() {
               >
                 Account
               </button>
+              {/* TEMPORARILY HIDDEN - WILL BE ADDED BACK LATER */}
+              {/* 
               <button
                 onClick={() => setActiveTab("settings")}
                 disabled
@@ -777,6 +818,7 @@ export default function ProfilePage() {
                 About
                 <span className="ml-2 text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
               </button>
+              */}
             </nav>
           </div>
 
@@ -835,7 +877,7 @@ export default function ProfilePage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-6">Statistics</h3>
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <div className="bg-gray-50 p-4 rounded-2xl text-center">
                       <div className="flex justify-center mb-2">
                         <BookmarkIcon className="h-6 w-6 text-gray-700" />
                       </div>
@@ -848,7 +890,7 @@ export default function ProfilePage() {
                       )}
                       <p className="text-sm text-gray-500">Bookmarks</p>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <div className="bg-gray-50 p-4 rounded-2xl text-center">
                       <div className="flex justify-center mb-2">
                         <Tag className="h-6 w-6 text-gray-700" />
                       </div>
@@ -861,7 +903,7 @@ export default function ProfilePage() {
                       )}
                       <p className="text-sm text-gray-500">Tags</p>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
+                    <div className="bg-gray-50 p-4 rounded-2xl text-center">
                       <div className="flex justify-center mb-2">
                         <svg
                           className="h-6 w-6 text-gray-700"
@@ -889,7 +931,7 @@ export default function ProfilePage() {
 
             {/* Coming Soon Message for Other Tabs */}
             {activeTab !== "account" && (
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-32 h-32 mb-6">
                     <img
