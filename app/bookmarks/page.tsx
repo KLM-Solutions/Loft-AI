@@ -1815,9 +1815,9 @@ export default function BookmarksPage() {
                             className="w-full h-full"
                           />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No images yet</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
                         <p className="text-gray-600 mb-8 max-w-md">
-                          Start uploading images to fill your Loft with visual content
+                          Start saving to fill your Loft with links, social posts, images, and more
                         </p>
                       </div>
                     ) : cardView === "list" ? (
