@@ -30,12 +30,13 @@ import {
   ExternalLink,
   X,
 } from "lucide-react"
-import { useUser } from "@clerk/nextjs"
+import { useUser, useClerk } from "@clerk/nextjs"
 
 export default function ProfilePage() {
   const router = useRouter()
   const pathname = usePathname()
   const { user } = useUser()
+  const { signOut } = useClerk()
   const [activeTab, setActiveTab] = useState("account")
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -198,6 +199,13 @@ export default function ProfilePage() {
     }
   };
 
+  // Add function to handle sign out
+  const handleSignOut = () => {
+    signOut(() => {
+      router.push('/');
+    });
+  };
+
   return (
     <div className="flex h-screen bg-[#f5f8fa] overflow-hidden">
       {/* Desktop Sidebar - Hidden on Mobile */}
@@ -243,13 +251,13 @@ export default function ProfilePage() {
                   <div className="px-2 py-2 text-sm text-gray-500">No collections yet</div>
                 ) : (
                   availableCollections.map((collection) => (
-                    <div
-                      key={collection.id}
-                      className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
-                    >
-                      <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
-                      <span>{collection.name}</span>
-                    </div>
+                  <div
+                    key={collection.id}
+                    className="flex items-center px-2 py-2 text-sm text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
+                  >
+                    <div className={`w-3 h-3 ${collection.color} rounded-sm mr-3`}></div>
+                    <span>{collection.name}</span>
+                  </div>
                   ))
                 )}
               </div>
@@ -515,13 +523,13 @@ export default function ProfilePage() {
                       ) : (
                         <User className="w-10 h-10 text-gray-600 mx-auto mt-5" />
                       )}
-                    </div>
+                  </div>
                     <div>
                       <h2 className="text-xl font-semibold">
                         {user?.firstName} {user?.lastName}
                       </h2>
                       <p className="text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
-                    </div>
+                  </div>
                   </div>
                 </div>
 
@@ -568,30 +576,27 @@ export default function ProfilePage() {
                 <div className="mb-6">
                   <h3 className="text-lg text-gray-500 font-medium mb-2">General</h3>
                   <div className="bg-white rounded-lg overflow-hidden">
-                    <button className="w-full flex items-center justify-between p-4 border-b border-gray-100">
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
                       <div className="flex items-center">
-                        <User className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Edit Profile</span>
+                        <User className="w-6 h-6 mr-4 text-gray-400" />
+                        <span className="text-base font-medium text-gray-400">Edit Profile</span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
-                    <button
-                      className="w-full flex items-center justify-between p-4 border-b border-gray-100"
-                      onClick={() => setShowSettings(true)}
-                    >
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
                       <div className="flex items-center">
-                        <Settings className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Settings</span>
+                        <Settings className="w-6 h-6 mr-4 text-gray-400" />
+                        <span className="text-base font-medium text-gray-400">Settings</span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
-                    <button className="w-full flex items-center justify-between p-4">
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4">
                       <div className="flex items-center">
-                        <HelpCircle className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Help & Support</span>
+                        <HelpCircle className="w-6 h-6 mr-4 text-gray-400" />
+                        <span className="text-base font-medium text-gray-400">Help & Support</span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
                   </div>
                 </div>
 
@@ -599,34 +604,37 @@ export default function ProfilePage() {
                 <div className="mb-6">
                   <h3 className="text-lg text-gray-500 font-medium mb-2">App Info</h3>
                   <div className="bg-white rounded-lg overflow-hidden">
-                    <button className="w-full flex items-center justify-between p-4 border-b border-gray-100">
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
                       <div className="flex items-center">
-                        <Smartphone className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">App Version</span>
+                        <Smartphone className="w-6 h-6 mr-4 text-gray-400" />
+                        <span className="text-base font-medium text-gray-400">App Version</span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
-                    <button className="w-full flex items-center justify-between p-4 border-b border-gray-100">
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4 border-b border-gray-100">
                       <div className="flex items-center">
-                        <Lock className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Privacy Policy</span>
+                        <Lock className="w-6 h-6 mr-4 text-gray-400" />
+                        <span className="text-base font-medium text-gray-400">Privacy Policy</span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
-                    <button className="w-full flex items-center justify-between p-4">
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
+                    <div className="w-full flex items-center justify-between p-4">
                       <div className="flex items-center">
-                        <FileText className="w-6 h-6 mr-4 text-gray-700" />
-                        <span className="text-base font-medium">Terms of services</span>
+                        <FileText className="w-6 h-6 mr-4 text-gray-400" />
+                        <span className="text-base font-medium text-gray-400">Terms of services</span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
+                      <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Logout Button */}
-                <button className="w-full flex items-center p-4 text-red-500 font-medium mb-20">
+                {/* Sign Out Button */}
+                <button 
+                  onClick={handleSignOut}
+                  className="w-full flex items-center p-4 text-red-500 font-medium mb-20"
+                >
                   <LogOut className="w-6 h-6 mr-4" />
-                  <span className="text-base">Logout</span>
+                  <span className="text-base">Sign Out</span>
                 </button>
               </div>
 
@@ -657,18 +665,18 @@ export default function ProfilePage() {
               {/* Header */}
               <header className="flex items-center justify-between p-4">
                 <div className="flex items-center">
-                  <button onClick={closeNotifications} className="mr-2">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M15 18L9 12L15 6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                  <h1 className="text-2xl font-bold">Notification</h1>
+                <button onClick={closeNotifications} className="mr-2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M15 18L9 12L15 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <h1 className="text-2xl font-bold">Notification</h1>
                 </div>
                 <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
               </header>
@@ -711,11 +719,11 @@ export default function ProfilePage() {
               </button>
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center relative overflow-hidden">
                 {user?.imageUrl ? (
-                  <img
+                <img
                     src={user.imageUrl}
                     alt={user.firstName || 'User'}
-                    className="w-full h-full rounded-full object-cover"
-                  />
+                  className="w-full h-full rounded-full object-cover"
+                />
                 ) : (
                   <User className="h-6 w-6 text-gray-600" />
                 )}
@@ -781,11 +789,11 @@ export default function ProfilePage() {
                   <div className="flex items-center">
                     <div className="w-20 h-20 rounded-full bg-gray-200 mr-6 overflow-hidden">
                       {user?.imageUrl ? (
-                        <img
+                      <img
                           src={user.imageUrl}
                           alt={user.firstName || 'User'}
-                          className="w-full h-full rounded-full object-cover"
-                        />
+                        className="w-full h-full rounded-full object-cover"
+                      />
                       ) : (
                         <User className="w-10 h-10 text-gray-600 mx-auto mt-5" />
                       )}
@@ -868,7 +876,7 @@ export default function ProfilePage() {
                       {isLoadingStats ? (
                         <div className="animate-pulse">
                           <div className="h-8 bg-gray-300 rounded mb-2"></div>
-                        </div>
+                    </div>
                       ) : (
                         <p className="text-2xl font-bold">{statistics.collections}</p>
                       )}
@@ -889,7 +897,7 @@ export default function ProfilePage() {
                       alt="Coming Soon"
                       className="w-full h-full object-contain"
                     />
-                  </div>
+                    </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon</h2>
                   <p className="text-gray-600 mb-8 max-w-md">
                     This feature is currently under development. We're working hard to bring you the best experience.
@@ -897,7 +905,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
-          </div>
+                    </div>
         </div>
       </div>
       {/* Overlay for desktop */}
@@ -912,17 +920,17 @@ export default function ProfilePage() {
               <h2 className="text-xl font-semibold">Notifications</h2>
               <div className="flex items-center gap-2">
                 <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">Coming Soon</span>
-                <button onClick={closeNotifications} className="text-gray-500 hover:text-gray-700">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M18 6L6 18M6 6L18 18"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
+              <button onClick={closeNotifications} className="text-gray-500 hover:text-gray-700">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M18 6L6 18M6 6L18 18"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
               </div>
             </div>
 
