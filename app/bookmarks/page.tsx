@@ -27,6 +27,7 @@ import SaveModal from "@/components/save-modal"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { useClipboard } from "@/hooks/use-clipboard"
 
 function removeQuotes(str: string) {
   // Remove leading/trailing quotes and all double asterisks
@@ -143,6 +144,9 @@ export default function BookmarksPage() {
     collections: 0
   })
   const [isLoadingStats, setIsLoadingStats] = useState(false)
+
+  // Add clipboard detection hook
+  const { showClipboardSuggestion, clipboardUrl, hideSuggestion, getClipboardUrl } = useClipboard();
 
   const defaultTags = [
     "design", "ui", "ux", "inspiration", "web", "mobile", "development",
@@ -2753,6 +2757,52 @@ export default function BookmarksPage() {
                             }`}
                             disabled={isGenerating} 
                           />
+                          
+                          {/* Clipboard Suggestion */}
+                          {showClipboardSuggestion && clipboardUrl && !urlInput && (
+                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0">
+                                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-sm font-medium text-blue-800">
+                                    URL detected in clipboard
+                                  </h3>
+                                  <div className="mt-1 text-sm text-blue-700 truncate">
+                                    {clipboardUrl}
+                                  </div>
+                                </div>
+                                <div className="flex-shrink-0 flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setUrlInput(clipboardUrl);
+                                      hideSuggestion();
+                                      // Trigger the paste handler
+                                      const mockEvent = {
+                                        clipboardData: {
+                                          getData: () => clipboardUrl
+                                        }
+                                      } as unknown as React.ClipboardEvent<HTMLInputElement>;
+                                      handleUrlPaste(mockEvent);
+                                    }}
+                                    className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full hover:bg-blue-200"
+                                  >
+                                    Paste
+                                  </button>
+                                  <button
+                                    onClick={hideSuggestion}
+                                    className="text-blue-400 hover:text-blue-600"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
                           {urlValidationError && (
                             <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                               <div className="flex items-start">

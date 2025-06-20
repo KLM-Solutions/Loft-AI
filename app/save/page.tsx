@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, Upload, Camera, Plus, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useClipboard } from "@/hooks/use-clipboard"
 
 export default function SavePage() {
   const router = useRouter()
@@ -58,6 +59,9 @@ export default function SavePage() {
     description: '',
     type: 'error'
   });
+
+  // Add clipboard detection hook
+  const { showClipboardSuggestion, clipboardUrl, hideSuggestion, getClipboardUrl } = useClipboard();
 
   const tagColors = [
     "bg-red-100 text-red-700 border-red-200",
@@ -642,6 +646,74 @@ export default function SavePage() {
                 minHeight: isMobile ? "44px" : "auto",
               }}
             />
+            
+            {/* Clipboard Suggestion */}
+            {showClipboardSuggestion && clipboardUrl && !formData.url && (
+              <div style={{
+                marginTop: "0.5rem",
+                padding: "0.75rem",
+                backgroundColor: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: "0.5rem",
+                borderLeft: "4px solid #3b82f6"
+              }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+                  <div style={{ flexShrink: 0 }}>
+                    <svg style={{ height: "1.25rem", width: "1.25rem", color: "#3b82f6" }} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ fontSize: "0.875rem", fontWeight: "500", color: "#1e40af", margin: 0 }}>
+                      URL detected in clipboard
+                    </h3>
+                    <div style={{ 
+                      marginTop: "0.25rem", 
+                      fontSize: "0.875rem", 
+                      color: "#1d4ed8", 
+                      overflow: "hidden", 
+                      textOverflow: "ellipsis", 
+                      whiteSpace: "nowrap"
+                    }}>
+                      {clipboardUrl}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                    <button
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, url: clipboardUrl }));
+                        hideSuggestion();
+                      }}
+                      style={{
+                        padding: "0.25rem 0.75rem",
+                        fontSize: "0.75rem",
+                        fontWeight: "500",
+                        color: "#1d4ed8",
+                        backgroundColor: "#dbeafe",
+                        borderRadius: "9999px",
+                        border: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Paste
+                    </button>
+                    <button
+                      onClick={hideSuggestion}
+                      style={{
+                        color: "#3b82f6",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "0.25rem"
+                      }}
+                    >
+                      <X style={{ height: "1rem", width: "1rem" }} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {urlValidationError && (
               <div style={{
                 marginTop: "0.5rem",
