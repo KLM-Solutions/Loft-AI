@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     const [titleResponse, summaryResponse] = await Promise.all([
       generateText({
         model: perplexity('sonar'),
-        prompt: `Generate a concise, engaging title (max 5 words) for this URL: ${url}, response format should be like this : title(text-format not any other format, don't use this type of numbers or sources [1][5]), also don't use "" or '' or any other format, just text`,
+        prompt: `Generate a concise, engaging title (max 5 words) for this URL: ${url}, response format should be like this : text-format not any other format, don't use this type of numbers or sources [1][5], also don't use "" or '' or any other format, just text`,
       }),
       generateText({
         model: perplexity('sonar'),
