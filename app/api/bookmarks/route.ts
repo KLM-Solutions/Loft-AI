@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const clerk_username = user.username || user.emailAddresses?.[0]?.emailAddress || user.id;
-    const { url, searchQuery } = await request.json();
+    const { url, searchQuery, xTitle, xSummary } = await request.json();
 
     // If it's a search query, save it to the database
     if (searchQuery) {
@@ -45,7 +45,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate title and summary using Perplexity AI
+    // If X data is provided, process it with AI
+    if (xTitle && xSummary) {
+      console.log('Processing X data with AI:', { xTitle, xSummary });
+      
+      const [titleResponse, summaryResponse] = await Promise.all([
+        generateText({
+          model: perplexity('sonar'),
+          prompt: `Improve and enhance this X (Twitter) post title to make it more engaging and descriptive (max 5 words): "${xTitle}". Response format should be like this: title(text-format not any other format, don't use this type of numbers or sources [1][5]), also don't use "" or '' or any other format, just text`,
+        }),
+        generateText({
+          model: perplexity('sonar'),
+          prompt: `Improve and enhance this X (Twitter) post summary to make it more comprehensive and engaging (2-3 sentences): "${xSummary}"`,
+        })
+      ]);
+
+      return NextResponse.json({
+        title: titleResponse.text,
+        summary: summaryResponse.text
+      });
+    }
+
+    // Generate title and summary using Perplexity AI for general URLs
     const [titleResponse, summaryResponse] = await Promise.all([
       generateText({
         model: perplexity('sonar'),

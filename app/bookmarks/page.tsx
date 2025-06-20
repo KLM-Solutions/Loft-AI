@@ -1017,9 +1017,9 @@ export default function BookmarksPage() {
       setTitleInput("");
       setSummaryInput("");
 
-      // First fetch metadata
-      console.log('Fetching metadata for URL:', url);
-      const metadataResponse = await fetch('/api/metadata', {
+      // First verify the URL type
+      console.log('Starting URL verification process...');
+      const verifyResponse = await fetch('/api/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1027,51 +1027,92 @@ export default function BookmarksPage() {
         body: JSON.stringify({ url }),
       });
 
-      if (!metadataResponse.ok) {
-        throw new Error('Failed to fetch metadata');
-      }
-
-      const metadata = await metadataResponse.json();
-      console.log('Received metadata:', metadata);
-
-      // Only update the image preview if metadata contains an ogImage
-      if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
-        setSelectedImage(metadata.metadata.ogImage[0].url);
-      } else {
-        // If no image in metadata, set selectedImage to empty string to show upload option
-        setSelectedImage("");
-      }
-
-      // Verify if the URL is from a social media platform
-      console.log('Starting URL verification process...');
-      const verifyResponse = await fetch('/api/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          url,
-          metadata: metadata.metadata
-        }),
-      });
-
       if (!verifyResponse.ok) {
         throw new Error('Failed to verify URL');
       }
 
       const verifyData = await verifyResponse.json();
-      const isSocialMedia = verifyData.isSocialMedia;
-      console.log('URL verification result:', { isSocialMedia });
+      console.log('URL verification result:', verifyData);
 
-      if (isSocialMedia) {
+      if (verifyData.isX) {
+        console.log('Processing X (Twitter) URL...');
+        // For X URLs, use the X API to extract content
+        const xResponse = await fetch('/api/x', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!xResponse.ok) {
+          throw new Error('Failed to process X URL');
+        }
+
+        const xData = await xResponse.json();
+        console.log('Received X data:', xData);
+        
+        // Send X data to bookmarks API for AI processing
+        const bookmarksResponse = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            url,
+            xTitle: xData.title,
+            xSummary: xData.summary
+          }),
+        });
+
+        if (!bookmarksResponse.ok) {
+          throw new Error('Failed to process X content with AI');
+        }
+
+        const bookmarksData = await bookmarksResponse.json();
+        console.log('AI processed X data:', bookmarksData);
+        
+        setTitleInput(bookmarksData.title);
+        setSummaryInput(bookmarksData.summary);
+        if (xData.image) {
+          setSelectedImage(xData.image);
+        }
+        setShowInShortModal(true);
+      } else if (verifyData.isSocialMedia) {
         console.log('Processing social media URL...');
-        // For social media links, use the title from metadata and let user write summary
-        setTitleInput(metadata.metadata.ogTitle || '');
-        console.log('Set title from metadata:', metadata.metadata.ogTitle);
+        // For social media links, ask user to enter data manually
+        setTitleInput('');
+        setSummaryInput('');
+        setSelectedImage('');
         setShowInShortModal(true);
       } else {
-        console.log('Processing non-social media URL...');
-        // For non-social media links, use the existing bookmark creation flow
+        console.log('Processing general URL...');
+        // For general URLs, fetch metadata first
+        console.log('Fetching metadata for URL:', url);
+        const metadataResponse = await fetch('/api/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!metadataResponse.ok) {
+          throw new Error('Failed to fetch metadata');
+        }
+
+        const metadata = await metadataResponse.json();
+        console.log('Received metadata:', metadata);
+
+        // Only update the image preview if metadata contains an ogImage
+        if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
+          setSelectedImage(metadata.metadata.ogImage[0].url);
+        } else {
+          // If no image in metadata, set selectedImage to empty string to show upload option
+          setSelectedImage("");
+        }
+
+        // For general links, use the existing bookmark creation flow
         const response = await fetch('/api/bookmarks', {
           method: 'POST',
           headers: {
@@ -1088,9 +1129,17 @@ export default function BookmarksPage() {
         }
 
         const data = await response.json();
-        console.log('Received bookmark data:', data);
         setTitleInput(data.title);
         setSummaryInput(data.summary);
+        // Keep the image from metadata for general URLs
+        if (metadata.metadata.image) {
+          let imageUrl = metadata.metadata.image;
+          if (imageUrl.startsWith('/')) {
+            const urlObj = new URL(url);
+            imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+          }
+          setSelectedImage(imageUrl);
+        }
         setShowInShortModal(true);
       }
     } catch (error) {
@@ -1103,6 +1152,17 @@ export default function BookmarksPage() {
           'warning'
         );
         setSelectedImage(""); // Reset image to show upload option
+        setShowInShortModal(true);
+      } else if (error instanceof Error && error.message === 'Failed to process X URL') {
+        // Show modal toast for X processing errors
+        showModalToast(
+          "X content processing failed",
+          "Unable to fetch X post content. Please try again or enter details manually.",
+          'error'
+        );
+        setTitleInput('');
+        setSummaryInput('');
+        setSelectedImage('');
         setShowInShortModal(true);
       } else {
         // Show modal toast for other processing errors

@@ -12,8 +12,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 })
     }
 
-    // Create a prompt for the LLM to verify if the URL is from a social media platform
-    const prompt = `Using this metadata provided, identify which social media platform this belongs to. Social media platforms are platforms like Instagram, X, Facebook, Snapchat, Youtube, Tiktok, Reddit, WhatsApp, and more. Only respond with "yes" or "no" in lowercase letters.
+    // Check if it's an X (Twitter) URL first
+    const isXUrl = url.includes('twitter.com') || url.includes('x.com');
+    
+    if (isXUrl) {
+      console.log('Detected X (Twitter) URL');
+      return NextResponse.json({ 
+        isX: true, 
+        isSocialMedia: false, 
+        isGeneral: false 
+      });
+    }
+
+    // Create a prompt for the LLM to verify if the URL is from a social media platform (excluding X)
+    const prompt = `Using this metadata provided, identify if this URL belongs to a social media platform. Social media platforms include Instagram, Facebook, Snapchat, Youtube, Tiktok, Reddit, WhatsApp, LinkedIn, Pinterest, and similar platforms. Do NOT include X (Twitter) as it's handled separately. Only respond with "yes" or "no" in lowercase letters.
 
 Metadata:
 ${JSON.stringify(metadata, null, 2)}`
@@ -30,7 +42,11 @@ ${JSON.stringify(metadata, null, 2)}`
     const isSocialMedia = response.text.trim().toLowerCase() === "yes"
     console.log('Is social media:', isSocialMedia);
 
-    return NextResponse.json({ isSocialMedia })
+    return NextResponse.json({ 
+      isX: false, 
+      isSocialMedia: isSocialMedia, 
+      isGeneral: !isSocialMedia 
+    })
   } catch (error) {
     console.error("Error verifying URL:", error)
     return NextResponse.json({ error: "Failed to verify URL" }, { status: 500 })

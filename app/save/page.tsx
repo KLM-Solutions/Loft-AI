@@ -221,9 +221,9 @@ export default function SavePage() {
       setTitleInput("");
       setSummaryInput("");
 
-      // First fetch metadata
-      console.log('Fetching metadata for URL:', formData.url);
-      const metadataResponse = await fetch('/api/metadata', {
+      // First verify the URL type
+      console.log('Starting URL verification process...');
+      const verifyResponse = await fetch('/api/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,48 +231,98 @@ export default function SavePage() {
         body: JSON.stringify({ url: formData.url }),
       });
 
-      if (!metadataResponse.ok) {
-        throw new Error('Failed to fetch metadata');
-      }
-
-      const metadata = await metadataResponse.json();
-      console.log('Received metadata:', metadata);
-
-      // Always update the image preview if metadata contains an ogImage
-      if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
-        setSelectedImage(metadata.metadata.ogImage[0].url);
-      }
-
-      // Verify if the URL is from a social media platform
-      console.log('Starting URL verification process...');
-      const verifyResponse = await fetch('/api/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          url: formData.url,
-          metadata: metadata.metadata
-        }),
-      });
-
       if (!verifyResponse.ok) {
         throw new Error('Failed to verify URL');
       }
 
       const verifyData = await verifyResponse.json();
-      const isSocialMedia = verifyData.isSocialMedia;
-      console.log('URL verification result:', { isSocialMedia });
+      console.log('URL verification result:', verifyData);
 
-      if (isSocialMedia) {
+      if (verifyData.isX) {
+        console.log('Processing X (Twitter) URL...');
+        console.log('URL being sent to X API:', formData.url);
+        // For X URLs, use the X API to extract content
+        const xResponse = await fetch('/api/x', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: formData.url }),
+        });
+
+        console.log('X API response status:', xResponse.status, xResponse.statusText);
+
+        if (!xResponse.ok) {
+          const errorText = await xResponse.text();
+          console.error('X API error response:', errorText);
+          throw new Error('Failed to process X URL');
+        }
+
+        const xData = await xResponse.json();
+        console.log('Received X data:', xData);
+        
+        // Send X data to bookmarks API for AI processing
+        const bookmarksResponse = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            url: formData.url,
+            xTitle: xData.title,
+            xSummary: xData.summary
+          }),
+        });
+
+        console.log('Bookmarks API response status:', bookmarksResponse.status, bookmarksResponse.statusText);
+
+        if (!bookmarksResponse.ok) {
+          const errorText = await bookmarksResponse.text();
+          console.error('Bookmarks API error response:', errorText);
+          throw new Error('Failed to process X content with AI');
+        }
+
+        const bookmarksData = await bookmarksResponse.json();
+        console.log('AI processed X data:', bookmarksData);
+        
+        setTitleInput(bookmarksData.title);
+        setSummaryInput(bookmarksData.summary);
+        if (xData.image) {
+          setSelectedImage(xData.image);
+        }
+        setShowInShortModal(true);
+      } else if (verifyData.isSocialMedia) {
         console.log('Processing social media URL...');
-        // For social media links, use the title from metadata and let user write summary
-        setTitleInput(metadata.metadata.ogTitle || '');
-        console.log('Set title from metadata:', metadata.metadata.ogTitle);
+        // For social media links, ask user to enter data manually
+        setTitleInput('');
+        setSummaryInput('');
+        setSelectedImage('');
         setShowInShortModal(true);
       } else {
-        console.log('Processing non-social media URL...');
-        // For non-social media links, use the existing bookmark creation flow
+        console.log('Processing general URL...');
+        // For general URLs, fetch metadata first
+        console.log('Fetching metadata for URL:', formData.url);
+        const metadataResponse = await fetch('/api/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: formData.url }),
+        });
+
+        if (!metadataResponse.ok) {
+          throw new Error('Failed to fetch metadata');
+        }
+
+        const metadata = await metadataResponse.json();
+        console.log('Received metadata:', metadata);
+
+        // Always update the image preview if metadata contains an ogImage
+        if (metadata.metadata.ogImage && metadata.metadata.ogImage.length > 0) {
+          setSelectedImage(metadata.metadata.ogImage[0].url);
+        }
+
+        // For general links, use the existing bookmark creation flow
         const response = await fetch('/api/bookmarks', {
           method: 'POST',
           headers: {
@@ -304,6 +354,28 @@ export default function SavePage() {
           'warning'
         );
         // Allow user to proceed to next page after showing error
+        setShowInShortModal(true);
+      } else if (error instanceof Error && error.message === 'Failed to process X URL') {
+        // Show modal toast for X processing errors
+        showModalToast(
+          "X content processing failed",
+          "Unable to fetch X post content. Please try again or enter details manually.",
+          'error'
+        );
+        setTitleInput('');
+        setSummaryInput('');
+        setSelectedImage('');
+        setShowInShortModal(true);
+      } else if (error instanceof Error && error.message === 'Failed to process X content with AI') {
+        // Show modal toast for X AI processing errors
+        showModalToast(
+          "X content AI processing failed",
+          "Unable to enhance X post content with AI. Please try again or enter details manually.",
+          'error'
+        );
+        setTitleInput('');
+        setSummaryInput('');
+        setSelectedImage('');
         setShowInShortModal(true);
       } else {
         // Show modal toast for other processing errors
