@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       const [titleResponse, summaryResponse] = await Promise.all([
         generateText({
           model: perplexity('sonar'),
-          prompt: `Improve and enhance this X (Twitter) post title to make it more engaging and descriptive (max 5 words): "${xTitle}". Response format should be like this: title(text-format not any other format, don't use this type of numbers or sources [1][5]), also don't use "" or '' or any other format, just text`,
+          prompt: `Improve and enhance this X (Twitter) post title to make it more engaging and descriptive (max 5 words): "${xTitle}". Response format should be like this: text-format not any other format, don't use this type of numbers or sources [1][5], also don't use "" or '' or any other format, just text`,
         }),
         generateText({
           model: perplexity('sonar'),
