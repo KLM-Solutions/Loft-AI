@@ -565,11 +565,34 @@ export default function ProfilePage() {
                     {isLoadingStats ? (
                       <div className="animate-pulse">
                         <div className="h-8 bg-gray-300 rounded mb-2"></div>
-                      </div>
-                    ) : (
-                      <span className="text-2xl font-bold">{statistics.collections}</span>
-                    )}
+                    </div>
+                      ) : (
+                        <span className="text-2xl font-bold">{statistics.collections}</span>
+                      )}
                     <span className="text-gray-500 text-sm">Collections</span>
+                  </div>
+                </div>
+
+                {/* Personal information */}
+                <div className="bg-white rounded-2xl p-4 mt-8">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Personal information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Username</p>
+                      <p className="font-medium text-gray-900">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">First Name</p>
+                      <p className="font-medium text-gray-900">{user?.firstName || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Last Name</p>
+                      <p className="font-medium text-gray-900">{user?.lastName || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium text-gray-900">{user?.primaryEmailAddress?.emailAddress || 'Not set'}</p>
+                    </div>
                   </div>
                 </div>
 
