@@ -270,27 +270,12 @@ pnpm db:studio    # Open database studio
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- **Next.js Team** for the amazing framework
-- **Vercel** for the deployment platform
-- **Radix UI** for accessible component primitives
-- **Tailwind CSS** for the utility-first CSS framework
-- **Clerk** for authentication services
-- **Perplexity AI** for AI capabilities
-- **Neon** for serverless PostgreSQL
-
 ## 📞 Support
 
-For support, email support@loftai.com or join our Discord community.
+For support, email info@pxlbrain.com
 
 ---
 
 <div align="center">
-  <p>Built with ❤️ by the Loft AI team</p>
-  <p>
-    <a href="https://twitter.com/loftai">Twitter</a> •
-    <a href="https://discord.gg/loftai">Discord</a> •
-    <a href="https://loftai.com">Website</a>
-  </p>
+  <p>Built with ❤️ by the pxlbrain team</p>
 </div> 
