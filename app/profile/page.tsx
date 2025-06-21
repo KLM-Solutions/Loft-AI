@@ -69,6 +69,14 @@ export default function ProfilePage() {
   // Slider state
   const [discoveryFrequency, setDiscoveryFrequency] = useState("weekly")
 
+  const [interests, setInterests] = useState<string[]>([])
+  const [isLoadingInterests, setIsLoadingInterests] = useState(true)
+  const [isEditingInterests, setIsEditingInterests] = useState(false)
+  const [editedInterests, setEditedInterests] = useState<string[]>([])
+  const [newInterest, setNewInterest] = useState("")
+
+  const hasChanges = JSON.stringify([...interests].sort()) !== JSON.stringify([...editedInterests].sort());
+
   // Add function to fetch statistics
   const fetchStatistics = async () => {
     setIsLoadingStats(true);
@@ -116,6 +124,22 @@ export default function ProfilePage() {
     }
   };
 
+  const fetchInterests = async () => {
+    setIsLoadingInterests(true);
+    try {
+      const res = await fetch('/api/interests');
+      if (!res.ok) throw new Error('Failed to fetch interests');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setInterests(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching interests:', error);
+    } finally {
+      setIsLoadingInterests(false);
+    }
+  };
+
   // Add useEffect to fetch collections and statistics on component mount
   useEffect(() => {
     fetch("/api/collections")
@@ -134,6 +158,7 @@ export default function ProfilePage() {
       });
 
     fetchStatistics();
+    fetchInterests();
   }, []);
 
   // Add function to toggle notifications
@@ -197,6 +222,46 @@ export default function ProfilePage() {
       console.error('Error creating collection:', error);
     } finally {
       setIsCreatingCollection(false);
+    }
+  };
+
+  const handleEditInterests = () => {
+    setIsEditingInterests(true);
+    setEditedInterests([...interests]);
+  };
+
+  const handleCancelEditInterests = () => {
+    setIsEditingInterests(false);
+  };
+
+  const handleAddInterest = () => {
+    const trimmedInterest = newInterest.trim();
+    if (trimmedInterest && !editedInterests.includes(trimmedInterest)) {
+        setEditedInterests([...editedInterests, trimmedInterest]);
+        setNewInterest("");
+    }
+  };
+
+  const handleRemoveInterest = (interestToRemove: string) => {
+    setEditedInterests(editedInterests.filter(i => i !== interestToRemove));
+  };
+
+  const handleSaveInterests = async () => {
+    try {
+        const response = await fetch('/api/interests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ interests: editedInterests })
+        });
+        const data = await response.json();
+        if (data.success) {
+            setInterests([...editedInterests]);
+            setIsEditingInterests(false);
+        } else {
+            console.error('Error saving interests:', data.error);
+        }
+    } catch (error) {
+        console.error('Error saving interests:', error);
     }
   };
 
@@ -510,7 +575,7 @@ export default function ProfilePage() {
               </header>
 
               {/* Profile Content */}
-              <div className="flex-1 overflow-y-auto px-4">
+              <div className="flex-1 overflow-y-auto px-4 pb-24">
                 {/* Profile Info */}
                 <div className="flex justify-between items-start mb-8">
                   <div className="flex items-center">
@@ -530,7 +595,7 @@ export default function ProfilePage() {
                         {user?.firstName} {user?.lastName}
                       </h2>
                       <p className="text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
-                  </div>
+                    </div>
                   </div>
                 </div>
 
@@ -571,6 +636,69 @@ export default function ProfilePage() {
                       )}
                     <span className="text-gray-500 text-sm">Collections</span>
                   </div>
+                </div>
+
+                {/* Interests Section */}
+                <div className="bg-white rounded-2xl p-6 mt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Your Interests</h3>
+                    {!isEditingInterests && (
+                      <button onClick={handleEditInterests} className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-xl hover:bg-blue-600">Edit</button>
+                    )}
+                  </div>
+                  {isLoadingInterests ? (
+                    <div>Loading interests...</div>
+                  ) : (
+                    <>
+                      {!isEditingInterests ? (
+                        <div className="flex flex-wrap gap-2">
+                          {interests.length > 0 ? (
+                            interests.map((interest, index) => (
+                              <div key={index} className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1.5 rounded-full">
+                                {interest}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500">Add your interests to get better recommendations.</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {editedInterests.map((interest, index) => (
+                              <div key={index} className="flex items-center bg-blue-100 text-blue-800 text-sm font-medium pl-3 pr-2 py-1.5 rounded-full">
+                                <span>{interest}</span>
+                                <button onClick={() => handleRemoveInterest(interest)} className="ml-1.5 text-blue-600 hover:text-blue-800">
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2 mt-4">
+                            <input
+                              type="text"
+                              value={newInterest}
+                              onChange={(e) => setNewInterest(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddInterest()}
+                              placeholder="e.g. Artificial Intelligence"
+                              className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button onClick={handleAddInterest} className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600">Add</button>
+                          </div>
+                          <div className="flex justify-end space-x-2 mt-4">
+                            <button onClick={handleCancelEditInterests} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                            <button 
+                              onClick={handleSaveInterests}
+                              disabled={!hasChanges}
+                              className={`px-4 py-2 text-sm font-medium text-white rounded-xl ${!hasChanges ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {/* Personal information */}
@@ -805,7 +933,70 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div>
+                {/* Interests Section */}
+                <div className="mt-8">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Your Interests</h3>
+                      {!isEditingInterests && (
+                        <button onClick={handleEditInterests} className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-xl hover:bg-blue-600">Edit</button>
+                      )}
+                    </div>
+                    {isLoadingInterests ? (
+                      <div>Loading interests...</div>
+                    ) : (
+                      <>
+                        {!isEditingInterests ? (
+                          <div className="flex flex-wrap gap-2">
+                            {interests.length > 0 ? (
+                              interests.map((interest, index) => (
+                                <div key={index} className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1.5 rounded-full">
+                                  {interest}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-500">Add your interests to get better recommendations.</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {editedInterests.map((interest, index) => (
+                                <div key={index} className="flex items-center bg-blue-100 text-blue-800 text-sm font-medium pl-3 pr-2 py-1.5 rounded-full">
+                                  <span>{interest}</span>
+                                  <button onClick={() => handleRemoveInterest(interest)} className="ml-1.5 text-blue-600 hover:text-blue-800">
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2 mt-4">
+                              <input
+                                type="text"
+                                value={newInterest}
+                                onChange={(e) => setNewInterest(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddInterest()}
+                                placeholder="e.g. Artificial Intelligence"
+                                className="w-full p-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <button onClick={handleAddInterest} className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600">Add</button>
+                            </div>
+                            <div className="flex justify-end space-x-2 mt-4">
+                              <button onClick={handleCancelEditInterests} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                              <button
+                                onClick={handleSaveInterests}
+                                disabled={!hasChanges}
+                                className={`px-4 py-2 text-sm font-medium text-white rounded-xl ${!hasChanges ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                <div className="mt-8">
                   <h3 className="text-lg font-semibold mb-6">Statistics</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-gray-50 p-4 rounded-2xl text-center">
