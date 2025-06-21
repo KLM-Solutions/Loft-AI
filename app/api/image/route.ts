@@ -29,7 +29,7 @@ export async function POST(request: Request) {
           content: [
             {
               type: 'text',
-              text: 'Analyze this image and provide:\n1. A concise, descriptive title (max 5 words)\n2. A detailed summary explaining what you see in the image (max 3 lines)\n\nFormat your response as:\nTitle: [title]\nSummary: [summary]',
+              text: 'Analyze this image and provide:\n1. A concise, descriptive title (max 5 words)\n2. A detailed summary explaining what you see in the image (max 3 lines), don\'t generate any sources [1][5]\n\nFormat your response as:\nTitle: [title]\nSummary: [summary]',
             },
             {
               type: 'file',
